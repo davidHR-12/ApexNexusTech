@@ -1,0 +1,158 @@
+{% extends "usuarios/base_auth.html" %}
+{% block title %}Login{% endblock %}
+{% block auth_content %}
+  <div class="flex justify-center mb-6">
+    <div class="bg-[#10b981] p-3 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+      <span class="text-white font-bold text-xl">3D</span>
+    </div>
+  </div>
+  <h2 class="text-white text-2xl font-bold text-center mb-8">Inicio Sesión</h2>
+  {% if messages %}
+    {% for message in messages %}
+      <div class="mb-4 p-4 rounded-xl flex items-center gap-3 animate-pulse {% if message.tags == 'error' %} bg-red-500/10 border border-red-500/50 text-red-400 {% else %} bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 {% endif %}">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd">
+          </path>
+        </svg>
+        <span class="text-sm font-medium">{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    {% for field in form %}
+      <div>
+        <label class="text-gray-400 text-sm block mb-2">{{ field.label }}</label>
+        {% if field.name == "password" %}
+          <div class="relative">
+            {{ field }}
+            <!-- Botón ojo -->
+            <button type="button"
+                    id="toggle-password"
+                    class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-[#10b981] transition">
+              <!-- Ojo cerrado (default) -->
+              <svg id="eye-closed"
+                   xmlns="http://www.w3.org/2000/svg"
+                   class="h-5 w-5"
+                   fill="none"
+                   viewBox="0 0 24 24"
+                   stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.657.402-3.22 1.125-4.575M9.88 9.88a3 3 0 104.243 4.243" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18" />
+              </svg>
+              <!-- Ojo abierto -->
+              <svg id="eye-open"
+                   xmlns="http://www.w3.org/2000/svg"
+                   class="h-5 w-5 hidden"
+                   fill="none"
+                   viewBox="0 0 24 24"
+                   stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          </div>
+        {% else %}
+          {{ field }}
+        {% endif %}
+        {% if field.errors %}<p class="text-red-400 text-xs mt-1">{{ field.errors.0 }}</p>{% endif %}
+      </div>
+    {% endfor %}
+    <div id="caps-warning"
+         class="mt-2 hidden items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">
+      <svg xmlns="http://www.w3.org/2000/svg"
+           class="h-4 w-4 flex-shrink-0"
+           fill="none"
+           viewBox="0 0 24 24"
+           stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 4h.01M5.07 19h13.86c1.1 0 1.79-1.2 1.24-2.12L13.24 4.88c-.55-.92-1.93-.92-2.48 0L3.83 16.88c-.55.92.14 2.12 1.24 2.12z" />
+      </svg>
+      <span>Bloq Mayús está activado</span>
+    </div>
+    <button type="submit"
+            class="w-full bg-[#10b981] hover:bg-[#059669] text-white font-bold py-3.5 rounded-xl mt-4 transition duration-300 shadow-[0_0_15px_rgba(16,185,129,0.3)] uppercase tracking-wider text-sm">
+      Iniciar Sesión
+    </button>
+  </form>
+  <p class="text-gray-500 text-sm text-center mt-6">
+    ¿Nuevo por aquí?
+    <a href="{% url 'usuarios:register' %}"
+       class="text-[#10b981] hover:underline">Crea una cuenta</a>
+  </p>
+  {% if email_no_verificado %}
+    <hr>
+    <p class="text-gray-500 text-sm text-center mt-6">
+      ¿No recibiste el correo de verificación para
+      <strong>{{ email_no_verificado }}</strong>?
+    </p>
+    <form method="post" action="{% url 'usuarios:reenviar_verificacion' %}">
+      {% csrf_token %}
+      <input type="hidden" name="email" value="{{ email_no_verificado }}">
+      <button type="submit"
+              class="w-full bg-[#10b981] hover:bg-[#059669] text-white font-bold py-3.5 rounded-xl mt-4 transition duration-300 shadow-[0_0_15px_rgba(16,185,129,0.3)] uppercase tracking-wider text-sm">
+        Reenviar correo
+      </button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}
+{% block extra_js %}
+  <script>
+      // Detectar Mayúsculas activadas
+      document.addEventListener("DOMContentLoaded", () => {
+          const passwordInput = document.getElementById("id_password");
+          const warning = document.getElementById("caps-warning");
+
+          if (!passwordInput) return;
+
+          passwordInput.addEventListener("keydown", (e) => {
+              warning.classList.toggle(
+                  "hidden",
+                  !e.getModifierState("CapsLock")
+              );
+              warning.classList.toggle(
+                  "flex",
+                  e.getModifierState("CapsLock")
+              );
+          });
+      });
+      // Deshabilitar el botón de reenvío tras el primer clic
+      const reenviarForm = document.querySelector('form[action*="reenviar_verificacion"]');
+      if (reenviarForm) {
+          reenviarForm.addEventListener('submit', function() {
+              const btn = this.querySelector('button[type="submit"]');
+              btn.disabled = true;
+              btn.innerHTML = "Enviando...";
+              btn.classList.add('opacity-50', 'cursor-not-allowed');
+          });
+      }
+
+      // Mostrar/ocultar contraseña
+      document.addEventListener("DOMContentLoaded", () => {
+          const passwordInput = document.getElementById("id_password");
+          const toggleBtn = document.getElementById("toggle-password");
+          const eyeOpen = document.getElementById("eye-open");
+          const eyeClosed = document.getElementById("eye-closed");
+
+          if (!passwordInput || !toggleBtn) return;
+
+          toggleBtn.addEventListener("click", () => {
+              const isPassword = passwordInput.type === "password";
+
+              passwordInput.type = isPassword ? "text" : "password";
+              eyeOpen.classList.toggle("hidden", !isPassword);
+              eyeClosed.classList.toggle("hidden", isPassword);
+          });
+      });
+
+      // Selecciona todos los mensajes y los oculta tras 5 segundos
+      setTimeout(function() {
+          let messages = document.querySelectorAll(".animate-pulse");
+          messages.forEach((msg) => {
+              msg.style.transition = "opacity 0.5s ease";
+              msg.style.opacity = "0";
+              setTimeout(() => msg.remove(), 500);
+          });
+      }, 5000);
+  </script>
+{% endblock extra_js %}

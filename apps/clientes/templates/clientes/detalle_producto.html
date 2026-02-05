@@ -1,0 +1,86 @@
+{% extends "base_publica.html" %}
+{% block content %}
+  <section class="max-w-7xl mx-auto px-4 py-12 md:py-20">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div class="space-y-6">
+        <div class="aspect-square bg-gray-900/50 rounded-[2.5rem] overflow-hidden border border-gray-800 shadow-2xl flex items-center justify-center p-6">
+          <img id="mainImage"
+               src="{{ producto.imagen.url }}"
+               alt="{{ producto.nombre }}"
+               class="max-w-full max-h-full object-contain transition-all duration-300 transform scale-100">
+        </div>
+        {% if galeria %}
+          <div id="thumbnailContainer" class="grid grid-cols-4 sm:grid-cols-5 gap-4">
+            <button onclick="changeImage('{{ producto.imagen.url }}', this)"
+                    class="thumb-btn aspect-square rounded-2xl overflow-hidden border-2 border-[#10b981] bg-gray-900/50 p-1 transition-all">
+              <img src="{{ producto.imagen.url }}" class="w-full h-full object-contain">
+            </button>
+            {% for img in galeria %}
+              <button onclick="changeImage('{{ img.imagen.url }}', this)"
+                      class="thumb-btn aspect-square rounded-2xl overflow-hidden border-2 border-transparent hover:border-gray-600 bg-gray-900/50 p-1 transition-all">
+                <img src="{{ img.imagen.url }}" class="w-full h-full object-contain">
+              </button>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+      <div class="flex flex-col justify-center lg:pl-6">
+        <nav class="flex mb-6 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">
+          <a href="{% url 'clientes:productos' %}"
+             class="hover:text-[#10b981] transition-colors">Catálogo</a>
+          <span class="mx-3 opacity-30">/</span>
+          <span class="text-[#10b981]">{{ producto.material_base.nombre|default:"3D Print" }}</span>
+        </nav>
+        <h1 class="text-4xl md:text-6xl font-black mb-6 text-white leading-tight">{{ producto.nombre }}</h1>
+        <div class="bg-[#1e293b]/50 backdrop-blur-sm p-6 rounded-3xl border border-gray-800 mb-8">
+          <p class="text-gray-400 leading-relaxed text-lg">
+            {{ producto.descripcion|default:"Esta pieza es fabricada mediante impresión 3D de alta precisión, garantizando detalles únicos y durabilidad." }}
+          </p>
+        </div>
+        <div class="grid grid-cols-2 gap-8 mb-10">
+          <div class="border-l-2 border-[#10b981] pl-4">
+            <p class="text-gray-500 text-[10px] uppercase font-bold mb-1 tracking-widest">Inversión</p>
+            <p class="text-4xl font-black text-white">RD$ {{ producto.precio_venta|floatformat:0 }}</p>
+          </div>
+        </div>
+        <div class="flex flex-col sm:grid sm:grid-cols-2 gap-4">
+          <a href="https://wa.me/TUNUMERO?text=Hola! Me interesa el producto: {{ producto.nombre }}"
+             class="flex items-center justify-center gap-2 bg-[#10b981] text-white py-5 rounded-2xl font-black text-lg hover:bg-[#059669] transition-all hover:scale-[1.02] shadow-xl shadow-[#10b981]/10">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.888 11.888-11.888 3.176 0 6.161 1.237 8.404 3.48s3.481 5.229 3.481 8.406c0 6.555-5.332 11.887-11.888 11.887-2.011 0-3.987-.51-5.742-1.478l-6.242 1.632z" />
+            </svg>
+            Comprar por WhatsApp
+          </a>
+          <a href="{% url 'usuarios:register' %}"
+             class="flex items-center justify-center border-2 border-gray-700 text-white py-5 rounded-2xl font-bold text-lg hover:bg-gray-800 transition-all hover:border-gray-500">
+            Cotización Pro
+          </a>
+        </div>
+        <p class="text-gray-500 text-[10px] mt-8 italic text-center lg:text-left uppercase tracking-tighter">
+          * Los precios pueden variar según material (PLA, PETG, Resina) y complejidad del post-procesado.
+        </p>
+      </div>
+    </div>
+  </section>
+  <script>
+      function changeImage(src, btn) {
+          const mainImg = document.getElementById('mainImage');
+
+          // Efecto de transición
+          mainImg.classList.add('opacity-0', 'scale-95');
+
+          setTimeout(() => {
+              mainImg.src = src;
+              mainImg.classList.remove('opacity-0', 'scale-95');
+          }, 200);
+
+          // Actualizar bordes de miniaturas
+          document.querySelectorAll('.thumb-btn').forEach(b => {
+              b.classList.remove('border-[#10b981]');
+              b.classList.add('border-transparent');
+          });
+          btn.classList.add('border-[#10b981]');
+          btn.classList.remove('border-transparent');
+      }
+  </script>
+{% endblock %}

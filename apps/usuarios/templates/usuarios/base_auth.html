@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <title>
+            {% block title %}{% endblock %}
+        - 3D Print</title>
+        <style>
+            /* AUTOFILL FIX PARA DARK MODE */
+            input,
+            textarea,
+            select {
+                color: #ffffff;
+                caret-color: white;
+            }
+
+            /* Autofill base */
+            input:-webkit-autofill,
+            input:-webkit-autofill:hover,
+            input:-webkit-autofill:focus,
+            input:-webkit-autofill:active,
+            input:-webkit-autofill:focus-visible {
+                -webkit-box-shadow: 0 0 0 1000px #334155 inset !important;
+                box-shadow: 0 0 0 1000px #334155 inset !important;
+                -webkit-text-fill-color: #ffffff !important;
+                color: #ffffff !important;
+                filter: none !important;
+                transition: background-color 9999s ease-in-out 0s;
+
+                /* FIX: Forzar tamaño de fuente para evitar el texto pequeño en previsualización */
+                font-size: 1rem !important;
+            }
+
+            /* Forzar el texto del autofill mientras está activo */
+            input:-webkit-autofill::first-line {
+                color: #ffffff !important;
+                -webkit-text-fill-color: #ffffff !important;
+                /* FIX: Asegura que la previsualización use el tamaño correcto */
+                font-size: 1rem !important;
+            }
+
+            /* Evitar que Chrome cambie tipografía y tamaño */
+            input:-webkit-autofill {
+                font-family: inherit !important;
+                font-size: 1rem !important;
+            }
+        </style>
+        {% block extra_css %}{% endblock %}
+    </head>
+    <body class="bg-[#0f172a] flex items-center justify-center min-h-screen py-10">
+        <div class="bg-[#1e293b] p-8 rounded-2xl shadow-2xl w-full {% block card_width %}max-w-md{% endblock %} border border-gray-700">
+            <div class="mb-4">
+                <a href="{% url 'clientes:index' %}"
+                   class="inline-flex items-center text-gray-400 hover:text-[#10b981] transition text-sm group">
+                    <svg class="w-4 h-4 mr-1 transform group-hover:-translate-x-1 transition-transform"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Volver al inicio
+                </a>
+            </div>
+            {% block auth_content %}{% endblock %}
+        </div>
+        {% block extra_js %}{% endblock %}
+    </body>
+</html>

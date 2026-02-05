@@ -1,0 +1,75 @@
+{% extends "core/modal_base.html" %}
+{% block modal_content %}
+    <form id="formNuevaCategoria"
+          action="{% url 'productos:crear_categoria' %}"
+          method="post"
+          enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <div>
+                    <label class="text-gray-400 text-xs uppercase mb-2 block font-semibold">Nombre</label>
+                    <input type="text"
+                           name="nombre"
+                           placeholder="Ej: Bustos, Llaveros..."
+                           class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-white focus:border-[#10b981] outline-none transition-all"
+                           required>
+                </div>
+                <div>
+                    <label class="text-gray-400 text-xs uppercase mb-2 block font-semibold">Descripción (Opcional)</label>
+                    <textarea name="descripcion"
+                              rows="4"
+                              placeholder="¿Qué tipo de piezas se agruparán aquí?"
+                              class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-white resize-none focus:border-[#10b981] outline-none transition-all"></textarea>
+                </div>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-gray-400 text-xs uppercase mb-2 block font-semibold text-[#10b981]">Imagen de Portada</label>
+                    <div id="zoneAdd"
+                         class="p-4 border border-gray-700 border-dashed rounded-lg bg-gray-900/50 flex flex-col items-center justify-center group hover:border-[#10b981] transition-colors relative h-[120px] overflow-hidden">
+                        <img id="previewAdd"
+                             src=""
+                             class="absolute inset-0 w-full h-full object-cover hidden pointer-events-none z-0">
+                        <button type="button"
+                                id="btnDeleteCatAdd"
+                                onclick="limpiarPreviewImagen('previewAdd', 'contentAdd', 'inputCatAdd', 'flagCatAdd')"
+                                class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg z-30 hidden">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                        <div id="contentAdd" class="relative z-10 flex flex-col items-center">
+                            <svg class="h-8 w-8 text-gray-500 group-hover:text-[#10b981] mb-2" ...>
+                            </svg>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase">Click para subir</p>
+                        </div>
+                        <input type="hidden" id="flagCatAdd" value="false">
+                        <input type="file"
+                               id="inputCatAdd"
+                               name="imagen"
+                               accept="image/*"
+                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                               onchange="handleImagePreview(this, 'previewAdd', 'contentAdd', 'zoneAdd'); document.getElementById('btnDeleteCatAdd').classList.remove('hidden');">
+                    </div>
+                </div>
+                <div class="bg-[#10b981]/10 p-3 rounded-lg border border-[#10b981]/20">
+                    <p class="text-[10px] text-emerald-300 leading-tight">
+                        <b>Nota:</b> Esta imagen ayudará a identificar el grupo de piezas visualmente en el panel principal.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="flex gap-3 pt-6 mt-6 border-t border-gray-800">
+            <button type="button"
+                    onclick="cerrarModales()"
+                    class="flex-1 px-4 py-2.5 rounded-xl border border-gray-700 text-gray-400 hover:bg-gray-800 transition-colors">
+                Cancelar
+            </button>
+            <button type="submit"
+                    class="flex-1 px-4 py-2.5 rounded-xl bg-[#10b981] text-white font-bold hover:bg-[#059669] transition-colors shadow-lg shadow-[#10b981]/20 uppercase text-xs tracking-wider">
+                Guardar Categoría
+            </button>
+        </div>
+    </form>
+{% endblock %}
