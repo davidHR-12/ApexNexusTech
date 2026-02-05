@@ -1,11 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Sum, Count, F
+from django.db.models import Sum, Count, F, FloatField
 from django.utils import timezone
 from django.http import JsonResponse
 from decimal import Decimal, InvalidOperation
 from django.utils.text import slugify
+from django.core.paginator import Paginator
+from django.db.models import Q
+
 
 # Create your views here.
 from .models import (TipoMaterial, Material, Color, Marca,
@@ -19,18 +22,52 @@ def material_list(request):
     Muestra el listado de materiales (rollos, resinas, etc.)
     Incluye formularios para crear materiales y registrar entradas de stock.
     """
-    materiales = Material.objects.all().order_by("tipo__nombre", "marca__nombre")
-    valor_total = sum(m.stock_actual * m.costo_por_gramo for m in materiales)
+    #Obtener todos los materiales
+    materiales_qs = Material.objects.all().order_by("tipo__nombre", "marca__nombre")
+
+    
+    #CÁLCULO DEL VALOR TOTAL (Sobre todo el material)
+    #Esto multiplica stock * costo en la base de datos y suma todo.
+    resultado = materiales_qs.aggregate(
+        total=Sum(F('stock_actual') * F('costo_por_gramo'), output_field=FloatField())
+    )
+    valor_total = resultado['total'] or 0
+
+    #Obtener parametros de busqueda y filtro
+    search_query = request.GET.get('search', '')
+    tipo_filtro = request.GET.get('tipo', '')
+    if search_query:
+        materiales_qs = materiales_qs.filter(
+            Q(marca__nombre__icontains=search_query) |
+            Q(tipo__nombre__icontains=search_query) |
+            Q(color__nombre__icontains=search_query)
+        )
+
+    #Aplicar Lógica de Filtro (por ejemplo, Filamento vs Resina)
+    if tipo_filtro:
+        materiales_qs = materiales_qs.filter(tipo_id=tipo_filtro)
+
+    # Paginación
+    paginator = Paginator(materiales_qs, 10)  # 10 materiales por página
+    page_number = request.GET.get("page")
+    materiales = paginator.get_page(page_number)
 
     context = {
         "materiales": materiales,
         "valor_total": valor_total,
         "marcas_list": Marca.objects.all().order_by("nombre"),
-        "tipos_list": TipoMaterial.objects.all().order_by("nombre"),
+        "tipos_list": TipoMaterial.objects.all(),
         "colores_list": Color.objects.all().order_by("nombre"),
         "form": MaterialForm(),
         "entrada_form": EntradaInventarioForm(),    
+        "search_query": search_query,
+        "tipo_filtro": tipo_filtro,
+        "tipo_seleccionado": tipo_filtro,
     }
+
+    if request.headers.get('HX-Request'):
+        return render(request, "materiales/partials/material_tabla.html", context)
+    
     return render(request, "materiales/material_list.html", context)
 
 @login_required
@@ -140,6 +177,19 @@ def registrar_entrada(request):
         else:
             messages.error(request, "Error: Verifique que los datos sean correctos.")
     return redirect("materiales:lista_materiales")
+
+def buscar_material_ajax(request):
+    query = request.GET.get('q', request.GET.get('material_search', '')).strip() # HTMX enviará el nombre del input
+    if len(query) >= 2:
+        materiales = Material.objects.filter(
+            Q(marca__nombre__icontains=query) |
+            Q(tipo__nombre__icontains=query) |
+            Q(color__nombre__icontains=query)
+        )[:4] # Limitamos a 5 resultados para que no sea gigante
+    else:
+        materiales = []
+
+    return render(request, "materiales/partials/resultados_busqueda_material.html", {"materiales": materiales})
 
 
 @login_required

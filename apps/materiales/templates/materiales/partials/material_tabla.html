@@ -1,0 +1,128 @@
+{% load humanize %}
+<div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden shadow-sm">
+    <table class="w-full text-left border-collapse">
+        <thead>
+            <tr class="bg-gray-800/50 text-gray-400 text-[10px] uppercase tracking-widest">
+                <th class="p-4 font-bold">Material / Marca</th>
+                <th class="p-4 font-bold">Color</th>
+                <th class="p-4 font-bold">Stock Actual</th>
+                <th class="p-4 font-bold">Costo/g</th>
+                <th class="p-4 font-bold">Estado</th>
+                <th class="p-4 font-bold text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-800">
+            {% for m in materiales %}
+                <tr class="hover:bg-gray-800/30 transition-colors group">
+                    <td class="p-4">
+                        <div class="font-bold text-white group-hover:text-blue-400 transition-colors">{{ m.marca.nombre }}</div>
+                        <div class="text-gray-500 text-xs">{{ m.tipo.nombre }}</div>
+                    </td>
+                    <td class="p-4 text-gray-300 text-sm">
+                        <div class="flex items-center gap-2">{{ m.color.nombre }}</div>
+                    </td>
+                    <td class="p-4">
+                        <span class="font-mono font-bold {% if m.stock_actual <= m.stock_minimo %}text-red-400 animate-pulse{% else %}text-emerald-400{% endif %}">
+                            {{ m.stock_actual|floatformat:0 }}g
+                        </span>
+                    </td>
+                    <td class="p-4 text-gray-400 text-sm font-medium">RD$ {{ m.costo_por_gramo|floatformat:2|intcomma }}</td>
+                    <td class="p-4">
+                        {% if m.stock_actual <= m.stock_minimo %}
+                            <span class="px-2.5 py-1 rounded-lg bg-red-500/10 text-red-500 text-[10px] font-bold uppercase border border-red-500/20">Crítico</span>
+                        {% else %}
+                            <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase border border-emerald-500/20">Óptimo</span>
+                        {% endif %}
+                    </td>
+                    <td class="p-4 text-center">
+                        <button onclick="abrirEditar('{{ m.id }}')"
+                                class="p-2 bg-gray-900 border border-gray-700 rounded-lg text-blue-400 hover:text-white hover:bg-blue-600 hover:border-blue-500 transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="p-12 text-center">
+                        <div class="flex flex-col items-center">
+                            <svg class="w-12 h-12 text-gray-700 mb-4"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                            <p class="text-gray-500 italic font-medium">No hay materiales registrados.</p>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="bg-[#1e293b] border-t border-gray-800 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-b-2xl">
+    <div class="hidden sm:block">
+        <p class="text-sm text-gray-400 font-medium">
+            Mostrando <span class="text-white">{{ materiales.start_index }}-{{ materiales.end_index }}</span> de <span class="text-white">{{ materiales.paginator.count }}</span> materiales
+        </p>
+    </div>
+    <nav class="flex items-center gap-1" aria-label="Paginación">
+        {# Botón Anterior #}
+        {% if materiales.has_previous %}
+            <a href="?page={{ materiales.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}"
+               class="p-2 mr-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </a>
+        {% else %}
+            <span class="p-2 mr-2 text-gray-600 cursor-not-allowed">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </span>
+        {% endif %}
+        {# Números de Página #}
+        <div class="flex items-center gap-1">
+            {% for i in materiales.paginator.page_range %}
+                {% if materiales.number == i %}
+                    {# Página Activa #}
+                    <span class="px-3.5 py-1.5 text-sm font-bold bg-blue-600 text-white rounded-lg shadow-lg shadow-blue-900/20">
+                        {{ i }}
+                    </span>
+                {% elif i > materiales.number|add:'-3' and i < materiales.number|add:'3' %}
+                    {# Páginas cercanas #}
+                    <a href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}"
+                       class="px-3.5 py-1.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all">
+                        {{ i }}
+                    </a>
+                {% elif i == 1 or i == materiales.paginator.num_pages %}
+                    {# Primera y última siempre visibles #}
+                    <a href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}"
+                       class="px-3.5 py-1.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all">
+                        {{ i }}
+                    </a>
+                {% elif i == materiales.number|add:'-3' or i == materiales.number|add:'3' %}
+                    {# Elipsis #}
+                    <span class="px-2 text-gray-600">...</span>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {# Botón Siguiente #}
+        {% if materiales.has_next %}
+            <a href="?page={{ materiales.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}"
+               class="p-2 ml-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </a>
+        {% else %}
+            <span class="p-2 ml-2 text-gray-600 cursor-not-allowed">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </span>
+        {% endif %}
+    </nav>
+</div>

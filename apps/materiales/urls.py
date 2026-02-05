@@ -22,4 +22,9 @@ urlpatterns = [
         views.obtener_material_json,
         name="obtener_material_json",
     ),
+    path(
+        "inventario/materiales/buscar_material_ajax/",
+        views.buscar_material_ajax,
+        name="buscar_material_ajax",
+    ),
 ]

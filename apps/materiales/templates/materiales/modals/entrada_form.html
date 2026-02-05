@@ -9,18 +9,27 @@
         method="POST"
         class="space-y-5">
     {% csrf_token %}
-    <div>
-      <label class="text-gray-400 text-xs uppercase mb-2 block font-semibold tracking-wide">Seleccionar Material</label>
-      <select name="material"
-              class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none appearance-none cursor-pointer"
-              required>
-        <option value="" disabled selected>Busca el filamento...</option>
-        {% for m in materiales %}
-          <option value="{{ m.id }}">
-            {{ m.marca.nombre }} {{ m.tipo.nombre }} - {{ m.color.nombre }} (Actual: {{ m.stock_actual|floatformat:0 }}g)
-          </option>
-        {% endfor %}
-      </select>
+    <div class="relative" x-data="{ query: '' }">
+      <label class="text-gray-400 text-xs uppercase mb-2 block font-semibold tracking-wide">Buscar Material</label>
+      <div class="relative">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </span>
+        <input type="text"
+               name="q"
+               id="material-search-input"
+               placeholder="Marca, color o tipo..."
+               class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 pl-10 text-white focus:border-blue-500 outline-none transition-all"
+               hx-get="{% url 'materiales:buscar_material_ajax' %}"
+               hx-trigger="keyup changed delay:300ms"
+               hx-target="#search-results"
+               @input="if($el.value === '') { document.getElementById('search-results').innerHTML = '' }"
+               autocomplete="off">
+        <input type="hidden" name="material" id="material-id-hidden" required>
+      </div>
+      <div id="search-results" class="absolute z-50 w-full mt-1 overflow-hidden"></div>
     </div>
     <div class="grid grid-cols-2 gap-4">
       <div class="bg-gray-800/40 p-3 rounded-xl border border-gray-700/50 focus-within:border-blue-500/50 transition-all">

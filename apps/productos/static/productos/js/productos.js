@@ -159,7 +159,7 @@ function eliminarImagenProducto(imagenId, wrapperElement) {
         }
     });
 }
-// Detectar si se presiona el botón guardar
+// Detectar si se presiona el botón guardar de productos
 document.getElementById('btn-Guardar').addEventListener('click', () => {
     eliminarImagenesPendientes();
 });
