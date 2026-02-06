@@ -37,4 +37,9 @@ urlpatterns = [
         views.gestionar_atributo,
         name="gestionar_atributo",
     ),
+    path(
+        "inventario/materiales/<int:material_id>/eliminar/",
+        views.eliminar_material,
+        name="eliminar_material",
+    ),
 ]

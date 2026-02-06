@@ -35,12 +35,21 @@
                         {% endif %}
                     </td>
                     <td class="p-4 text-center">
-                        <button onclick="abrirEditar('{{ m.id }}')"
-                                class="p-2 bg-gray-900 border border-gray-700 rounded-lg text-blue-400 hover:text-white hover:bg-blue-600 hover:border-blue-500 transition-all">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                            </svg>
-                        </button>
+                        <div class="flex items-center gap-2 justify-center">
+                            <button onclick="abrirEditar('{{ m.id }}')"
+                                    class="p-2 bg-gray-900 border border-gray-700 rounded-lg text-blue-400 hover:text-white hover:bg-blue-600 hover:border-blue-500 transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                            </button>
+                            <button onclick="confirmarEliminarMaterial('{{ m.id }}', '{{ m.tipo.nombre }} {{ m.marca.nombre }}')"
+                                    class="p-2 bg-gray-900 border border-gray-700 rounded-lg text-red-400 hover:text-white hover:bg-red-600 hover:border-red-500 transition-all shadow-sm"
+                                    title="Eliminar o Desactivar">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             {% empty %}
@@ -91,7 +100,7 @@
                     <span class="px-3.5 py-1.5 text-sm font-bold bg-blue-600 text-white rounded-lg shadow-lg shadow-blue-900/20">
                         {{ i }}
                     </span>
-                {% elif i > materiales.number|add:'-3' and i < materiales.number|add:'3' %}
+                {% elif i > materiales.number|add:'-6' and i < materiales.number|add:'6' %}
                     {# Páginas cercanas #}
                     <a href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}"
                        class="px-3.5 py-1.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all">
@@ -103,7 +112,7 @@
                        class="px-3.5 py-1.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all">
                         {{ i }}
                     </a>
-                {% elif i == materiales.number|add:'-3' or i == materiales.number|add:'3' %}
+                {% elif i == materiales.number|add:'-6' or i == materiales.number|add:'6' %}
                     {# Elipsis #}
                     <span class="px-2 text-gray-600">...</span>
                 {% endif %}
@@ -126,3 +135,16 @@
         {% endif %}
     </nav>
 </div>
+<template>
+    <div id="boton-limpiar-container" hx-swap-oob="true">
+        {% if search_query or tipo_filtro or orden_actual %}
+            <a href="."
+               class="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 font-bold px-2 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Limpiar
+            </a>
+        {% endif %}
+    </div>
+</template>

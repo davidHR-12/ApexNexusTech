@@ -184,24 +184,58 @@ def editar_producto(request, producto_id):
     return redirect("productos:lista_productos")
 
 
+
 @login_required
-def eliminar_imagen_producto(request, imagen_id):
+def eliminar_imagenes_producto_bulk(request):
     """
-    API: Elimina una imagen específica de la galería de un producto.
-    Borra tanto de BDD como del sistema de archivos.
+    API: Elimina múltiples imágenes de la galería de productos.
+    Recibe un array de IDs y las elimina en batch.
     """
     if request.method == "POST":
-        imagen = get_object_or_404(ImagenProducto, id=imagen_id)
         try:
-            # Borrar el archivo físico
-            if imagen.imagen:
-                imagen.imagen.delete(save=False)
-            # Borrar el registro
-            imagen.delete()
-            return JsonResponse({"status": "ok"})
+            import json
+            data = json.loads(request.body)
+            imagenes_ids = data.get('imagenes', [])
+            
+            if not imagenes_ids:
+                return JsonResponse({"status": "error", "message": "No se enviaron imágenes"}, status=400)
+            
+            eliminadas = 0
+            errores = []
+            
+            for imagen_id in imagenes_ids:
+                try:
+                    imagen = ImagenProducto.objects.get(id=imagen_id)
+                    # Borrar el archivo físico
+                    if imagen.imagen:
+                        imagen.imagen.delete(save=False)
+                    # Borrar el registro
+                    imagen.delete()
+                    eliminadas += 1
+                except ImagenProducto.DoesNotExist:
+                    errores.append(f"Imagen {imagen_id} no encontrada")
+                except Exception as e:
+                    errores.append(f"Error al eliminar imagen {imagen_id}: {str(e)}")
+            
+            if errores:
+                return JsonResponse({
+                    "status": "partial",
+                    "eliminadas": eliminadas,
+                    "errores": errores
+                }, status=207)
+            
+            return JsonResponse({
+                "status": "ok",
+                "eliminadas": eliminadas,
+                "message": f"{eliminadas} imagen(es) eliminada(s) correctamente"
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "JSON inválido"}, status=400)
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
-    return JsonResponse({"status": "error"}, status=400)
+    
+    return JsonResponse({"status": "error", "message": "Método no permitido"}, status=405)
 
 
 @login_required

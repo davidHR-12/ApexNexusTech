@@ -10,37 +10,71 @@
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css" />
     <style>
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1);
-            opacity: 0.7;
-            cursor: pointer;
-        }
-        /* Suavizar la transición del sidebar */
-        #sidebar {
-            transition: transform 0.3s ease-in-out;
-        }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.7;
+    cursor: pointer;
+    }
+    /* Suavizar la transición del sidebar */
+    #sidebar {
+    transition: transform 0.3s ease-in-out;
+    }
+    /* AUTOFILL FIX PARA DARK MODE */
+    input,
+    textarea,
+    select {
+    color: #ffffff;
+    caret-color: white;
+    }
+    /* Autofill base */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active,
+    input:-webkit-autofill:focus-visible {
+    -webkit-box-shadow: 0 0 0 1000px #334155 inset !important;
+    box-shadow: 0 0 0 1000px #334155 inset !important;
+    -webkit-text-fill-color: #ffffff !important;
+    color: #ffffff !important;
+    filter: none !important;
+    transition: background-color 9999s ease-in-out 0s;
+    /* FIX: Forzar tamaño de fuente para evitar el texto pequeño en previsualización */
+    font-size: 1rem !important;
+    }
+    /* Forzar el texto del autofill mientras está activo */
+    input:-webkit-autofill::first-line {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    /* FIX: Asegura que la previsualización use el tamaño correcto */
+    font-size: 1rem !important;
+    }
+    /* Evitar que Chrome cambie tipografía y tamaño */
+    input:-webkit-autofill {
+    font-family: inherit !important;
+    font-size: 1rem !important;
+    }
     </style>
   </head>
   <body class="bg-[#0f172a] text-gray-100 font-sans">
-    
     <div class="md:hidden flex items-center justify-between p-4 bg-[#1e293b] border-b border-gray-800 sticky top-0 z-50">
-        <div class="flex items-center gap-2">
-            <div class="bg-[#10b981] p-1.5 rounded-lg shadow-lg">
-                <span class="text-white font-bold text-lg">3D</span>
-            </div>
-            <span class="text-xs text-gray-400 font-bold uppercase tracking-widest">Admin</span>
+      <div class="flex items-center gap-2">
+        <div class="bg-[#10b981] p-1.5 rounded-lg shadow-lg">
+          <span class="text-white font-bold text-lg">3D</span>
         </div>
-        <button id="toggleSidebar" class="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-            </svg>
-        </button>
+        <span class="text-xs text-gray-400 font-bold uppercase tracking-widest">Admin</span>
+      </div>
+      <button id="toggleSidebar"
+              class="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+        </svg>
+      </button>
     </div>
-
     <div class="flex min-h-screen">
-      <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden"></div>
-
-      <aside id="sidebar" class="w-64 bg-[#1e293b] border-r border-gray-800 flex flex-col fixed h-full z-50 transform -translate-x-full md:translate-x-0">
+      <div id="sidebarOverlay"
+           class="fixed inset-0 bg-black/50 z-40 hidden md:hidden"></div>
+      <aside id="sidebar"
+             class="w-64 bg-[#1e293b] border-r border-gray-800 flex flex-col fixed h-full z-50 transform -translate-x-full md:translate-x-0">
         <div class="p-6">
           <div class="bg-[#10b981] p-2 rounded-lg inline-block shadow-[0_0_10px_rgba(16,185,129,0.3)] mb-4">
             <span class="text-white font-bold text-xl">3D</span>
@@ -95,7 +129,7 @@
         </nav>
         <div class="p-4 border-t border-gray-800 space-y-1">
           <a href="{% url 'core:configuracion' %}"
-            class="flex items-center gap-3 p-3 rounded-xl text-gray-300 hover:bg-[#334155] hover:text-[#10b981] transition">
+             class="flex items-center gap-3 p-3 rounded-xl text-gray-300 hover:bg-[#334155] hover:text-[#10b981] transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
               </path>
@@ -103,7 +137,7 @@
             Configuración
           </a>
           <a href="{% url 'clientes:index' %}"
-            class="flex items-center gap-3 p-3 rounded-xl text-gray-300 hover:bg-[#334155] hover:text-[#10b981] transition">
+             class="flex items-center gap-3 p-3 rounded-xl text-gray-300 hover:bg-[#334155] hover:text-[#10b981] transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9">
               </path>
@@ -123,17 +157,14 @@
           </form>
         </div>
       </aside>
-
       <main class="md:ml-64 flex-1 p-4 md:p-8">
         {% block content %}
         {% endblock content %}
       </main>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{% static 'js/globals.js' %}"></script>
     <script src="{% static 'js/htmx.min.js' %}"></script>
-    
     <script>
         // LÓGICA DEL SIDEBAR RESPONSIVO
         const btnToggle = document.getElementById('toggleSidebar');
@@ -163,7 +194,6 @@
             {% endif %}
         });
     </script>
-
     {% block extra_js %}
     {% endblock extra_js %}
   </body>

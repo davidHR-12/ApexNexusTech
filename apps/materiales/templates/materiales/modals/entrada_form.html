@@ -27,7 +27,7 @@
                hx-target="#search-results"
                @input="if($el.value === '') { document.getElementById('search-results').innerHTML = '' }"
                autocomplete="off">
-        <input type="hidden" name="material" id="material-id-hidden" required>
+        <input type="hidden" name="material" id="material-id-hidden">
       </div>
       <div id="search-results" class="absolute z-50 w-full mt-1 overflow-hidden"></div>
     </div>

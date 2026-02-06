@@ -119,3 +119,15 @@ class EntradaInventarioForm(TailwindModelForm):
     class Meta:
         model = EntradaInventario
         fields = ["material", "cantidad_gramos", "costo_total"]
+
+    def clean_cantidad_gramos(self):
+        cantidad = self.cleaned_data.get("cantidad_gramos")
+        if cantidad is not None and cantidad <= 0:
+            raise forms.ValidationError("La cantidad debe ser mayor a cero.")
+        return abs(cantidad)
+
+    def clean_costo_total(self):
+        costo = self.cleaned_data.get("costo_total")
+        if costo is not None and costo < 0:
+            raise forms.ValidationError("El costo no puede ser negativo.")
+        return abs(costo)

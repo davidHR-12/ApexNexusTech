@@ -3,6 +3,7 @@ Modelos para la gestión de inventario de materiales de impresión 3D
 """
 from django.db import models
 from decimal import Decimal
+from django.core.exceptions import ValidationError
 
 
 # =============================
@@ -137,6 +138,22 @@ class Material(models.Model):
         """Verifica si el stock está por debajo del mínimo"""
         return self.stock_actual <= self.stock_minimo
 
+    def delete(self, *args, **kwargs):
+        # 1. Impedir si hay stock físico
+        if self.stock_actual > 0:
+            raise ValidationError(
+                f"No se puede eliminar {self}. Aún tiene {self.stock_actual}g en stock."
+            )
+        
+        # 2. Impedir si tiene historial (para no romper la contabilidad)
+        if self.entradainventario_set.exists() or self.consumomaterial_set.exists():
+            # En lugar de borrar, sugerimos desactivar
+            self.activo = False
+            self.save()
+            return # Salimos sin borrar físicamente
+            
+        super().delete(*args, **kwargs)
+
     def __str__(self):
         return f"{self.tipo} {self.marca} - {self.color} ({self.stock_actual}g)"
 
@@ -232,15 +249,22 @@ class EntradaInventario(models.Model):
         if self.pk:  # EDICIÓN
             try:
                 old = EntradaInventario.objects.get(pk=self.pk)
-                diff = self.cantidad_gramos - old.cantidad_gramos
-
-                if diff != 0:
-                    self.actualizar_stock(diff)
-                    self.crear_historial(
-                        accion="Edición",
-                        diferencia=diff,
-                        old_cantidad=old.cantidad_gramos,
-                    )
+                if old.material != self.material:
+                    # Si cambió el material, restamos todo al viejo y sumamos todo al nuevo
+                    old.material.stock_actual -= old.cantidad_gramos
+                    old.material.save()
+                    self.material.stock_actual += self.cantidad_gramos
+                    self.material.save()
+                else:
+                    # Si es el mismo material, aplicamos la diferencia
+                    diff = self.cantidad_gramos - old.cantidad_gramos
+                    if diff != 0:
+                        self.actualizar_stock(diff)
+                        self.crear_historial(
+                            accion="Edición",
+                            diferencia=diff,
+                            old_cantidad=old.cantidad_gramos,
+                        )
 
                 super().save(*args, **kwargs)
             except EntradaInventario.DoesNotExist:

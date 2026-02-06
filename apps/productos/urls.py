@@ -17,17 +17,20 @@ urlpatterns = [
         views.producto_detalle,
         name="producto_detalle",
     ),
+    
     # API Productos (JSON)
     path(
         "inventario/productos/api/<int:pk>/",
         views.obtener_producto_json,
         name="obtener_producto_json",
     ),
+    
     path(
-        "inventario/productos/api/eliminar-imagen/<int:imagen_id>/",
-        views.eliminar_imagen_producto,
-        name="eliminar_imagen_producto",
+        "inventario/productos/api/eliminar-imagenes/",
+        views.eliminar_imagenes_producto_bulk,
+        name="eliminar_imagenes_producto_bulk",
     ),
+    
     # --- INVENTARIO: CATEGORÍAS ---
     # Gestión de Categorías
     path(
@@ -45,6 +48,7 @@ urlpatterns = [
         views.eliminar_categoria,
         name="eliminar_categoria",
     ),
+    
     # Vistas y API Categorías
     path(
         "inventario/productos/categoria/<str:slug>/",
@@ -56,8 +60,8 @@ urlpatterns = [
         views.obtener_categoria_json,
         name="obtener_categoria_json",
     ),
+    
     # --- PRODUCCIÓN Y VARIANTES ---
-
     path(
         "inventario/productos/variantes/crear/",
         views.crear_variante_json,
