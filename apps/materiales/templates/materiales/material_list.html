@@ -48,6 +48,13 @@
                       {% if tipo_seleccionado == t.id|stringformat:"s" %}selected{% endif %}>{{ t.nombre }}</option>
             {% endfor %}
           </select>
+          <select name="orden" 
+            onchange="this.form.submit()"
+            class="bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 p-2.5 outline-none">
+            <option value="">Ordenar por (Defecto)</option>
+            <option value="stock_desc" {% if orden_actual == "stock_desc" %}selected{% endif %}>Mayor Stock</option>
+            <option value="stock_asc" {% if orden_actual == "stock_asc" %}selected{% endif %}>Menor Stock</option>
+          </select>
           {% if search_query or tipo_filtro %}
             <a href="."
                class="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 font-bold px-2 transition-colors">
@@ -91,6 +98,14 @@
             </span>
           {% endif %}
         </div>
+        <button onclick="abrirModal('modalCatalogo')"
+                class="bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 text-indigo-400 hover:text-white px-3 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                title="Corregir Marcas, Tipos o Colores">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
         <button onclick="abrirModal('modalEntrada')"
                 class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-900/20 flex items-center gap-2">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,14 +121,13 @@
           <span class="hidden md:inline">Nuevo Material</span>
         </button>
       </div>
-    </div> 
-    <div id="materiales-container" class="space-y-6">
-      {% include "materiales/partials/material_tabla.html" %}
     </div>
+    <div id="materiales-container" class="space-y-6">{% include "materiales/partials/material_tabla.html" %}</div>
   </div>
   {% include "materiales/modals/material_form.html" with modal_id="modalMaterial" is_edit=False %}
   {% include "materiales/modals/material_form.html" with modal_id="modalEditarMaterial" is_edit=True %}
   {% include "materiales/modals/entrada_form.html" with modal_id="modalEntrada" max_width="max-w-2xl" %}
+  {% include "materiales/modals/atributo_catalogo.html" with modal_id="modalCatalogo" max_width="max-w-2xl" %}
   <script>
       function abrirEditar(id) {
           const url = `/administrador/inventario/materiales/api/${id}/`;
@@ -167,5 +181,32 @@
           document.getElementById('material-id-hidden').value = id;
           document.getElementById('search-results').innerHTML = ''; // Limpia los resultados
       }
+      function seleccionarAtributo(tipo, nombre) {
+        // 1. Setea el valor en el input correspondiente
+        const input = document.getElementById(`input-${tipo}`);
+        input.value = nombre;
+        
+        // 2. Limpia los resultados de HTMX
+        document.getElementById(`results-${tipo}`).innerHTML = '';
+    
+        // 3. Opcional: Dar foco al siguiente input para agilizar la carga
+        if (tipo === 'marca') document.getElementById('input-tipo').focus();
+        if (tipo === 'tipo') document.getElementById('input-color').focus();
+      }
+      
+    document.addEventListener('click', function(event) {
+    // Definimos los IDs de los contenedores de resultados
+    const contenedores = ['results-marca', 'results-tipo', 'results-color','search-results'];
+    
+    contenedores.forEach(id => {
+        const resContainer = document.getElementById(id);
+        const inputContainer = document.getElementById(`input-${id.split('-')[1]}`);
+        
+        // Si el clic no fue en el input ni en el contenedor de resultados, limpiamos
+        if (resContainer && !resContainer.contains(event.target) && event.target !== inputContainer) {
+            resContainer.innerHTML = '';
+        }
+    });
+});
   </script>
 {% endblock content %}

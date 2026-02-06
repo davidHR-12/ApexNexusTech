@@ -6,7 +6,9 @@ from apps.pedidos.models import Pago
 from apps.finanzas.models import Gasto
 from apps.materiales.models import Material
 from apps.pedidos.models import Pedido
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def dashboard_admin(request):
     """
     Vista principal del dashboard administrativo.
@@ -37,8 +39,10 @@ def dashboard_admin(request):
     }
     return render(request, "core/dashboard_admin.html", context)
 
+@login_required
 def calculadora(request):
     return render(request, "core/calculadora.html")
 
+@login_required
 def configuracion(request):
     return render(request, "core/configuracion.html")

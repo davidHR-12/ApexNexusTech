@@ -6,6 +6,7 @@ from .forms import GastoForm
 from .models import Gasto
 # Create your views here.
 
+@login_required
 def gastos_list(request):
     """
     Muestra la lista de gastos operativos y formulario para agregar nuevos.

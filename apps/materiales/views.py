@@ -8,13 +8,12 @@ from decimal import Decimal, InvalidOperation
 from django.utils.text import slugify
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.db import transaction, IntegrityError
 
-
-# Create your views here.
 from .models import (TipoMaterial, Material, Color, Marca,
                      EntradaInventario, HistorialInventario, ConsumoMaterial)
 
-from .forms import MaterialForm, EntradaInventarioForm
+from .forms import MaterialForm, EntradaInventarioForm, EditarMaterialForm
 
 @login_required
 def material_list(request):
@@ -36,6 +35,7 @@ def material_list(request):
     #Obtener parametros de busqueda y filtro
     search_query = request.GET.get('search', '')
     tipo_filtro = request.GET.get('tipo', '')
+    orden_filtro = request.GET.get('orden', '')
     if search_query:
         materiales_qs = materiales_qs.filter(
             Q(marca__nombre__icontains=search_query) |
@@ -46,6 +46,13 @@ def material_list(request):
     #Aplicar Lógica de Filtro (por ejemplo, Filamento vs Resina)
     if tipo_filtro:
         materiales_qs = materiales_qs.filter(tipo_id=tipo_filtro)
+    if orden_filtro == "stock_asc":
+        materiales_qs = materiales_qs.order_by("stock_actual", "tipo__nombre")
+    elif orden_filtro == "stock_desc":
+        materiales_qs = materiales_qs.order_by("-stock_actual", "tipo__nombre")
+    else:
+        # Orden por defecto: Alfabético
+        materiales_qs = materiales_qs.order_by("tipo__nombre", "marca__nombre")
 
     # Paginación
     paginator = Paginator(materiales_qs, 10)  # 10 materiales por página
@@ -63,6 +70,7 @@ def material_list(request):
         "search_query": search_query,
         "tipo_filtro": tipo_filtro,
         "tipo_seleccionado": tipo_filtro,
+        "orden_actual": orden_filtro,
     }
 
     if request.headers.get('HX-Request'):
@@ -72,90 +80,57 @@ def material_list(request):
 
 @login_required
 def crear_material(request):
-    """
-    Registra un nuevo tipo de material en el sistema.
-    Crea automáticamente Marca, Tipo y Color si no existen.
-    """
     if request.method == "POST":
-        # Extraemos los nombres del formulario
-        marca_txt = request.POST.get("marca_nombre").strip()
-        tipo_txt = request.POST.get("tipo_nombre").strip()
-        color_txt = request.POST.get("color_nombre").strip()
-
-        costo = abs(Decimal(request.POST.get("costo_por_gramo", 0) or 0))
-        minimo = abs(Decimal(request.POST.get("stock_minimo", 0) or 0))
-
-        # Magia de Django: Si existe lo usa, si no, lo crea
-        marca_obj, _ = Marca.objects.get_or_create(nombre=marca_txt)
-        tipo_obj, _ = TipoMaterial.objects.get_or_create(nombre=tipo_txt)
-        color_obj, _ = Color.objects.get_or_create(nombre=color_txt)
-
-        try:
-            material, created = Material.objects.get_or_create(
-                tipo=tipo_obj,
-                marca=marca_obj,
-                color=color_obj,
-                defaults={
-                    "costo_por_gramo": costo,
-                    "stock_minimo": minimo,
-                    "stock_actual": 0,
-                },
-            )
-            if created:
-                messages.success(
-                    request, f"Material {str(material)} creado exitosamente."
-                )
+        form = MaterialForm(request.POST)
+        if form.is_valid():
+            material = form.save()
+            
+            if material.just_created:
+                messages.success(request, f"Material {material} creado con éxito.")
             else:
-                messages.info(request, "Este material ya existía en el catálogo.")
-        except Exception as e:
-            messages.error(request, f"Error al crear el material: {e}")
-
+                messages.warning(request, f"El material {material} ya existe en el sistema.")
+        else:
+            messages.error(request, "Error al procesar el formulario. Revisa los datos.")
+            
     return redirect("materiales:lista_materiales")
 
+@login_required
+def buscar_atributo_ajax(request):
+    # Intentamos obtener 'q' (el estándar) o el nombre específico del input
+    query = request.GET.get('q') or request.GET.get('marca_nombre') or request.GET.get('tipo_nombre') or request.GET.get('color_nombre') or ''
+    query = query.strip()
+    
+    tipo_busqueda = request.GET.get('tipo', '') 
+    
+    resultados = []
+    if len(query) >= 1:
+        if tipo_busqueda == 'marca':
+            resultados = Marca.objects.filter(nombre__icontains=query)[:5]
+        elif tipo_busqueda == 'tipo':
+            resultados = TipoMaterial.objects.filter(nombre__icontains=query)[:5]
+        elif tipo_busqueda == 'color':
+            resultados = Color.objects.filter(nombre__icontains=query)[:5]
+            
+    return render(request, "materiales/partials/resultados_atributos.html", {
+        "resultados": resultados,
+        "tipo": tipo_busqueda
+    })
 
 @login_required
 def editar_material(request, material_id):
-    """
-    Edita propiedades un material y gestione pérdidas/mermas manuales.
-    Si se reporta pérdida, descuenta stock y registra en historial.
-    """
     material = get_object_or_404(Material, id=material_id)
 
     if request.method == "POST":
-        # Extraemos los valores manualmente para asegurar precisión
-        nuevo_costo = abs(Decimal(request.POST.get("costo_por_gramo", 0) or 0))
-        nuevo_minimo = abs(Decimal(request.POST.get("stock_minimo", 0) or 0))
-
-        # 1. Actualizamos los campos básicos directamente
-        material.costo_por_gramo = nuevo_costo
-        material.stock_minimo = nuevo_minimo
-
-        # 2. Lógica de pérdida (antes de guardar todo)
-        if request.POST.get("es_perdida") == "on":
-            cantidad_p = abs(Decimal(request.POST.get("cantidad_perdida") or 0))
-
-            if cantidad_p > 0:
-                stock_viejo = material.stock_actual
-                # Limitamos la pérdida al stock disponible
-                if cantidad_p > material.stock_actual:
-                    cantidad_p = material.stock_actual
-
-                material.stock_actual -= cantidad_p
-
-                # Registramos en historial
-                HistorialInventario.objects.create(
-                    material=material,
-                    accion="Eliminación",
-                    cantidad_anterior=stock_viejo,
-                    cantidad_nueva=material.stock_actual,
-                    diferencia=-cantidad_p,
-                )
-                messages.warning(request, f"Se descontaron {cantidad_p}g del stock.")
-
-        # 3. Guardado final de todos los cambios
-        material.save()
-        messages.success(request, "Material actualizado correctamente.")
-
+        form = EditarMaterialForm(request.POST, instance=material)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Material actualizado correctamente.")
+        else:
+            # Si el formulario no es válido (ej: stock en cero), capturamos el error
+            for error in form.non_field_errors():
+                messages.error(request, error)
+            # También podrías iterar form.errors si quieres ser más específico
+            
     return redirect("materiales:lista_materiales")
 
 @login_required
@@ -178,6 +153,7 @@ def registrar_entrada(request):
             messages.error(request, "Error: Verifique que los datos sean correctos.")
     return redirect("materiales:lista_materiales")
 
+@login_required
 def buscar_material_ajax(request):
     query = request.GET.get('q', request.GET.get('material_search', '')).strip() # HTMX enviará el nombre del input
     if len(query) >= 2:
@@ -190,7 +166,6 @@ def buscar_material_ajax(request):
         materiales = []
 
     return render(request, "materiales/partials/resultados_busqueda_material.html", {"materiales": materiales})
-
 
 @login_required
 def obtener_material_json(request, material_id):
@@ -208,3 +183,60 @@ def obtener_material_json(request, material_id):
             "stock_actual": float(material.stock_actual),
         }
     )
+
+@login_required
+def gestionar_atributo(request, modelo_tipo, objeto_id):
+    modelos = {'marca': Marca, 'tipo': TipoMaterial, 'color': Color}
+    model_class = modelos.get(modelo_tipo)
+    objeto = get_object_or_404(model_class, id=objeto_id)
+    
+    if request.method == "POST":
+        nuevo_nombre = request.POST.get("nuevo_nombre").strip()
+        existente = model_class.objects.filter(nombre__iexact=nuevo_nombre).exclude(id=objeto.id).first()
+        
+        try:
+            with transaction.atomic():
+                if existente:
+                    # Buscamos todos los materiales que usan el atributo viejo (ej: SASA)
+                    filtro = {modelo_tipo: objeto}
+                    materiales_a_mover = Material.objects.filter(**filtro)
+
+                    for mat_viejo in materiales_a_mover:
+                        # Buscamos si ya existe un material igual pero con el atributo nuevo (ej: ASA)
+                        busqueda_clon = {
+                            'marca': mat_viejo.marca,
+                            'tipo': mat_viejo.tipo,
+                            'color': mat_viejo.color,
+                        }
+                        # Reemplazamos el atributo que estamos gestionando en la búsqueda
+                        busqueda_clon[modelo_tipo] = existente
+                        
+                        mat_clon = Material.objects.filter(**busqueda_clon).first()
+
+                        if mat_clon:
+                            # ¡COLISIÓN DETECTADA! Fusionamos datos
+                            mat_clon.stock_actual += mat_viejo.stock_actual
+                            mat_clon.save()
+                            
+                            # Movemos el historial para no perder el rastro
+                            HistorialInventario.objects.filter(material=mat_viejo).update(material=mat_clon)
+                            
+                            # Borramos el material viejo que ya no sirve
+                            mat_viejo.delete()
+                        else:
+                            # No hay colisión, solo actualizamos el atributo
+                            setattr(mat_viejo, modelo_tipo, existente)
+                            mat_viejo.save()
+                    
+                    objeto.delete() # Borramos SASA
+                    messages.success(request, f"Fusión exitosa. '{nuevo_nombre}' ha absorbido los materiales.")
+                else:
+                    # Simple renombramiento (no hay riesgo de colisión)
+                    objeto.nombre = nuevo_nombre
+                    objeto.save()
+                    messages.success(request, f"Nombre corregido a '{nuevo_nombre}'.")
+                    
+        except Exception as e:
+            messages.error(request, f"Error durante la gestión: {str(e)}")
+            
+    return redirect('materiales:lista_materiales')

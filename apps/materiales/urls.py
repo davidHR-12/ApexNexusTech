@@ -27,4 +27,14 @@ urlpatterns = [
         views.buscar_material_ajax,
         name="buscar_material_ajax",
     ),
+    path(
+        "inventario/materiales/buscar_atributo_ajax/",
+        views.buscar_atributo_ajax,
+        name="buscar_atributo_ajax",
+    ),
+    path(
+        "inventario/materiales/gestionar_atributo/<str:modelo_tipo>/<int:objeto_id>/",
+        views.gestionar_atributo,
+        name="gestionar_atributo",
+    ),
 ]
