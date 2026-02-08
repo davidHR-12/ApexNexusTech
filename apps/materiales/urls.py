@@ -42,4 +42,9 @@ urlpatterns = [
         views.eliminar_material,
         name="eliminar_material",
     ),
+    path(
+        "inventario/materiales/atributos/<str:tipo_atrib>/<int:id_atrib>/eliminar/",
+        views.eliminar_atributo,
+        name="eliminar_atributo",
+    ),
 ]

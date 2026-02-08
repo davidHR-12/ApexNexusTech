@@ -88,11 +88,11 @@ def material_list(request):
 def crear_material(request):
     if request.method == "POST":
         data = request.POST.copy()
-        
+
         # --- CORRECCIÓN AQUÍ ---
         # Usamos los nombres exactos que vienen del HTML (mira tu traceback)
-        campos_a_limpiar = ['marca_nombre', 'tipo_nombre', 'color_nombre']
-        
+        campos_a_limpiar = ["marca_nombre", "tipo_nombre", "color_nombre"]
+
         for campo in campos_a_limpiar:
             valor = data.get(campo)
             if valor:
@@ -101,7 +101,7 @@ def crear_material(request):
 
         # Pasamos la data ya limpia (donde 'color_nombre' es 'Amarillo')
         form = MaterialForm(data)
-        
+
         if form.is_valid():
             try:
                 material = form.save()
@@ -115,7 +115,7 @@ def crear_material(request):
                 print(e)
         else:
             messages.error(request, "Error al procesar el formulario.")
-            
+
     return redirect("materiales:lista_materiales")
 
 
@@ -208,26 +208,40 @@ def gestionar_atributo(request, modelo_tipo, objeto_id):
                             mat_clon.save()
 
                             # Movemos el historial para no perder el rastro
-                            HistorialInventario.objects.filter(material=mat_viejo).update(material=mat_clon)
+                            HistorialInventario.objects.filter(
+                                material=mat_viejo
+                            ).update(material=mat_clon)
                             # También mover las entradas y consumos si quieres mantener link
-                            EntradaInventario.objects.filter(material=mat_viejo).update(material=mat_clon)
-                            ConsumoMaterial.objects.filter(material=mat_viejo).update(material=mat_clon)
+                            EntradaInventario.objects.filter(material=mat_viejo).update(
+                                material=mat_clon
+                            )
+                            ConsumoMaterial.objects.filter(material=mat_viejo).update(
+                                material=mat_clon
+                            )
 
                             from apps.finanzas.models import Gasto
-    
+
                             # Buscamos todos los gastos asociados a las entradas que acabamos de mover
-                            entradas_ids = EntradaInventario.objects.filter(material=mat_clon).values_list('id', flat=True)
-                            gastos_a_corregir = Gasto.objects.filter(entrada_inventario_id__in=entradas_ids)
-                            
+                            entradas_ids = EntradaInventario.objects.filter(
+                                material=mat_clon
+                            ).values_list("id", flat=True)
+                            gastos_a_corregir = Gasto.objects.filter(
+                                entrada_inventario_id__in=entradas_ids
+                            )
+
                             for gasto in gastos_a_corregir:
                                 # Reemplazamos el nombre viejo por el nuevo en la descripción
                                 # Ejemplo: "Compra de 1000g de Daviterra PLAS Blanco" -> "... PLA Blanco"
-                                nombre_viejo = str(mat_viejo).split(' (')[0] # Quita el stock del __str__
-                                nombre_nuevo = str(mat_clon).split(' (')[0]
-                                
-                                gasto.descripcion = gasto.descripcion.replace(nombre_viejo, nombre_nuevo)
+                                nombre_viejo = str(mat_viejo).split(" (")[
+                                    0
+                                ]  # Quita el stock del __str__
+                                nombre_nuevo = str(mat_clon).split(" (")[0]
+
+                                gasto.descripcion = gasto.descripcion.replace(
+                                    nombre_viejo, nombre_nuevo
+                                )
                                 gasto.save()
-                            
+
                             # Borramos el material viejo USANDO EL NUEVO PERMISO
                             mat_viejo.delete(force_delete=True)
                         else:
@@ -250,6 +264,41 @@ def gestionar_atributo(request, modelo_tipo, objeto_id):
             messages.error(request, f"Error durante la gestión: {str(e)}")
 
     return redirect("materiales:lista_materiales")
+
+
+@login_required
+@require_POST
+def eliminar_atributo(request, tipo_atrib, id_atrib):
+    modelos = {"marcas": Marca, "tipos": TipoMaterial, "colores": Color}
+
+    model_class = modelos.get(tipo_atrib)
+    if not model_class:
+        return JsonResponse({"success": False, "message": "Atributo no válido."})
+
+    obj = get_object_or_404(model_class, id=id_atrib)
+
+    # Verificamos si hay materiales vinculados
+    if obj.material_set.exists():
+        return JsonResponse(
+            {
+                "success": False,
+                "message": f"Existen materiales registrados con este/a {tipo_atrib}. Elimina o edita esos materiales primero.",
+            }
+        )
+
+    try:
+        nombre = obj.nombre
+        obj.delete()
+        return JsonResponse(
+            {
+                "success": True,
+                "message": f"{tipo_atrib.capitalize()} '{nombre}' eliminado correctamente.",
+            }
+        )
+    except Exception as e:
+        return JsonResponse(
+            {"success": False, "message": "Error al eliminar el registro."}
+        )
 
 
 # --- ENDPOINTS AJAX / JSON ---

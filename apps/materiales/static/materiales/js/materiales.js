@@ -1,38 +1,6 @@
 // ============================================================================
 // CONFIGURACIÓN DE SWEETALERT2
 // ============================================================================
-
-/**
- * Configuración base reutilizable para todos los modales de SweetAlert2
- */
-const swalConfigBase = {
-    background: '#1e293b',
-    color: '#fff',
-    showCancelButton: true,
-    reverseButtons: true,
-    buttonsStyling: false,
-    showClass: { popup: '', backdrop: '' },
-    hideClass: { popup: '', backdrop: '' },
-    backdrop: 'rgba(0, 0, 0, 0.5)',
-    didOpen: () => {
-        const container = Swal.getContainer();
-        if (container) container.style.backdropFilter = 'blur(4px)';
-    }
-};
-
-/**
- * Clases CSS personalizadas para los elementos de SweetAlert2
- */
-const swalCustomClasses = {
-    popup: 'bg-[#1e293b] border border-gray-800 rounded-2xl shadow-2xl',
-    title: 'text-xl font-bold text-white',
-    htmlContainer: 'text-gray-300',
-    confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase px-6 py-3 rounded-xl transition-colors mx-2',
-    cancelButton: 'bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs uppercase px-6 py-3 rounded-xl transition-colors mx-2',
-    actions: 'pb-4'
-};
-
-
 function abrirEditar(id) {
     const url = `/administrador/inventario/materiales/api/${id}/`;
 
@@ -132,12 +100,7 @@ function confirmarEliminarMaterial(id, nombre) {
                 <p class="text-white font-semibold text-lg">${nombre}</p>
                 <p class="text-gray-400 text-sm mt-3 border-t border-gray-700/50 pt-3">Si tiene historial, no se eliminara, en cambio se desactivará automáticamente.</p>
             </div>`,
-        iconHtml: `
-            <div class="w-20 h-20 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                </svg>
-            </div>`,
+        iconHtml: swalIcons.warningRed,
         confirmButtonText: 'Sí, Eliminar',
         cancelButtonText: 'Cancelar',
         customClass: {
@@ -174,5 +137,50 @@ function confirmarEliminarMaterial(id, nombre) {
                 Swal.close();
                 mostrarToast('error', 'Error al procesar la solicitud');
             });
+    });
+}
+
+// Función para confirmar eliminación de atributos
+function confirmarEliminarAtributo(tipo, id, nombre) {
+    Swal.fire({
+        ...swalConfigBase,
+        title: '¿Eliminar Atributo?',
+        html: `<p class="text-gray-300">¿Estás seguro de eliminar <b>${nombre}</b> de la lista de ${tipo}?</p>
+               <p class="text-red-400 text-[10px] mt-2 font-bold uppercase">Esta acción no se puede deshacer</p>`,
+        iconHtml: swalIcons.warningRed,
+        confirmButtonText: 'Sí, Eliminar',
+        cancelButtonText: 'Cancelar',
+        customClass: {
+            ...swalCustomClasses,
+            icon: 'border-0'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/administrador/inventario/materiales/atributos/${tipo}/${id}/eliminar/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        mostrarToast('success', data.message);
+                        // Cerramos modales y recargamos para limpiar la lista principal
+                        cerrarModales();
+                        setTimeout(() => location.reload(), 800);
+                    } else {
+                        // Si tiene materiales asociados, la vista devolverá success: false
+                        Swal.fire({
+                            ...swalConfigBase,
+                            title: 'No se puede eliminar',
+                            text: data.message,
+                            icon: 'error'
+                        });
+                    }
+                })
+                .catch(error => mostrarToast('error', 'Error en la solicitud'));
+        }
     });
 }
