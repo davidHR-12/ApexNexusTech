@@ -23,7 +23,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # Rutas de nuestras aplicaciones
     path("administrador/", include("apps.core.urls")),
-    path("usuarios/", include("apps.usuarios.urls")),
+    path("", include("apps.usuarios.urls")),
     path("administrador/", include("apps.reportes.urls")),
     path("administrador/", include("apps.finanzas.urls")),
     path("administrador/", include("apps.materiales.urls")),

@@ -246,8 +246,16 @@ class VarianteProducto(models.Model):
     def save(self, *args, **kwargs):
         # Auto-generar SKU si no existe
         if not self.codigo_sku:
-            self.codigo_sku = f"{self.producto.slug}-{self.material.color.nombre.lower().replace(' ', '-')}"[
-                :50]
+            # Incluimos la marca para evitar colisiones entre marcas del mismo color
+            marca = self.material.marca.nombre.lower().replace(' ', '-')
+            color = self.material.color.nombre.lower().replace(' ', '-')
+            tipo = self.material.tipo.nombre.lower().replace(' ', '-')
+        
+            nuevo_sku = f"{self.producto.slug}-{marca}-{color}-{tipo}"
+        
+            # Si el SKU es muy largo, lo cortamos, pero aseguramos unicidad
+            self.codigo_sku = nuevo_sku[:50]
+        
         super().save(*args, **kwargs)
 
     def __str__(self):

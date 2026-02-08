@@ -6,11 +6,11 @@ app_name = "productos"
 urlpatterns = [
     # --- INVENTARIO: PRODUCTOS ---
     path("inventario/productos/", views.product_list, name="lista_productos"),
-    path("inventario/productos/nuevo/", views.crear_producto, name="crear_producto"),
+    path("inventario/productos/nuevo/", views.crear_producto_base, name="crear_producto_base"),
     path(
         "inventario/productos/<int:producto_id>/editar/",
-        views.editar_producto,
-        name="editar_producto",
+        views.editar_producto_base,
+        name="editar_producto_base",
     ),
     path(
         "inventario/productos/producto/<str:slug>/",
@@ -63,9 +63,15 @@ urlpatterns = [
     
     # --- PRODUCCIÓN Y VARIANTES ---
     path(
-        "inventario/productos/variantes/crear/",
-        views.crear_variante_json,
+        "inventario/productos/variantes/crear/<int:producto_id>/",
+        views.crear_variante,
         name="crear_variante",
+    ),
+    
+    path(
+        "inventario/productos/variantes/registrar/<int:variante_id>/",
+        views.registrar_produccion,
+        name="registrar_produccion",
     ),
     path(
         "inventario/productos/variantes/obtener/<int:producto_id>/",
@@ -73,8 +79,8 @@ urlpatterns = [
         name="obtener_variantes_producto",
     ),
     path(
-        "inventario/productos/variantes/eliminar/<int:variante_id>/",
-        views.eliminar_variante_json,
-        name="eliminar_variante",
+        "inventario/productos/variantes/eliminar/<int:variante_id>/", 
+        views.eliminar_variante_json, 
+        name="eliminar_variante_json" 
     ),
 ]

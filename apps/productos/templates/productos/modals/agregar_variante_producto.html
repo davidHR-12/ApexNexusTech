@@ -1,0 +1,47 @@
+{% extends "core/modal_base.html" %}
+
+{% block modal_content %}
+<div class="mb-6">
+    <h2 class="text-xl font-bold text-white">Asociar Material</h2>
+    <p class="text-gray-400 text-xs">Crea una variante física para: <span class="text-emerald-400">{{ producto.nombre }}</span></p>
+</div>
+
+<form action="{% url 'productos:crear_variante' producto.id %}" 
+      method="POST" 
+      class="space-y-4">
+    {% csrf_token %}
+    
+    <div>
+        <label class="text-gray-400 text-[10px] uppercase font-bold mb-2 block tracking-widest">Seleccionar Material del Inventario</label>
+        {{ form.material }}
+        {% if form.material.errors %}
+            <p class="text-red-500 text-[10px] mt-1">{{ form.material.errors.0 }}</p>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <label class="text-gray-400 text-[10px] uppercase font-bold mb-2 block tracking-widest">Stock ya Impreso</label>
+            {{ form.stock_disponible }}
+            <p class="text-[9px] text-gray-500 mt-1 italic">Unidades físicas listas para entrega.</p>
+        </div>
+
+        <div>
+            <label class="text-gray-400 text-[10px] uppercase font-bold mb-2 block tracking-widest">Precio Extra (RD$)</label>
+            {{ form.precio_adicional }}
+            <p class="text-[9px] text-gray-500 mt-1 italic">Suma al precio base de RD$ {{ producto.precio_venta }}.</p>
+        </div>
+    </div>
+
+    <div class="pt-4 flex gap-3">
+        <button type="button" onclick="cerrarModales()"
+                class="flex-1 py-3 text-gray-500 text-[10px] font-bold uppercase hover:bg-gray-800 rounded-xl transition-all">
+            Cancelar
+        </button>
+        <button type="submit"
+                class="flex-1 py-3 bg-emerald-600 text-white text-[10px] font-bold uppercase rounded-xl hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-900/20">
+            Guardar Variante
+        </button>
+    </div>
+</form>
+{% endblock %}

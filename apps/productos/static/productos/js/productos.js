@@ -316,7 +316,6 @@ function eliminarImagenesPendientes() {
             if (data.status === 'ok' || data.success) {
 
                 imagenesPendientesEliminar = []; // Limpiar array
-                mostrarToast('success', 'Imágenes eliminadas correctamente');
                 return true;
             } else {
 

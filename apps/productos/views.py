@@ -2,15 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum, Count, F
-from django.utils import timezone
 from django.http import JsonResponse
-from decimal import Decimal, InvalidOperation
-from django.utils.text import slugify
 
 from .models import Categoria, Producto, VarianteProducto, ImagenProducto
-from apps.materiales.models import Material
-from apps.materiales.forms import MaterialForm
-from .forms import CategoriaForm, ProductoForm, ProduccionInternaForm
+from .forms import CategoriaForm, ProductoForm, ProduccionInternaForm, VarianteProductoForm
 
 
 # ==============================================================================
@@ -29,13 +24,12 @@ def product_list(request):
 
     # Estadísticas para los cuadros superiores
     total_productos = Producto.objects.count()
-    # Calculamos el valor del inventario (precio * stock de variantes)
-    # Esto es un ejemplo, ajusta según tu lógica de valor
+    # Calculamos el valor del inventario (precio * stock de variantes)    
     valor_inventario = (
         Producto.objects.aggregate(
             total=Sum(
                 F("precio_venta")
-            )  # Aquí podrías multiplicar por stock si prefieres
+            )  
         )["total"]
         or 0
     )
@@ -52,48 +46,23 @@ def product_list(request):
 
 
 @login_required
-def crear_producto(request):
-    """
-    Procesa el formulario para crear un nuevo producto.
-    Maneja limpieza de formatos numéricos (comas y decimales).
-    """
+def crear_producto_base(request):
     if request.method == "POST":
-        data = request.POST.copy()
-
-        # Limpieza de decimales segura
-        try:
-            data["precio_venta"] = abs(
-                Decimal(data.get("precio_venta", "0").replace(",", "") or "0")
-            )
-            data["peso_gramos"] = abs(
-                Decimal(data.get("peso_gramos", "0").replace(",", "") or "0")
-            )
-        except (InvalidOperation, ValueError):
-            messages.error(request, "Formatos numéricos incorrectos.")
-            return redirect(request.META.get("HTTP_REFERER", "productos:lista_productos"))
-
-        form = ProductoForm(data, request.FILES)
-
+        form = ProductoForm(request.POST, request.FILES)
+        
         if form.is_valid():
             producto = form.save()
-
-            # Guardar galería adicional
-            imagenes_extras = request.FILES.getlist("imagenes_galeria")
-            for f in imagenes_extras:
-                ImagenProducto.objects.create(producto=producto, imagen=f)
-
             messages.success(request, f"Producto '{producto.nombre}' creado.")
-
-            next_url = request.POST.get("next", "")
-            if next_url:
-                return redirect(next_url)
-            else:
-                # Redirigir a los detalles del producto
-                return redirect("productos:producto_detalle", slug=producto.slug)
+            next_url = request.POST.get("next")
+            return redirect(next_url if next_url else "productos:producto_detalle", slug=producto.slug)
         else:
+            # CAMBIO AQUÍ: Captura TODOS los errores de campos para saber qué falla
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.error(request, f"{field.capitalize()}: {error}")
+                    messages.error(request, f"Error en {field}: {error}")
+            
+            # Devuelve a donde venía para que el usuario vea los mensajes
+            return redirect(request.META.get("HTTP_REFERER", "productos:lista_productos"))
 
     return redirect("productos:lista_productos")
 
@@ -116,70 +85,23 @@ def producto_detalle(request, slug):
 
 
 @login_required
-def editar_producto(request, producto_id):
-    """
-    Edita un producto existente.
-    Permite eliminar la imagen de portada y gestionar la galería.
-    """
+def editar_producto_base(request, producto_id):
     producto = get_object_or_404(Producto, id=producto_id)
 
     if request.method == "POST":
-        data = request.POST.copy()
-
-        # --- LÓGICA PARA BORRAR PORTADA ---
-        # Si el flag es 'true', borramos la imagen antes de procesar el form
-        if request.POST.get("eliminar_portada_flag") == "true":
-            if producto.imagen:
-                producto.imagen.delete(save=False)  # Borra el archivo físico
-                producto.imagen = None  # Limpia el campo en DB
-        # ----------------------------------
-
-        # Limpieza de datos numéricos
-        try:
-            data["precio_venta"] = abs(
-                Decimal(data.get("precio_venta", "0").replace(",", ""))
-            )
-            data["peso_gramos"] = abs(
-                Decimal(data.get("peso_gramos", "0").replace(",", ""))
-            )
-        except (InvalidOperation, ValueError):
-            messages.error(request, "Formatos numéricos incorrectos.")
-            return redirect(request.META.get("HTTP_REFERER", "productos:lista_productos"))
-
-        form = ProductoForm(data, request.FILES, instance=producto)
+        # El form maneja el borrado de portada y actualización de slug internamente
+        form = ProductoForm(request.POST, request.FILES, instance=producto)
 
         if form.is_valid():
-            # Si el nombre cambió, forzamos la actualización del slug
-            producto_editado = form.save(commit=False)
-            # Si el flag estaba activo, aseguramos que se guarde como None
-            if request.POST.get("eliminar_portada_flag") == "true":
-                producto_editado.imagen = None
-            producto_editado.slug = slugify(producto_editado.nombre)
-            producto_editado.save()
+            producto_editado = form.save()
+            messages.success(request, f"'{producto_editado.nombre}' actualizado correctamente.")
 
-            # Guardar nuevas imágenes de la galería
-            nuevas_imagenes = request.FILES.getlist("imagenes_galeria")
-            for f in nuevas_imagenes:
-                ImagenProducto.objects.create(producto=producto_editado, imagen=f)
-
-            messages.success(
-                request, f"'{producto_editado.nombre}' actualizado correctamente."
-            )
-
-            # Redirección inteligente
             next_url = request.POST.get("next")
             if next_url:
-                # Si el slug cambió, intentamos actualizar el slug en la URL de 'next'
-                # para evitar errores 404 si el usuario estaba viendo el detalle del producto
                 return redirect(next_url)
-
-            return redirect(
-                "productos:categoria_detalle", slug=producto_editado.categoria.slug
-            )
+            return redirect("productos:categoria_detalle", slug=producto_editado.categoria.slug)
         else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field.capitalize()}: {error}")
+            messages.error(request, "Error al actualizar el producto. Verifique los datos.")
 
     return redirect("productos:lista_productos")
 
@@ -289,27 +211,55 @@ def obtener_variantes_producto(request, producto_id):
 
 
 @login_required
-def crear_variante_json(request):
-    """
-    API JSON: Asocia un material a un producto (crea una variante).
-    """
+def crear_variante(request, producto_id):
+    producto = get_object_or_404(Producto, id=producto_id)
+    
     if request.method == "POST":
-        import json
+        form = VarianteProductoForm(request.POST, producto=producto)
+        if form.is_valid():
+            variante = form.save(commit=False)
+            variante.producto = producto
+            variante.save() # El modelo genera el SKU automáticamente
+            messages.success(request, "Variante añadida correctamente.")
+            return redirect("productos:producto_detalle", slug=producto.slug)
+    else:
+        form = VarianteProductoForm(producto=producto)
 
-        data = json.loads(request.body)
-        producto_id = data.get("producto_id")
-        material_id = data.get("material_id")
+    return render(request, "productos/modals/agregar_variante_producto.html", {
+        "producto": producto,
+        "form": form,
+        "title": "Agregar Variante",      
+        "modal_id": "modalVariante"
+    })
 
-        producto = get_object_or_404(Producto, id=producto_id)
-        material = get_object_or_404(Material, id=material_id)
+@login_required
+def registrar_produccion(request, variante_id):
+    variante = get_object_or_404(VarianteProducto, id=variante_id)
+    
+    if request.method == "POST":
+        data = request.POST.copy()
+        data['variante'] = variante.id
+        data['material'] = variante.material.id
+        data['gramos_por_pieza'] = variante.producto.peso_gramos
+        data['cantidad_producida'] = request.POST.get('cantidad')
 
-        # Esto crea la conexión en la base de datos
-        variante, creada = VarianteProducto.objects.get_or_create(
-            producto=producto, material=material
-        )
-
-        return JsonResponse({"success": True, "id": variante.id})
-    return JsonResponse({"success": False}, status=400)
+        form = ProduccionInternaForm(data)
+        
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Producción registrada y stock actualizado.")
+            return redirect("productos:producto_detalle", slug=variante.producto.slug)
+        else:
+            # Si hay error (como stock insuficiente), enviamos los errores a messages
+            for error in form.non_field_errors():
+                messages.error(request, error)
+            # Redirigimos de vuelta al detalle para que el usuario intente de nuevo
+            return redirect("productos:producto_detalle", slug=variante.producto.slug)
+    
+    # Si es GET, renderizamos el modal normal
+    return render(request, "productos/modals/registrar_produccion.html", {
+        "variante": variante,
+    })
 
 
 @login_required
@@ -318,13 +268,21 @@ def eliminar_variante_json(request, variante_id):
     API JSON: Elimina una variante de producto.
     """
     if request.method == "POST":
+        variante = get_object_or_404(VarianteProducto, id=variante_id)
+        producto_slug = variante.producto.slug
         try:
-            variante = VarianteProducto.objects.get(id=variante_id)
+            nombre_material = str(variante.material)
             variante.delete()
-            return JsonResponse({"success": True})
-        except VarianteProducto.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Variante no encontrada"})
-    return JsonResponse({"success": False}, status=400)
+            # Devolvemos éxito para que el JS de SweetAlert sepa que todo salió bien
+            return JsonResponse({
+                "success": True, 
+                "message": f"Variante {nombre_material} eliminada."
+            })
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+            
+    return JsonResponse({"success": False, "message": "Método no permitido"}, status=405)
+    
 # ==============================================================================
 # --- GESTIÓN DE CATEGORÍAS ---
 # ==============================================================================
@@ -352,39 +310,12 @@ def crear_categoria(request):
 
 @login_required
 def editar_categoria(request, categoria_id):
-    """
-    Edita una categoría existente.
-    Permite cambiar nombre, descripción e imagen. Re-slugifica si cambia el nombre.
-    """
     categoria = get_object_or_404(Categoria, pk=categoria_id)
-
     if request.method == "POST":
         form = CategoriaForm(request.POST, request.FILES, instance=categoria)
-        eliminar_imagen = request.POST.get("eliminar_imagen") == "true"
-
         if form.is_valid():
-            obj = form.save(commit=False)
-
-            # --- ACTUALIZACIÓN DE SLUG ---
-            # Forzamos la regeneración del slug basado en el nuevo nombre
-            obj.slug = slugify(obj.nombre)
-
-            # --- LÓGICA DE IMAGEN ---
-            if eliminar_imagen and not request.FILES.get("imagen"):
-                if obj.imagen:
-                    obj.imagen.delete(save=False)
-                obj.imagen = None
-
-            obj.save()
-            messages.success(request, f'Categoría "{obj.nombre}" actualizada.')
-
-            # --- REDIRECCIÓN INTELIGENTE ---
-            # Si venimos de una página que usaba el slug viejo, redirigimos al nuevo
-            # para evitar errores 404 al recargar.
-        else:
-            for error in form.errors.values():
-                messages.error(request, error)
-
+            form.save() # El form maneja el slug y la imagen internamente
+            messages.success(request, f'Categoría "{categoria.nombre}" actualizada.')
     return redirect("productos:lista_productos")
 
 @login_required

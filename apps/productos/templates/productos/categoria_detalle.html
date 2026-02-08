@@ -37,7 +37,7 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path d="M12 4v16m8-8H4" stroke-width="2.5" />
                 </svg>
-                Añadir Pieza
+                Añadir Pieza Base
             </button>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -88,7 +88,7 @@
             {% endfor %}
         </div>
     </div>
-    {% include "productos/modals/agregar_producto.html" with modal_id="modalNuevoProducto" current_page="categoria_detalle" categoria=categoria max_width="max-w-4xl" %}
+    {% include "productos/modals/agregar_producto_base.html" with modal_id="modalNuevoProducto" current_page="categoria_detalle" categoria=categoria max_width="max-w-4xl" %}
     {% include "productos/modals/editar_producto.html" with modal_id="modalEditarProducto" max_width="max-w-4xl" %}
 {% endblock content %}
 {% block extra_js %}

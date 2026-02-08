@@ -102,7 +102,7 @@
     {% include "productos/modals/agregar_categoria.html" with modal_id="modalNuevaCategoria" max_width="max-w-2xl" title="Nueva Categoría de Piezas" %}
     {% include "productos/modals/editar_categoria.html" with modal_id="modalEditarCat" max_width="max-w-2xl" %}
     {% include "productos/modals/eliminar_categoria.html" with modal_id="modalEliminarCategoria" max_width="max-w-md" %}
-    {% include "productos/modals/agregar_producto.html" with modal_id="modalNuevoProducto" current_page="productos" max_width="max-w-4xl" %}
+    {% include "productos/modals/agregar_producto_base.html" with modal_id="modalNuevoProducto" current_page="productos" max_width="max-w-4xl" %}
 {% endblock content %}
 {% block extra_js %}
     <script src="{% static 'productos/js/productos.js' %}"></script>
