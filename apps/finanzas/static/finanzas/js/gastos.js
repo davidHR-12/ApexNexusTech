@@ -1,5 +1,5 @@
 // Función para resetear el modal al estado original (Nuevo Gasto)
-function prepararNuevoGasto() {
+function prepararNuevoGasto(urlCrear) {
   const form = document.getElementById('formGasto');
   form.reset();
   form.action = urlCrear;

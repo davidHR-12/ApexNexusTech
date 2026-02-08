@@ -112,7 +112,6 @@ def crear_material(request):
             except Exception as e:
                 # Capturamos cualquier otro error de integridad por si acaso
                 messages.error(request, f"Error al guardar: {e}")
-                print(e)
         else:
             messages.error(request, "Error al procesar el formulario.")
 

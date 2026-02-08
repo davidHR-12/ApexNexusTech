@@ -165,19 +165,6 @@
     <script src="{% static 'js/globals.js' %}"></script>
     <script src="{% static 'js/htmx.min.js' %}"></script>
     <script>
-        // LÓGICA DEL SIDEBAR RESPONSIVO
-        const btnToggle = document.getElementById('toggleSidebar');
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-
-        function toggleMenu() {
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
-        }
-
-        btnToggle.addEventListener('click', toggleMenu);
-        overlay.addEventListener('click', toggleMenu);
-
         // Notificaciones Django (SweetAlert2)
         document.addEventListener('DOMContentLoaded', function() {
             {% if messages %}

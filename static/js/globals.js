@@ -1,4 +1,18 @@
 
+// LÓGICA DEL SIDEBAR RESPONSIVO
+const btnToggle = document.getElementById('toggleSidebar');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('sidebarOverlay');
+
+function toggleMenu() {
+    sidebar.classList.toggle('-translate-x-full');
+    overlay.classList.toggle('hidden');
+}
+
+btnToggle.addEventListener('click', toggleMenu);
+overlay.addEventListener('click', toggleMenu);
+
+
 window.swalConfigBase = window.swalConfigBase || {
     background: '#1e293b',
     color: '#fff',
@@ -31,7 +45,7 @@ window.swalIcons = window.swalIcons || {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
         </div>`,
-    
+
     successGreen: `
         <div class="w-20 h-20 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg class="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,7 +98,7 @@ function mostrarToast(type, message) {
             toast.style.backgroundColor = sel.bg;
             toast.style.border = `1px solid ${sel.border}`;
             toast.style.borderRadius = '1rem';
-            
+
             // Forzamos que el icono nativo de SWAL no aparezca si usamos el nuestro
             const swalIcon = toast.querySelector('.swal2-icon');
             if (swalIcon) swalIcon.style.display = 'none';
@@ -119,3 +133,17 @@ function cerrarModales() {
     modales.forEach(modal => modal.classList.add('hidden'));
     document.body.style.overflow = 'auto';
 }
+
+// Cerrar modales con la tecla Escape
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        cerrarModales();
+    }
+});
+
+// Cerrar modales al hacer clic fuera de ellos
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-overlay')) {
+        cerrarModales();
+    }
+});
