@@ -37,7 +37,7 @@
     {% endif %}
     <form id="{% if is_edit %}formEditarMaterial{% else %}formCrearMaterial{% endif %}"
           action="{% if not is_edit %}{% url 'materiales:crear_material' %}{% else %}#{% endif %}"
-          method="POST"
+          method="post"
           class="space-y-5">
         {% csrf_token %}
         {% if not is_edit %}

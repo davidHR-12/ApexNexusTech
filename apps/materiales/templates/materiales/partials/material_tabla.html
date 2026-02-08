@@ -1,4 +1,8 @@
 {% load humanize %}
+<template>
+    <div id="barra-filtros-container" hx-swap-oob="true">{% include "materiales/partials/barra_filtros.html" %}</div>
+</template>
+{# TABLA DE MATERIALES #}
 <div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden shadow-sm">
     <table class="w-full text-left border-collapse">
         <thead>
@@ -70,6 +74,7 @@
         </tbody>
     </table>
 </div>
+{# PAGINACIÓN INFERIOR #}
 <div class="bg-[#1e293b] border-t border-gray-800 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-b-2xl">
     <div class="hidden sm:block">
         <p class="text-sm text-gray-400 font-medium">
@@ -79,7 +84,10 @@
     <nav class="flex items-center gap-1" aria-label="Paginación">
         {# Botón Anterior #}
         {% if materiales.has_previous %}
-            <a href="?page={{ materiales.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}"
+            <a href="?page={{ materiales.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
+               hx-get="{% url 'materiales:lista_materiales' %}?page={{ materiales.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
+               hx-target="#materiales-container"
+               hx-push-url="true"
                class="p-2 mr-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -102,13 +110,19 @@
                     </span>
                 {% elif i > materiales.number|add:'-6' and i < materiales.number|add:'6' %}
                     {# Páginas cercanas #}
-                    <a href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}"
+                    <a href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
+                       hx-get="{% url 'materiales:lista_materiales' %}?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
+                       hx-target="#materiales-container"
+                       hx-push-url="true"
                        class="px-3.5 py-1.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all">
                         {{ i }}
                     </a>
                 {% elif i == 1 or i == materiales.paginator.num_pages %}
                     {# Primera y última siempre visibles #}
-                    <a href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}"
+                    <a href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
+                       hx-get="{% url 'materiales:lista_materiales' %}?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
+                       hx-target="#materiales-container"
+                       hx-push-url="true"
                        class="px-3.5 py-1.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all">
                         {{ i }}
                     </a>
@@ -120,7 +134,10 @@
         </div>
         {# Botón Siguiente #}
         {% if materiales.has_next %}
-            <a href="?page={{ materiales.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}"
+            <a href="?page={{ materiales.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
+               hx-get="{% url 'materiales:lista_materiales' %}?page={{ materiales.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
+               hx-target="#materiales-container"
+               hx-push-url="true"
                class="p-2 ml-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -135,16 +152,3 @@
         {% endif %}
     </nav>
 </div>
-<template>
-    <div id="boton-limpiar-container" hx-swap-oob="true">
-        {% if search_query or tipo_filtro or orden_actual %}
-            <a href="."
-               class="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 font-bold px-2 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Limpiar
-            </a>
-        {% endif %}
-    </div>
-</template>

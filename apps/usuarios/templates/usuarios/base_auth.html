@@ -5,7 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <script src="https://cdn.tailwindcss.com"></script>
         <title>
-            {% block title %}{% endblock %}
+            {% block title %}
+            {% endblock title %}
         - 3D Print</title>
         <style>
             /* AUTOFILL FIX PARA DARK MODE */
@@ -47,10 +48,11 @@
                 font-size: 1rem !important;
             }
         </style>
-        {% block extra_css %}{% endblock %}
+        {% block extra_css %}
+        {% endblock extra_css %}
     </head>
     <body class="bg-[#0f172a] flex items-center justify-center min-h-screen py-10">
-        <div class="bg-[#1e293b] p-8 rounded-2xl shadow-2xl w-full {% block card_width %}max-w-md{% endblock %} border border-gray-700">
+        <div class="bg-[#1e293b] p-8 rounded-2xl shadow-2xl w-full {% block card_width %}max-w-md{% endblock card_width %} border border-gray-700">
             <div class="mb-4">
                 <a href="{% url 'clientes:index' %}"
                    class="inline-flex items-center text-gray-400 hover:text-[#10b981] transition text-sm group">
@@ -63,8 +65,10 @@
                     Volver al inicio
                 </a>
             </div>
-            {% block auth_content %}{% endblock %}
+            {% block auth_content %}
+            {% endblock auth_content %}
         </div>
-        {% block extra_js %}{% endblock %}
+        {% block extra_js %}
+        {% endblock extra_js %}
     </body>
 </html>

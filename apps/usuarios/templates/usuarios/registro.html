@@ -1,6 +1,10 @@
 {% extends "usuarios/base_auth.html" %}
-{% block title %}Registro{% endblock %}
-{% block card_width %}max-w-lg{% endblock %}
+{% block title %}
+  Registro
+{% endblock title %}
+{% block card_width %}
+  max-w-lg
+{% endblock card_width %}
 {% block auth_content %}
   <h2 class="text-white text-3xl font-bold text-center mb-2">Crear Cuenta</h2>
   <p class="text-gray-400 text-center mb-8 text-sm">Únete a la plataforma de impresión 3D</p>
@@ -125,7 +129,7 @@
          class="text-[#10b981] hover:underline">Inicia sesión</a>
     </p>
   </div>
-{% endblock %}
+{% endblock auth_content %}
 {% block extra_js %}
   <script>
       document.addEventListener("DOMContentLoaded", () => {

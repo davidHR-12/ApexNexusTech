@@ -1,56 +1,86 @@
 {% extends "core/modal_base.html" %}
 {% block modal_content %}
-<div class="mb-6">
-    <h2 class="text-xl font-bold text-white">Mantenimiento de Catálogo</h2>
-    <p class="text-gray-400 text-xs">Corrige errores ortográficos o fusiona atributos duplicados.</p>
-</div>
-
-<div class="space-y-4">
-    <div class="flex bg-gray-900/50 p-1 rounded-xl border border-gray-800">
-        <button onclick="cambiarTab(event, 'tab-marcas')" class="tab-btn flex-1 py-2 text-[10px] font-bold rounded-lg transition-all bg-blue-600 text-white">MARCAS</button>
-        <button onclick="cambiarTab(event, 'tab-tipos')" class="tab-btn flex-1 py-2 text-[10px] font-bold rounded-lg transition-all text-gray-500 hover:text-gray-300">TIPOS</button>
-        <button onclick="cambiarTab(event, 'tab-colores')" class="tab-btn flex-1 py-2 text-[10px] font-bold rounded-lg transition-all text-gray-500 hover:text-gray-300">COLORES</button>
+    <div class="mb-6">
+        <h2 class="text-xl font-bold text-white">Mantenimiento de Catálogo</h2>
+        <p class="text-gray-400 text-xs">Corrige errores ortográficos o fusiona atributos duplicados.</p>
     </div>
-
-    <div class="max-h-96 overflow-y-auto pr-2 space-y-2">
-        
-        <div id="tab-marcas" class="tab-content">
-            {% for m in marcas_list %}
-            <form action="{% url 'materiales:gestionar_atributo' 'marca' m.id %}" method="POST" class="flex gap-2 mb-2 p-2 bg-gray-800/40 rounded-lg border border-gray-700/50 group">
-                {% csrf_token %}
-                <input type="text" name="nuevo_nombre" value="{{ m.nombre }}" class="flex-1 bg-transparent text-sm text-white outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">
-                <button type="submit" class="hidden group-focus-within:block text-[10px] bg-blue-600 px-2 py-1 rounded text-white font-bold uppercase">Guardar</button>
-            </form>
-            {% endfor %}
+    <div class="space-y-4">
+        <div class="flex bg-gray-900/50 p-1 rounded-xl border border-gray-800">
+            <button onclick="cambiarTab(event, 'tab-marcas')"
+                    class="tab-btn flex-1 py-2 text-[10px] font-bold rounded-lg transition-all bg-blue-600 text-white">
+                MARCAS
+            </button>
+            <button onclick="cambiarTab(event, 'tab-tipos')"
+                    class="tab-btn flex-1 py-2 text-[10px] font-bold rounded-lg transition-all text-gray-500 hover:text-gray-300">
+                TIPOS
+            </button>
+            <button onclick="cambiarTab(event, 'tab-colores')"
+                    class="tab-btn flex-1 py-2 text-[10px] font-bold rounded-lg transition-all text-gray-500 hover:text-gray-300">
+                COLORES
+            </button>
         </div>
-
-        <div id="tab-tipos" class="tab-content hidden">
-            {% for t in tipos_list %}
-            <form action="{% url 'materiales:gestionar_atributo' 'tipo' t.id %}" method="POST" class="flex gap-2 mb-2 p-2 bg-gray-800/40 rounded-lg border border-gray-700/50 group">
-                {% csrf_token %}
-                <input type="text" name="nuevo_nombre" value="{{ t.nombre }}" class="flex-1 bg-transparent text-sm text-white outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">
-                <button type="submit" class="hidden group-focus-within:block text-[10px] bg-blue-600 px-2 py-1 rounded text-white font-bold uppercase">Guardar</button>
-            </form>
-            {% endfor %}
-        </div>
-
-        <div id="tab-colores" class="tab-content hidden">
-            {% for c in colores_list %}
-            <form action="{% url 'materiales:gestionar_atributo' 'color' c.id %}" method="POST" class="flex gap-2 mb-2 p-2 bg-gray-800/40 rounded-lg border border-gray-700/50 group">
-                {% csrf_token %}
-                <input type="text" name="nuevo_nombre" value="{{ c.nombre }}" class="flex-1 bg-transparent text-sm text-white outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">
-                <button type="submit" class="hidden group-focus-within:block text-[10px] bg-blue-600 px-2 py-1 rounded text-white font-bold uppercase">Guardar</button>
-            </form>
-            {% endfor %}
+        <div class="max-h-96 overflow-y-auto pr-2 space-y-2">
+            <div id="tab-marcas" class="tab-content">
+                {% for m in marcas_list %}
+                    <form action="{% url 'materiales:gestionar_atributo' 'marca' m.id %}"
+                          method="post"
+                          class="flex gap-2 mb-2 p-2 bg-gray-800/40 rounded-lg border border-gray-700/50 group">
+                        {% csrf_token %}
+                        <input type="text"
+                               name="nuevo_nombre"
+                               value="{{ m.nombre }}"
+                               class="flex-1 bg-transparent text-sm text-white outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">
+                        <button type="submit"
+                                class="hidden group-focus-within:block text-[10px] bg-blue-600 px-2 py-1 rounded text-white font-bold uppercase">
+                            Guardar
+                        </button>
+                    </form>
+                {% endfor %}
+            </div>
+            <div id="tab-tipos" class="tab-content hidden">
+                {% for t in tipos_list %}
+                    <form action="{% url 'materiales:gestionar_atributo' 'tipo' t.id %}"
+                          method="post"
+                          class="flex gap-2 mb-2 p-2 bg-gray-800/40 rounded-lg border border-gray-700/50 group">
+                        {% csrf_token %}
+                        <input type="text"
+                               name="nuevo_nombre"
+                               value="{{ t.nombre }}"
+                               class="flex-1 bg-transparent text-sm text-white outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">
+                        <button type="submit"
+                                class="hidden group-focus-within:block text-[10px] bg-blue-600 px-2 py-1 rounded text-white font-bold uppercase">
+                            Guardar
+                        </button>
+                    </form>
+                {% endfor %}
+            </div>
+            <div id="tab-colores" class="tab-content hidden">
+                {% for c in colores_list %}
+                    <form action="{% url 'materiales:gestionar_atributo' 'color' c.id %}"
+                          method="post"
+                          class="flex gap-2 mb-2 p-2 bg-gray-800/40 rounded-lg border border-gray-700/50 group">
+                        {% csrf_token %}
+                        <input type="text"
+                               name="nuevo_nombre"
+                               value="{{ c.nombre }}"
+                               class="flex-1 bg-transparent text-sm text-white outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">
+                        <button type="submit"
+                                class="hidden group-focus-within:block text-[10px] bg-blue-600 px-2 py-1 rounded text-white font-bold uppercase">
+                            Guardar
+                        </button>
+                    </form>
+                {% endfor %}
+            </div>
         </div>
     </div>
-</div>
-
-<div class="pt-4 border-t border-gray-800">
-    <button type="button" onclick="cerrarModales()" class="w-full py-3 text-gray-500 text-[10px] font-bold uppercase hover:text-white transition-colors tracking-widest">Cerrar</button>
-</div>
-
-<script>
+    <div class="pt-4 border-t border-gray-800">
+        <button type="button"
+                onclick="cerrarModales()"
+                class="w-full py-3 text-gray-500 text-[10px] font-bold uppercase hover:text-white transition-colors tracking-widest">
+            Cerrar
+        </button>
+    </div>
+    <script>
 function cambiarTab(event, tabId) {
     // 1. Ocultar todos los contenidos
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -68,5 +98,5 @@ function cambiarTab(event, tabId) {
     event.currentTarget.classList.remove('text-gray-500');
     event.currentTarget.classList.add('bg-blue-600', 'text-white');
 }
-</script>
-{% endblock %}
+    </script>
+{% endblock modal_content %}

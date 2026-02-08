@@ -46,6 +46,8 @@
                         <div class="relative h-48 w-full bg-gray-900 rounded-xl mb-4 overflow-hidden flex items-center justify-center">
                             {% if cat.imagen %}
                                 <img src="{{ cat.imagen.url }}"
+                                     width="100%"
+                                     height="100%"
                                      class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-60 group-hover:opacity-100"
                                      alt="{{ cat.nombre }}">
                             {% else %}

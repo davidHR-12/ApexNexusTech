@@ -6,7 +6,7 @@
   </div>
   <form id="formEntradaMaterial"
         action="{% url 'materiales:registrar_entrada' %}"
-        method="POST"
+        method="post"
         class="space-y-5">
     {% csrf_token %}
     <div class="relative" x-data="{ query: '' }">
@@ -76,4 +76,4 @@
       </button>
     </div>
   </form>
-{% endblock %}
+{% endblock modal_content %}

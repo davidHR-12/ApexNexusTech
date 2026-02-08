@@ -72,7 +72,6 @@ def material_list(request):
         "entrada_form": EntradaInventarioForm(),
         "search_query": search_query,
         "tipo_filtro": tipo_filtro,
-        "tipo_seleccionado": tipo_filtro,
         "orden_actual": orden_filtro,
     }
 

@@ -7,8 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Panel Administrativo - 3D PRINT</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css" />
+    <link rel="stylesheet" href="{% static 'sweetalert2/dark.css' %}">
     <style>
     input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(1);
@@ -162,7 +161,7 @@
         {% endblock content %}
       </main>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{% static 'sweetalert2/sweetalert2.all.min.js' %}"></script>
     <script src="{% static 'js/globals.js' %}"></script>
     <script src="{% static 'js/htmx.min.js' %}"></script>
     <script>

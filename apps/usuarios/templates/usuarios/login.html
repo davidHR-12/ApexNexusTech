@@ -1,5 +1,10 @@
 {% extends "usuarios/base_auth.html" %}
-{% block title %}Login{% endblock %}
+{% block title %}
+  Login
+{% endblock title %}
+{% block card_width %}
+  max-w-md
+{% endblock card_width %}
 {% block auth_content %}
   <div class="flex justify-center mb-6">
     <div class="bg-[#10b981] p-3 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.5)]">
@@ -94,8 +99,7 @@
       </button>
     </form>
   {% endif %}
-</div>
-{% endblock %}
+{% endblock auth_content %}
 {% block extra_js %}
   <script>
       // Detectar Mayúsculas activadas
