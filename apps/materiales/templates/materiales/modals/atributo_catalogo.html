@@ -23,6 +23,7 @@
             <div id="tab-marcas" class="tab-content">
                 {% for m in marcas_list %}
                     <form action="{% url 'materiales:gestionar_atributo' 'marca' m.id %}"
+                          hx-target="#materiales-container"
                           method="post"
                           class="flex gap-2 mb-2 p-2 bg-gray-800/40 rounded-lg border border-gray-700/50 group">
                         {% csrf_token %}
@@ -40,6 +41,7 @@
             <div id="tab-tipos" class="tab-content hidden">
                 {% for t in tipos_list %}
                     <form action="{% url 'materiales:gestionar_atributo' 'tipo' t.id %}"
+                          hx-target="#materiales-container"
                           method="post"
                           class="flex gap-2 mb-2 p-2 bg-gray-800/40 rounded-lg border border-gray-700/50 group">
                         {% csrf_token %}
@@ -57,6 +59,7 @@
             <div id="tab-colores" class="tab-content hidden">
                 {% for c in colores_list %}
                     <form action="{% url 'materiales:gestionar_atributo' 'color' c.id %}"
+                          hx-target="#materiales-container"
                           method="post"
                           class="flex gap-2 mb-2 p-2 bg-gray-800/40 rounded-lg border border-gray-700/50 group">
                         {% csrf_token %}

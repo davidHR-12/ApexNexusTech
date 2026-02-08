@@ -39,7 +39,7 @@ class Marca(models.Model):
         unique=True,
         verbose_name="Nombre"
     )
-    #posiblemente se pueda eliminar
+    # posiblemente se pueda eliminar
     pais_origen = models.CharField(
         max_length=50,
         blank=True,
@@ -62,7 +62,7 @@ class Color(models.Model):
         unique=True,
         verbose_name="Nombre"
     )
-    #posiblemente se pueda eliminar
+    # posiblemente se pueda eliminar
     codigo_hex = models.CharField(
         max_length=7,
         blank=True,
@@ -139,19 +139,22 @@ class Material(models.Model):
         return self.stock_actual <= self.stock_minimo
 
     def delete(self, *args, **kwargs):
-        # 1. Impedir si hay stock físico
-        if self.stock_actual > 0:
-            raise ValidationError(
-                f"No se puede eliminar {self}. Aún tiene {self.stock_actual}g en stock."
-            )
-        
-        # 2. Impedir si tiene historial (para no romper la contabilidad)
-        if self.entradainventario_set.exists() or self.consumomaterial_set.exists():
-            # En lugar de borrar, sugerimos desactivar
-            self.activo = False
-            self.save()
-            return # Salimos sin borrar físicamente
-            
+        # Añadimos la opción de forzar el borrado (usado en fusiones)
+        force_delete = kwargs.pop('force_delete', False)
+
+        if not force_delete:
+            # 1. Impedir si hay stock físico
+            if self.stock_actual > 0:
+                raise ValidationError(
+                    f"No se puede eliminar {self}. Aún tiene {self.stock_actual}g en stock."
+                )
+
+            # 2. Impedir si tiene historial (si no es forzado)
+            if self.entradainventario_set.exists() or self.consumomaterial_set.exists():
+                self.activo = False
+                self.save()
+                return
+
         super().delete(*args, **kwargs)
 
     def __str__(self):

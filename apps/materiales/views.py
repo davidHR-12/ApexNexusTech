@@ -15,6 +15,8 @@ from .models import (
     Material,
     Color,
     Marca,
+    EntradaInventario,
+    ConsumoMaterial,
     HistorialInventario,
 )
 
@@ -186,12 +188,13 @@ def gestionar_atributo(request, modelo_tipo, objeto_id):
                             mat_clon.save()
 
                             # Movemos el historial para no perder el rastro
-                            HistorialInventario.objects.filter(
-                                material=mat_viejo
-                            ).update(material=mat_clon)
+                            HistorialInventario.objects.filter(material=mat_viejo).update(material=mat_clon)
+                            # También mover las entradas y consumos si quieres mantener link
+                            EntradaInventario.objects.filter(material=mat_viejo).update(material=mat_clon)
+                            ConsumoMaterial.objects.filter(material=mat_viejo).update(material=mat_clon)
 
-                            # Borramos el material viejo que ya no sirve
-                            mat_viejo.delete()
+                            # Borramos el material viejo USANDO EL NUEVO PERMISO
+                            mat_viejo.delete(force_delete=True)
                         else:
                             # No hay colisión, solo actualizamos el atributo
                             setattr(mat_viejo, modelo_tipo, existente)
