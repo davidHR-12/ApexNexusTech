@@ -87,15 +87,35 @@ def material_list(request):
 @login_required
 def crear_material(request):
     if request.method == "POST":
-        form = MaterialForm(request.POST)
+        data = request.POST.copy()
+        
+        # --- CORRECCIÓN AQUÍ ---
+        # Usamos los nombres exactos que vienen del HTML (mira tu traceback)
+        campos_a_limpiar = ['marca_nombre', 'tipo_nombre', 'color_nombre']
+        
+        for campo in campos_a_limpiar:
+            valor = data.get(campo)
+            if valor:
+                # Convertimos "AMARILLO" -> "Amarillo"
+                data[campo] = valor.strip().capitalize()
+
+        # Pasamos la data ya limpia (donde 'color_nombre' es 'Amarillo')
+        form = MaterialForm(data)
+        
         if form.is_valid():
-            material = form.save()
-            if material.just_created:
-                messages.success(request, f"Material {material} creado con éxito.")
-            else:
-                messages.warning(request, f"El material {material} ya existía.")
+            try:
+                material = form.save()
+                if material.just_created:
+                    messages.success(request, f"Material {material} creado con éxito.")
+                else:
+                    messages.warning(request, f"El material {material} ya existía.")
+            except Exception as e:
+                # Capturamos cualquier otro error de integridad por si acaso
+                messages.error(request, f"Error al guardar: {e}")
+                print(e)
         else:
             messages.error(request, "Error al procesar el formulario.")
+            
     return redirect("materiales:lista_materiales")
 
 
@@ -121,7 +141,7 @@ def eliminar_material(request, material_id):
         nombre = str(material)
         material.delete()
         return JsonResponse(
-            {"success": True, "message": f"Material {nombre} procesado correctamente."}
+            {"success": True, "message": f"Material {nombre} eliminado correctamente."}
         )
     except ValidationError as e:
         return JsonResponse({"success": False, "message": str(e.message)})

@@ -4,7 +4,7 @@ Modelos para la gestión de inventario de materiales de impresión 3D
 from django.db import models
 from decimal import Decimal
 from django.core.exceptions import ValidationError
-
+from django.db.models.functions import Lower
 
 # =============================
 # ATRIBUTOS DE MATERIALES
@@ -30,6 +30,12 @@ class TipoMaterial(models.Model):
         verbose_name = "Tipo de Material"
         verbose_name_plural = "Tipos de Material"
         ordering = ["nombre"]
+        constraints = [
+            models.UniqueConstraint(
+                Lower('nombre'), 
+                name='unique_tipo_nombre_case_insensitive'
+            )
+        ]
 
 
 class Marca(models.Model):
@@ -53,6 +59,12 @@ class Marca(models.Model):
         verbose_name = "Marca"
         verbose_name_plural = "Marcas"
         ordering = ["nombre"]
+        constraints = [
+            models.UniqueConstraint(
+                Lower('nombre'), 
+                name='unique_marca_nombre_case_insensitive'
+            )
+        ]
 
 
 class Color(models.Model):
@@ -77,6 +89,12 @@ class Color(models.Model):
         verbose_name = "Color"
         verbose_name_plural = "Colores"
         ordering = ["nombre"]
+        constraints = [
+            models.UniqueConstraint(
+                Lower('nombre'), 
+                name='unique_color_nombre_case_insensitive'
+            )
+        ]
 
 
 # =============================

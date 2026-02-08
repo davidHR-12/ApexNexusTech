@@ -37,18 +37,30 @@ class MaterialForm(TailwindModelForm):
         ]
 
     def save(self, commit=True):
-        # 1. Extraer nombres limpios
-        marca_txt = self.cleaned_data['marca_nombre'].strip()
-        tipo_txt = self.cleaned_data['tipo_nombre'].strip()
-        color_txt = self.cleaned_data['color_nombre'].strip()
+        # 1. Extraer nombres y normalizarlos (Primera letra mayúscula)
+        marca_txt = self.cleaned_data['marca_nombre'].strip().capitalize()
+        tipo_txt = self.cleaned_data['tipo_nombre'].strip().capitalize()
+        color_txt = self.cleaned_data['color_nombre'].strip().capitalize()
 
-        # 2. Lógica Get or Create para los objetos relacionados
-        marca_obj, _ = Marca.objects.get_or_create(nombre=marca_txt)
-        tipo_obj, _ = TipoMaterial.objects.get_or_create(nombre=tipo_txt)
-        color_obj, _ = Color.objects.get_or_create(nombre=color_txt)
+        # 2. Lógica Manual para evitar el choque con el UniqueConstraint
+        # Buscamos ignorando mayúsculas, si no existe, creamos.
+        
+        # Para Marca
+        marca_obj = Marca.objects.filter(nombre__iexact=marca_txt).first()
+        if not marca_obj:
+            marca_obj = Marca.objects.create(nombre=marca_txt)
+
+        # Para Tipo
+        tipo_obj = TipoMaterial.objects.filter(nombre__iexact=tipo_txt).first()
+        if not tipo_obj:
+            tipo_obj = TipoMaterial.objects.create(nombre=tipo_txt)
+
+        # Para Color
+        color_obj = Color.objects.filter(nombre__iexact=color_txt).first()
+        if not color_obj:
+            color_obj = Color.objects.create(nombre=color_txt)
 
         # 3. Crear o recuperar el Material
-        # Usamos self.instance para mantener la funcionalidad de ModelForm
         material, created = Material.objects.get_or_create(
             tipo=tipo_obj,
             marca=marca_obj,
@@ -60,9 +72,7 @@ class MaterialForm(TailwindModelForm):
             },
         )
         
-        # Guardamos un flag temporal para que la vista sepa si enviará success o warning
         material.just_created = created
-        
         return material
 
 class EditarMaterialForm(TailwindModelForm):
