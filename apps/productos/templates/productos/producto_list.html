@@ -107,9 +107,9 @@
 {% block extra_js %}
     <script src="{% static 'productos/js/productos.js' %}"></script>
     <script>
-        // Envolvemos la llamada para pasarle la URL de redirección de Django
-        function ejecutarEliminarCat(id, nombre) {
-            confirmarEliminarCategoria(id, nombre, "{% url 'productos:lista_productos' %}");
-        }
+            // Envolvemos la llamada para pasarle la URL de redirección de Django
+            function ejecutarEliminarCat(id, nombre) {
+                confirmarEliminarCategoria(id, nombre, "{% url 'productos:lista_productos' %}");
+            }
     </script>
 {% endblock extra_js %}

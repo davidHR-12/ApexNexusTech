@@ -79,6 +79,11 @@ class Gasto(models.Model):
         verbose_name="Gasto recurrente"
     )
 
+    @property
+    def es_automatico(self):
+        """Si el gasto viene de inventario, es automático"""
+        return self.entrada_inventario is not None
+    
     def __str__(self):
         return f"{self.get_tipo_display()}: {self.descripcion} - ${self.monto} ({self.fecha})"
 

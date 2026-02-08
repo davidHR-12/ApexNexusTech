@@ -193,6 +193,21 @@ def gestionar_atributo(request, modelo_tipo, objeto_id):
                             EntradaInventario.objects.filter(material=mat_viejo).update(material=mat_clon)
                             ConsumoMaterial.objects.filter(material=mat_viejo).update(material=mat_clon)
 
+                            from apps.finanzas.models import Gasto
+    
+                            # Buscamos todos los gastos asociados a las entradas que acabamos de mover
+                            entradas_ids = EntradaInventario.objects.filter(material=mat_clon).values_list('id', flat=True)
+                            gastos_a_corregir = Gasto.objects.filter(entrada_inventario_id__in=entradas_ids)
+                            
+                            for gasto in gastos_a_corregir:
+                                # Reemplazamos el nombre viejo por el nuevo en la descripción
+                                # Ejemplo: "Compra de 1000g de Daviterra PLAS Blanco" -> "... PLA Blanco"
+                                nombre_viejo = str(mat_viejo).split(' (')[0] # Quita el stock del __str__
+                                nombre_nuevo = str(mat_clon).split(' (')[0]
+                                
+                                gasto.descripcion = gasto.descripcion.replace(nombre_viejo, nombre_nuevo)
+                                gasto.save()
+                            
                             # Borramos el material viejo USANDO EL NUEVO PERMISO
                             mat_viejo.delete(force_delete=True)
                         else:

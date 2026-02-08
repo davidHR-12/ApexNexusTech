@@ -41,13 +41,14 @@
                     <td class="p-4 text-center">
                         <div class="flex items-center gap-2 justify-center">
                             <button onclick="abrirEditar('{{ m.id }}')"
-                                    class="p-2 bg-gray-900 border border-gray-700 rounded-lg text-blue-400 hover:text-white hover:bg-blue-600 hover:border-blue-500 transition-all">
+                                    class="p-2 bg-gray-800 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+                                    title="Editar">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                 </svg>
                             </button>
                             <button onclick="confirmarEliminarMaterial('{{ m.id }}', '{{ m.tipo.nombre }} {{ m.marca.nombre }}')"
-                                    class="p-2 bg-gray-900 border border-gray-700 rounded-lg text-red-400 hover:text-white hover:bg-red-600 hover:border-red-500 transition-all shadow-sm"
+                                    class="p-2 bg-gray-800 text-red-400 rounded-lg hover:bg-red-600 hover:text-white transition-all"
                                     title="Eliminar o Desactivar">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

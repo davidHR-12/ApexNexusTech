@@ -26,5 +26,5 @@ class TailwindModelForm(forms.ModelForm):
 class GastoForm(TailwindModelForm):
     class Meta:
         model = Gasto
-        fields = ["descripcion", "monto", "fecha", "tipo"]
+        fields = ["descripcion", "monto", "fecha", "tipo", "notas"]
         widgets = {"fecha": forms.DateInput(attrs={"type": "date"})}
