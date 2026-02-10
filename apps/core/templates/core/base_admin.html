@@ -29,6 +29,7 @@
     }
     ::-webkit-scrollbar {
     width: 12px; /* Ancho del scroll */
+    height: 12px; /* Altura para scroll horizontal */
   }
 
   /* El fondo del scroll (Track) */
@@ -62,14 +63,27 @@
   ::-webkit-scrollbar-button:single-button:vertical:decrement {
     background-position: center bottom;
     /* Flecha blanca en formato SVG */
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%2310b981'><polygon points='50,20 10,80 90,80'/></svg>");
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%2310b981'><polygon points='50,20 10,80 90,80' /></svg>");
   }
 
   /* Flecha hacia abajo */
   ::-webkit-scrollbar-button:single-button:vertical:increment {
     background-position: center top;
     /* Flecha blanca en formato SVG */
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%2310b981'><polygon points='50,80 10,20 90,20'/></svg>");
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%2310b981'><polygon points='50,80 10,20 90,20' /></svg>");
+  }
+  /* Flecha hacia la IZQUIERDA (Horizontal Decrement) */
+  ::-webkit-scrollbar-button:single-button:horizontal:decrement {
+    background-position: left center;
+    /* Flecha apuntando a la izquierda */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%2310b981'><polygon points='20,50 80,10 80,90' /></svg>");
+  }
+
+  /* Flecha hacia la DERECHA (Horizontal Increment) */
+  ::-webkit-scrollbar-button:single-button:horizontal:increment {
+    background-position: right center;
+    /* Flecha apuntando a la derecha */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%2310b981'><polygon points='80,50 20,10 20,90' /></svg>");
   }
     /* AUTOFILL FIX PARA DARK MODE */
     input,
