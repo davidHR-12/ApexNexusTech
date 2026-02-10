@@ -1,4 +1,5 @@
 {% load humanize %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
   <head>
@@ -7,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
           rel="stylesheet">
-    <title>3D Print Service | Studio</title>
+    <title>A.N.T - 3D Print Service</title>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -33,25 +34,86 @@
             max-height: 500px; /* Altura suficiente para el contenido */
             padding-bottom: 1.5rem;
         }
+
+        /* Logo - Estilos para navbar */
+        .navbar-logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar-logo-figura {
+            width: 2.5rem; /* 40px */
+            height: 2.5rem; /* 40px */
+            flex-shrink: 0;
+        }
+
+        .navbar-logo-figura img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .navbar-logo-texto {
+            height: 1.75rem; /* 28px - ajusta según necesites */
+            flex-shrink: 0;
+        }
+
+        .navbar-logo-texto img {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
+        }
+
+        /* Responsive: En móvil hacer el logo un poco más pequeño */
+        @media (max-width: 640px) {
+            .navbar-logo-figura {
+                width: 2rem; /* 32px */
+                height: 2rem; /* 32px */
+            }
+            
+            .navbar-logo-texto {
+                height: 1.5rem; /* 24px */
+            }
+        }
     </style>
   </head>
   <body class="bg-[#0f172a] text-white flex flex-col min-h-screen">
     <nav class="border-b border-gray-800 bg-[#0f172a]/80 backdrop-blur-md sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-20 items-center">
-          <a href="/"
-             class="flex items-center gap-2 hover:opacity-80 transition group">
-            <div class="bg-[#10b981] p-1.5 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.4)] group-hover:scale-110 transition-transform">
-              <svg class="w-6 h-6 text-white"
-                   fill="none"
-                   stroke="currentColor"
-                   viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
-              </svg>
-            </div>
-            <span class="text-xl font-bold tracking-tighter uppercase">3D<span class="text-[#10b981]">Print</span></span>
-          </a>
-
+<a href="{% url 'clientes:index' %}"
+   class="flex items-center gap-3 hover:opacity-80 transition group">
+  <!-- Logo Figura -->
+  <div class="p-2 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.4)] group-hover:scale-110 transition-transform bg-transparent w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center flex-shrink-0">
+    <img src="{% static 'img/Logo-figura.png' %}"
+         alt="A.N.T Logo"
+         class="w-full h-full object-contain" />
+  </div>
+  
+  <!-- Logo Texto (HTML/CSS) -->
+  <div class="flex flex-col">
+    <!-- A.N.T -->
+    <div class="flex items-end gap-0.5">
+      <div class="flex items-end">
+        <span class="text-2xl sm:text-3xl font-black text-white tracking-tighter leading-none">A</span>
+        <span class="text-xl sm:text-2xl font-black text-white leading-none mb-0.5">.</span>
+      </div>
+      <div class="flex items-end">
+        <span class="text-2xl sm:text-3xl font-black text-white tracking-tighter leading-none">N</span>
+        <span class="text-xl sm:text-2xl font-black text-white leading-none mb-0.5">.</span>
+      </div>
+      <span class="text-2xl sm:text-3xl font-black text-white tracking-tighter leading-none">T</span>
+    </div>
+    
+    <!-- APEX NEXUS TECHNOLOGY -->
+    <div class="flex items-center gap-1.5 sm:gap-2">
+      <span class="text-[8px] sm:text-[10px] font-bold text-[#10b981] tracking-[0.25em] sm:tracking-[0.3em] leading-none uppercase">APEX</span>
+      <span class="text-[8px] sm:text-[10px] font-bold text-[#10b981] tracking-[0.25em] sm:tracking-[0.3em] leading-none uppercase">NEXUS</span>
+      <span class="text-[8px] sm:text-[10px] font-bold text-[#10b981] tracking-[0.25em] sm:tracking-[0.3em] leading-none uppercase">TECHNOLOGY</span>
+    </div>
+  </div>
+</a>
           <div class="hidden md:flex items-center space-x-8 text-sm font-medium">
             <a href="{% url 'clientes:materiales' %}"
                class="text-gray-400 hover:text-[#10b981] transition">Materiales</a>
@@ -74,47 +136,78 @@
               </a>
             {% endif %}
           </div>
-
           <div class="md:hidden">
             <button id="hamburger-btn" class="text-gray-400 p-2 focus:outline-none">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path id="hamburger-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                <path id="hamburger-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7">
+                </path>
               </svg>
             </button>
           </div>
         </div>
-
-        <div id="mobile-menu" class="md:hidden flex flex-col space-y-4 text-sm font-medium">
-            <a href="{% url 'clientes:materiales' %}" class="text-gray-400 hover:text-[#10b981] transition px-2  {% if request.resolver_match.url_name == 'materiales' %}text-[#10b981] transition px-2{% endif %}">Materiales</a>
-            <a href="{% url 'clientes:productos' %}" class="text-gray-400 hover:text-[#10b981] transition px-2  {% if request.resolver_match.url_name == 'productos' %}text-[#10b981] transition px-2{% endif %}">Productos</a>
-            <a href="{% url 'clientes:proceso' %}" class="text-gray-400 hover:text-[#10b981] transition px-2  {% if request.resolver_match.url_name == 'proceso' %}text-[#10b981] transition px-2{% endif %}">Proceso</a>
-            <div class="border-t border-gray-800 pt-4 flex flex-col gap-3">
-                {% if user.is_authenticated %}
-                  <a href="{% if user.rol == 'Admin' %}{% url 'core:dashboard-admin' %}{% else %}{% url 'clientes:home' %}{% endif %}"
-                     class="bg-[#10b981] text-white px-5 py-3 rounded-xl font-bold text-center">
-                    Mi Panel
-                  </a>
-                {% else %}
-                  <a href="{% url 'usuarios:login' %}" class="text-gray-400 hover:text-white transition px-2">Iniciar Sesión</a>
-                  <a href="{% url 'usuarios:register' %}" class="border border-[#10b981] text-[#10b981] px-5 py-3 rounded-xl text-center font-bold">
-                    Registrarse
-                  </a>
-                {% endif %}
-            </div>
+        <div id="mobile-menu"
+             class="md:hidden flex flex-col space-y-4 text-sm font-medium">
+          <a href="{% url 'clientes:materiales' %}"
+             class="text-gray-400 hover:text-[#10b981] transition px-2  {% if request.resolver_match.url_name == 'materiales' %}text-[#10b981] transition px-2{% endif %}">Materiales</a>
+          <a href="{% url 'clientes:productos' %}"
+             class="text-gray-400 hover:text-[#10b981] transition px-2  {% if request.resolver_match.url_name == 'productos' %}text-[#10b981] transition px-2{% endif %}">Productos</a>
+          <a href="{% url 'clientes:proceso' %}"
+             class="text-gray-400 hover:text-[#10b981] transition px-2  {% if request.resolver_match.url_name == 'proceso' %}text-[#10b981] transition px-2{% endif %}">Proceso</a>
+          <div class="border-t border-gray-800 pt-4 flex flex-col gap-3">
+            {% if user.is_authenticated %}
+              <a href="{% if user.rol == 'Admin' %}{% url 'core:dashboard-admin' %}{% else %}{% url 'clientes:home' %}{% endif %}"
+                 class="bg-[#10b981] text-white px-5 py-3 rounded-xl font-bold text-center">Mi Panel</a>
+            {% else %}
+              <a href="{% url 'usuarios:login' %}"
+                 class="text-gray-400 hover:text-white transition px-2">Iniciar Sesión</a>
+              <a href="{% url 'usuarios:register' %}"
+                 class="border border-[#10b981] text-[#10b981] px-5 py-3 rounded-xl text-center font-bold">
+                Registrarse
+              </a>
+            {% endif %}
+          </div>
         </div>
       </div>
     </nav>
-
     <main class="flex-grow">
       {% block content %}
       {% endblock content %}
     </main>
-
     <footer class="bg-[#0b1222] border-t border-gray-900 pt-16 pb-8">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div class="col-span-1 md:col-span-2">
-            <span class="text-xl font-bold tracking-tighter uppercase">3D<span class="text-[#10b981]">Print</span></span>
+            <div class="flex items-center gap-2 mb-4">
+  <!-- Logo Figura pequeño -->
+  <div class="w-8 h-8 flex items-center justify-center flex-shrink-0">
+    <img src="{% static 'img/Logo-figura.png' %}"
+         alt="A.N.T Logo"
+         class="w-full h-full object-contain" />
+  </div>
+  
+  <!-- Logo Texto -->
+  <div class="flex flex-col">
+    <!-- A.N.T -->
+    <div class="flex items-end gap-0.5">
+      <div class="flex items-end">
+        <span class="text-xl font-black text-white tracking-tighter leading-none">A</span>
+        <span class="text-lg font-black text-white leading-none mb-0.5">.</span>
+      </div>
+      <div class="flex items-end">
+        <span class="text-xl font-black text-white tracking-tighter leading-none">N</span>
+        <span class="text-lg font-black text-white leading-none mb-0.5">.</span>
+      </div>
+      <span class="text-xl font-black text-white tracking-tighter leading-none">T</span>
+    </div>
+    
+    <!-- APEX NEXUS TECHNOLOGY -->
+    <div class="flex items-center gap-1.5">
+      <span class="text-[7px] font-bold text-[#10b981] tracking-[0.25em] leading-none uppercase">APEX</span>
+      <span class="text-[7px] font-bold text-[#10b981] tracking-[0.25em] leading-none uppercase">NEXUS</span>
+      <span class="text-[7px] font-bold text-[#10b981] tracking-[0.25em] leading-none uppercase">TECHNOLOGY</span>
+    </div>
+  </div>
+</div>
             <p class="text-gray-500 mt-4 max-w-sm text-sm leading-relaxed">
               Transformamos tus archivos digitales en objetos físicos de alta calidad.
               Expertos en prototipado rápido y fabricación aditiva en República Dominicana.
@@ -123,20 +216,33 @@
           <div>
             <h4 class="text-white font-bold mb-4 uppercase text-xs tracking-widest">Navegación</h4>
             <ul class="text-gray-500 text-sm space-y-2">
-              <li><a href="{% url 'clientes:productos' %}" class="hover:text-[#10b981] transition">Catálogo</a></li>
-              <li><a href="{% url 'clientes:proceso' %}" class="hover:text-[#10b981] transition">Cómo funciona</a></li>
-              <li><a href="#" class="hover:text-[#10b981] transition">Preguntas frecuentes</a></li>
+              <li>
+                <a href="{% url 'clientes:productos' %}"
+                   class="hover:text-[#10b981] transition">Catálogo</a>
+              </li>
+              <li>
+                <a href="{% url 'clientes:proceso' %}"
+                   class="hover:text-[#10b981] transition">Cómo funciona</a>
+              </li>
+              <li>
+                <a href="#" class="hover:text-[#10b981] transition">Preguntas frecuentes</a>
+              </li>
             </ul>
           </div>
           <div>
             <h4 class="text-white font-bold mb-4 uppercase text-xs tracking-widest">Contacto</h4>
             <ul class="text-gray-500 text-sm space-y-2">
               <li class="flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-width="2" /></svg>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-width="2" />
+                </svg>
                 info@3dprint.do
               </li>
               <li class="flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke-width="2" /><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2" /></svg>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke-width="2" />
+                  <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2" />
+                </svg>
                 Santo Domingo, RD
               </li>
             </ul>
@@ -151,7 +257,6 @@
         </div>
       </div>
     </footer>
-
     <script>
         const btn = document.getElementById('hamburger-btn');
         const menu = document.getElementById('mobile-menu');
