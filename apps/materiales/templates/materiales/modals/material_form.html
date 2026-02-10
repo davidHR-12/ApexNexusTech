@@ -49,7 +49,7 @@
                        placeholder="Escribe para buscar o agregar..."
                        class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none transition-all"
                        hx-get="{% url 'materiales:buscar_atributo_ajax' %}?tipo=marca"
-                       hx-trigger="keyup changed delay:200ms"
+                       hx-trigger="keyup[key!='ArrowDown'&&key!='ArrowUp'&&key!='Enter'&&key!='Tab'] changed delay:200ms"
                        hx-target="#results-marca"
                        autocomplete="off"
                        required>
@@ -64,7 +64,7 @@
                            placeholder="Ej: PLA, PETG..."
                            class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none transition-all"
                            hx-get="{% url 'materiales:buscar_atributo_ajax' %}?tipo=tipo"
-                           hx-trigger="keyup changed delay:200ms"
+                           hx-trigger="keyup[key!='ArrowDown'&&key!='ArrowUp'&&key!='Enter'&&key!='Tab'] changed delay:200ms"
                            hx-target="#results-tipo"
                            autocomplete="off"
                            required>
@@ -78,7 +78,7 @@
                            placeholder="Ej: Negro Mate"
                            class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none transition-all"
                            hx-get="{% url 'materiales:buscar_atributo_ajax' %}?tipo=color"
-                           hx-trigger="keyup changed delay:200ms"
+                           hx-trigger="keyup[key!='ArrowDown'&&key!='ArrowUp'&&key!='Enter'&&key!='Tab'] changed delay:200ms"
                            hx-target="#results-color"
                            autocomplete="off"
                            required>

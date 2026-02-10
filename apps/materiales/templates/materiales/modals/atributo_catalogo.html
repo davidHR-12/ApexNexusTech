@@ -1,16 +1,19 @@
 {% extends "core/modal_base.html" %}
+{% load static %}
 {% block modal_content %}
     <div class="mb-6">
         <h2 class="text-xl font-bold text-white">Mantenimiento de Catálogo</h2>
         <p class="text-gray-400 text-xs">Corrige errores ortográficos o fusiona atributos duplicados.</p>
-        <div class="mt-2 bg-blue-600/10 p-2 rounded-lg border border-blue-600/50">
-            <p class="text-blue-400 text-xs"><strong>Nota:</strong> Para empezar a editar un atributo, haz clic en el campo y luego presiona enter o el boton guardar.</p>
+        <div class="mt-2 bg-emerald-600/10 p-2 rounded-lg border border-emerald-600/50">
+            <p class="text-emerald-400 text-xs">
+                <strong>Nota:</strong> Para empezar a editar un atributo, haz clic en el campo y luego presiona enter o el boton guardar.
+            </p>
         </div>
     </div>
     <div class="space-y-4">
         <div class="flex bg-gray-900/50 p-1 rounded-xl border border-gray-800">
             <button onclick="cambiarTab(event, 'tab-marcas')"
-                    class="tab-btn flex-1 py-2 text-[10px] font-bold rounded-lg transition-all bg-blue-600 text-white">
+                    class="tab-btn flex-1 py-2 text-[10px] font-bold rounded-lg transition-all bg-emerald-600 text-white">
                 MARCAS
             </button>
             <button onclick="cambiarTab(event, 'tab-tipos')"
@@ -33,9 +36,9 @@
                         <input type="text"
                                name="nuevo_nombre"
                                value="{{ m.nombre }}"
-                               class="flex-1 bg-transparent text-sm text-white outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">
+                               class="flex-1 bg-transparent text-sm text-white outline-none focus:ring-1 focus:ring-emerald-500 rounded px-1">
                         <button type="submit"
-                                class="hidden group-focus-within:block text-[10px] bg-blue-600 px-2 py-1 rounded text-white font-bold uppercase">
+                                class="hidden group-focus-within:block text-[10px] bg-emerald-600 px-2 py-1 rounded text-white font-bold uppercase">
                             Guardar
                         </button>
                         <button type="button"
@@ -59,9 +62,9 @@
                         <input type="text"
                                name="nuevo_nombre"
                                value="{{ t.nombre }}"
-                               class="flex-1 bg-transparent text-sm text-white outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">
+                               class="flex-1 bg-transparent text-sm text-white outline-none focus:ring-1 focus:ring-emerald-500 rounded px-1">
                         <button type="submit"
-                                class="hidden group-focus-within:block text-[10px] bg-blue-600 px-2 py-1 rounded text-white font-bold uppercase">
+                                class="hidden group-focus-within:block text-[10px] bg-emerald-600 px-2 py-1 rounded text-white font-bold uppercase">
                             Guardar
                         </button>
                         <button type="button"
@@ -85,9 +88,9 @@
                         <input type="text"
                                name="nuevo_nombre"
                                value="{{ c.nombre }}"
-                               class="flex-1 bg-transparent text-sm text-white outline-none focus:ring-1 focus:ring-blue-500 rounded px-1">
+                               class="flex-1 bg-transparent text-sm text-white outline-none focus:ring-1 focus:ring-emerald-500 rounded px-1">
                         <button type="submit"
-                                class="hidden group-focus-within:block text-[10px] bg-blue-600 px-2 py-1 rounded text-white font-bold uppercase">
+                                class="hidden group-focus-within:block text-[10px] bg-emerald-600 px-2 py-1 rounded text-white font-bold uppercase">
                             Guardar
                         </button>
                         <button type="button"
@@ -110,23 +113,5 @@
             Cerrar
         </button>
     </div>
-    <script>
-function cambiarTab(event, tabId) {
-    // 1. Ocultar todos los contenidos
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-    
-    // 2. Quitar estilos activos de todos los botones
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('bg-blue-600', 'text-white');
-        btn.classList.add('text-gray-500');
-    });
-
-    // 3. Mostrar el contenido seleccionado
-    document.getElementById(tabId).classList.remove('hidden');
-
-    // 4. Activar el botón clicado
-    event.currentTarget.classList.remove('text-gray-500');
-    event.currentTarget.classList.add('bg-blue-600', 'text-white');
-}
-    </script>
+    <script src="{% static 'materiales/js/materiales.js' %}"></script>
 {% endblock modal_content %}

@@ -322,7 +322,7 @@ def buscar_atributo_ajax(request):
         modelos = {"marca": Marca, "tipo": TipoMaterial, "color": Color}
         model_class = modelos.get(tipo_busqueda)
         if model_class:
-            resultados = model_class.objects.filter(nombre__icontains=query.strip())[:5]
+            resultados = model_class.objects.filter(nombre__icontains=query.strip()).order_by('nombre')[:5]
 
     return render(
         request,
@@ -350,7 +350,7 @@ def buscar_material_ajax(request):
                 | Q(color__nombre__icontains=palabra)
             )
 
-        materiales = materiales_qs.distinct()[:5]  # Limitamos a 5 resultados
+        materiales = materiales_qs.distinct().order_by('marca__nombre', 'tipo__nombre', 'color__nombre')[:5] # Ordenamos por marca y color y limitamos a 5 resultados
 
     return render(
         request,

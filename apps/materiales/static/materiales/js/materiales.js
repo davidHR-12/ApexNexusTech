@@ -2,7 +2,7 @@
 // CONFIGURACIÓN DE SWEETALERT2
 // ============================================================================
 function abrirEditar(id) {
-    const url = `/administrador/inventario/materiales/api/${id}/`;
+    const url = `/administrador/api/materiales/${id}/`;
 
     fetch(url)
         .then(r => r.json())
@@ -23,7 +23,7 @@ function abrirEditar(id) {
 
             // Actualizar Action del Formulario
             if (form) {
-                form.action = `/administrador/inventario/materiales/${id}/editar/`;
+                form.action = `/administrador/materiales/${id}/editar/`;
             }
 
             // Resetear el checkbox de pérdida al abrir (por seguridad UX)
@@ -61,18 +61,35 @@ function seleccionarMaterial(id, textoCompleto) {
     // 3. Limpiamos la lista de resultados
     const resultados = document.getElementById('search-results');
     if (resultados) resultados.innerHTML = '';
+
+    // Salto automático al siguiente input para velocidad de escritura
+    const proximoInput = document.querySelector('input[name="cantidad_gramos"]');
+    if (proximoInput) proximoInput.focus();
+
+    document.querySelector('input[name="cantidad_gramos"]').focus();
 }
+
 function seleccionarAtributo(tipo, nombre) {
-    // 1. Setea el valor en el input correspondiente
     const input = document.getElementById(`input-${tipo}`);
-    input.value = nombre;
+    if (input) {
+        input.value = nombre;
+        // Importante: le decimos a HTMX que no busque esto
+        input.dispatchEvent(new Event('htmx:abort'));
+    }
 
-    // 2. Limpia los resultados de HTMX
-    document.getElementById(`results-${tipo}`).innerHTML = '';
+    // Limpia los resultados
+    const resContainer = document.getElementById(`results-${tipo}`);
+    if (resContainer) resContainer.innerHTML = '';
 
-    // 3. Opcional: Dar foco al siguiente input para agilizar la carga
-    if (tipo === 'marca') document.getElementById('input-tipo').focus();
-    if (tipo === 'tipo') document.getElementById('input-color').focus();
+    // Salto de foco inteligente
+    if (tipo === 'marca') {
+        document.getElementById('input-tipo').focus();
+    } else if (tipo === 'tipo') {
+        document.getElementById('input-color').focus();
+    } else if (tipo === 'color') {
+        const costoInput = document.querySelector('input[name="costo_por_gramo"]');
+        if (costoInput) costoInput.focus();
+    }
 }
 
 document.addEventListener('click', function (event) {
@@ -111,7 +128,7 @@ function confirmarEliminarMaterial(id, nombre) {
     }).then((result) => {
         if (!result.isConfirmed) return;
 
-        fetch(`/administrador/inventario/materiales/${id}/eliminar/`, {
+        fetch(`/administrador/materiales/${id}/eliminar/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -158,7 +175,7 @@ function confirmarEliminarAtributo(tipo, id, nombre) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch(`/administrador/inventario/materiales/atributos/${tipo}/${id}/eliminar/`, {
+            fetch(`/administrador/materiales/atributos/${tipo}/${id}/eliminar/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -186,3 +203,87 @@ function confirmarEliminarAtributo(tipo, id, nombre) {
         }
     });
 }
+
+function cambiarTab(event, tabId) {
+    // 1. Ocultar todos los contenidos
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    
+    // 2. Resetear todos los botones
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        // Quitamos el estado activo
+        btn.classList.remove('bg-emerald-600', 'text-white');
+        // Devolvemos el estado inactivo
+        btn.classList.add('text-gray-500', 'hover:text-gray-300');
+    });
+
+    // 3. Mostrar el contenido seleccionado
+    document.getElementById(tabId).classList.remove('hidden');
+
+    // 4. Activar el botón clicado
+    const activo = event.currentTarget;
+    activo.classList.remove('text-gray-500', 'hover:text-gray-300');
+    activo.classList.add('bg-emerald-600', 'text-white');
+}
+
+// Usamos un objeto global para evitar duplicados
+if (typeof window.MaterialesHandlers === 'undefined') {
+    window.MaterialesHandlers = {
+        keydown: function(e) {
+            const target = e.target;
+            if (target.tagName === 'INPUT' && target.hasAttribute('hx-target')) {
+                
+                if (['ArrowUp', 'ArrowDown', 'Enter', 'Tab'].includes(e.key)) {
+                    if (e.key !== 'Tab') e.stopPropagation();
+                }
+
+                const selector = target.getAttribute('hx-target');
+                const container = document.querySelector(selector);
+                if (!container) return;
+
+                const items = container.querySelectorAll('.resultado-item');
+                if (items.length === 0) return;
+
+                let currentIndex = Array.from(items).findIndex(item => item.classList.contains('item-active'));
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    // Lógica estándar (Bajamos en la lista)
+                    currentIndex = (currentIndex + 1 < items.length) ? currentIndex + 1 : 0;
+                    window.MaterialesHandlers.actualizarSeleccion(items, currentIndex);
+                } 
+                else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    // Lógica estándar (Subimos en la lista)
+                    currentIndex = (currentIndex <= 0) ? items.length - 1 : currentIndex - 1;
+                    window.MaterialesHandlers.actualizarSeleccion(items, currentIndex);
+                } 
+                else if (e.key === 'Enter' || e.key === 'Tab') {
+                    if (currentIndex >= 0) {
+                        e.preventDefault();
+                        items[currentIndex].click();
+                    }
+                }
+            }
+        },
+        actualizarSeleccion: function(items, index) {
+            items.forEach(item => {
+                item.classList.remove('item-active');
+                // Quitamos el estilo manual por si acaso
+                item.style.backgroundColor = "";
+            });
+            
+            const activeItem = items[index];
+            if (activeItem) {
+                activeItem.classList.add('item-active');
+                // Forzamos el color con JS para asegurar que se vea
+                activeItem.style.backgroundColor = "rgba(37, 99, 235, 0.4)"; 
+                activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+    };
+
+    // Solo agregamos el evento la PRIMERA vez que se carga el archivo
+    document.addEventListener('keydown', window.MaterialesHandlers.keydown);
+}
+
+//Hasta ahora todo bien

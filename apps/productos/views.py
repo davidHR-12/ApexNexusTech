@@ -349,7 +349,6 @@ def eliminar_variante_json(request, variante_id):
     """
     if request.method == "POST":
         variante = get_object_or_404(VarianteProducto, id=variante_id)
-        producto_slug = variante.producto.slug
         try:
             nombre_material = str(variante.material)
             variante.delete()
