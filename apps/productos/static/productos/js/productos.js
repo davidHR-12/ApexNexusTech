@@ -233,8 +233,6 @@ function actualizarContadorVisual(containerId, textId) {
  * @param {HTMLElement} wrapperElement - Elemento DOM que contiene la imagen
  */
 function eliminarImagenProducto(imagenId, wrapperElement) {
-
-
     Swal.fire({
         ...swalConfigBase,
         title: '¿ELIMINAR IMAGEN?',
@@ -283,18 +281,11 @@ function eliminarImagenProducto(imagenId, wrapperElement) {
  * CORRECCIÓN: Mejor manejo de errores y logging
  */
 function eliminarImagenesPendientes() {
-
-
     if (imagenesPendientesEliminar.length === 0) {
-
         return Promise.resolve(); // Retornar Promise para mejor control de flujo
     }
-
-
-
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-    return fetch('/administrador/inventario/productos/api/eliminar-imagenes/', {
+    return fetch('/administrador/api/productos/eliminar-imagenes/', {
         method: 'POST',
         headers: {
             'X-CSRFToken': csrftoken,
@@ -305,27 +296,21 @@ function eliminarImagenesPendientes() {
         })
     })
         .then(res => {
-
             if (!res.ok) {
                 throw new Error(`Error HTTP: ${res.status}`);
             }
             return res.json();
         })
         .then(data => {
-
-
             if (data.status === 'ok' || data.success) {
-
                 imagenesPendientesEliminar = []; // Limpiar array
                 return true;
             } else {
-
                 mostrarToast('error', data.message || 'Error al eliminar imágenes');
                 return false;
             }
         })
         .catch(error => {
-
             mostrarToast('error', 'Error de conexión al eliminar imágenes');
             return false;
         });
@@ -400,10 +385,7 @@ function limpiarPreviewImagen(previewId, contentId, inputId, flagId) {
  * @param {number|string} id - ID del producto a editar
  */
 function abrirEditarProducto(id) {
-    const url = `/administrador/inventario/productos/api/${id}/`;
-
-
-
+    const url = `/administrador/api/productos/${id}/`;
     // 1. Limpiar archivos locales previos
     galeriaFiles = new DataTransfer();
     const inputFisico = document.getElementById('input-galeria-edit');
@@ -517,7 +499,7 @@ function abrirEditarProducto(id) {
 
             // 8. Configurar action del formulario
             if (elementos.form) {
-                elementos.form.action = `/administrador/inventario/productos/${id}/editar/`;
+                elementos.form.action = `/administrador/productos/${id}/editar/`;
             }
 
             // 9. Abrir el modal
@@ -529,6 +511,150 @@ function abrirEditarProducto(id) {
         });
 }
 
+function confirmarEliminarProducto(id, nombre) {
+    Swal.fire({
+        ...swalConfigBase,
+        title: 'Eliminar Producto',
+        html: `
+            <div class="text-center">
+                <p class="text-gray-400">¿Estás seguro de eliminar <b>${nombre}</b>?</p>
+                <p class="text-[11px] text-amber-500 mt-2">Nota: Si tiene stock o piezas fabricadas, se desactivará automáticamente para preservar el historial.</p>
+            </div>`,
+        iconHtml: swalIcons.warningRed,
+        confirmButtonText: 'Sí, Eliminar',
+        cancelButtonText: 'Cancelar',
+        showCloseButton: true,
+        customClass: {
+            ...swalCustomClasses,
+            icon: 'border-0'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/administrador/productos/${id}/eliminar/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarToast('success', data.message);
+                    // Opcional: Eliminar la card del DOM sin recargar
+                    // o simplemente recargar para ver el cambio
+                    location.reload(); 
+                } else {
+                    mostrarToast('error', data.message);
+                }
+            })
+            .catch(error => {
+                mostrarToast('error', 'Ocurrió un error en el servidor');
+            });
+        }
+    });
+}
+
+function abrirArchivoProductos(categoriaId) {
+    // 1. Mostrar un loader o limpiar contenido previo
+    const contenedor = document.querySelector('#modalArchivo .custom-scrollbar');
+    if (contenedor) contenedor.innerHTML = '<div class="text-center py-10 text-gray-500">Cargando archivo...</div>';
+    
+    // 2. Fetch al partial filtrado
+    fetch(`/administrador/api/productos/archivados/${categoriaId}/`)
+        .then(response => response.text())
+        .then(html => {
+            contenedor.innerHTML = html;
+            abrirModal('modalArchivo');
+        })
+        .catch(err => mostrarToast('error', 'Error al cargar el archivo'));
+}
+
+function reactivarProducto(id) {
+    fetch(`/administrador/productos/${id}/reactivar/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            mostrarToast('success', 'Producto reactivado correctamente');
+            location.reload();
+        }
+    });
+}
+
+// Controla la visibilidad del botón de acción masiva
+function toggleBatchButton() {
+    const checkboxes = document.querySelectorAll('input[name="productos_ids"]:checked').length;
+    const container = document.getElementById('batchActionContainer');
+    const countSpan = document.getElementById('selectedCount');
+    const textSpan = document.getElementById('selectedText');
+    
+    if (checkboxes > 0) {
+        container.classList.remove('hidden');
+        countSpan.innerText = checkboxes;
+
+        // Ajuste de plural/singular
+        if (textSpan) {
+            textSpan.innerText = checkboxes === 1 ? 'producto seleccionado' : 'productos seleccionados';
+        }
+    } else {
+        container.classList.add('hidden');
+    }
+}
+
+function reactivarMultiplesProductos() {
+    const checkboxes = document.querySelectorAll('input[name="productos_ids"]:checked');
+    const ids = Array.from(checkboxes).map(cb => cb.value);
+
+    if (ids.length === 0) {
+        mostrarToast('warning', 'Por favor, selecciona al menos un producto.');
+        return;
+    }
+
+    // Definimos el texto en plural o singular
+    const textoProductos = ids.length === 1 ? 'producto' : 'productos';
+    const textoRestaurar = ids.length === 1 ? 'Se restaurará' : 'Se restaurarán';
+
+    Swal.fire({
+        ...swalConfigBase,
+        title: '¿Reactivar selección?',
+        text: `${textoRestaurar} ${ids.length} ${textoProductos} al catálogo activo.`,
+        iconHtml: swalIcons.questionBlue,
+        confirmButtonText: 'Sí, Restaurar Todos',
+        cancelButtonText: 'Cancelar',
+        showCloseButton: true,
+        customClass: {
+            ...swalCustomClasses,
+            confirmButton: 'px-4 py-3 rounded-xl border border-blue-500 text-white bg-blue-500 hover:bg-blue-600 transition-all font-bold text-sm mx-2',
+            icon: 'border-0'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('/administrador/productos/reactivar-multiples/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ids: ids })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    mostrarToast('success', data.message);
+                    location.reload();
+                } else {
+                    mostrarToast('error', data.message || 'Error al reactivar');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarToast('error', 'Error de conexión con el servidor');
+            });
+        }
+    });
+}
 
 // ----------------------------------------------------------------------------
 // EVENT LISTENERS Y MANEJO DE GUARDADO
@@ -540,49 +666,33 @@ function abrirEditarProducto(id) {
  */
 document.addEventListener('DOMContentLoaded', function () {
     const formEditar = document.getElementById('formEditarProducto');
-
     if (formEditar) {
-
-
         formEditar.addEventListener('submit', function (e) {
-
-
             // Si hay imágenes pendientes de eliminar
             if (imagenesPendientesEliminar.length > 0) {
                 e.preventDefault(); // Detener el submit
-
-
                 // Eliminar imágenes primero
                 eliminarImagenesPendientes().then(() => {
-
                     // Ahora sí enviar el formulario
                     formEditar.submit();
                 });
             } else {
-
             }
         });
     }
 });
 
 /**
- * ALTERNATIVA: Detectar clic en botón guardar
- * Si prefieres usar un botón específico en lugar del submit del form
+ *  
+ * 
  */
 const btnGuardar = document.getElementById('btn-Guardar');
 if (btnGuardar) {
-
-
     btnGuardar.addEventListener('click', function (e) {
-
-
         if (imagenesPendientesEliminar.length > 0) {
             e.preventDefault();
-
-
             eliminarImagenesPendientes().then((success) => {
                 if (success) {
-
                     const form = document.getElementById('formEditarProducto');
                     if (form) form.submit();
                 }

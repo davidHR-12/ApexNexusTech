@@ -110,7 +110,7 @@
     <script>
             // Envolvemos la llamada para pasarle la URL de redirección de Django
             function ejecutarEliminarCat(id, nombre) {
-                confirmarEliminarCategoria(id, nombre, "{% url 'productos:lista_productos' %}");
+                confirmarEliminarCategoria(id, nombre, "{% url 'productos:productos_index' %}");
             }
     </script>
 {% endblock extra_js %}

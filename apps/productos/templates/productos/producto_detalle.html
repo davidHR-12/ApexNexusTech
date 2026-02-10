@@ -4,8 +4,8 @@
 {% block content %}
   <div class="space-y-8">
     <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest gap-2">
-      <a href="{% url 'productos:lista_productos' %}"
-         class="hover:text-white transition-colors">Catálogo</a>
+      <a href="{% url 'productos:productos_index' %}"
+         class="hover:text-white transition-colors">Catálogo de productos</a>
       <span>/</span>
       <a href="{% url 'productos:categoria_detalle' producto.categoria.slug %}"
          class="hover:text-white transition-colors">{{ producto.categoria.nombre }}</a>
@@ -54,7 +54,7 @@
       </div>
       <div class="lg:col-span-7 space-y-6">
         <div class="flex justify-between items-center">
-          <h2 class="text-3xl font-bold text-white">Inventario de Variantes</h2>
+          <h2 class="text-3xl font-bold text-white">Inventario de {{ producto.nombre }}</h2>
           <button onclick="abrirModalDinamico('{% url 'productos:crear_variante' producto.id %}')"
                   class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

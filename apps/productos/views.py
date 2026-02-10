@@ -3,8 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum, Count, F
 from django.http import JsonResponse
+from django.utils.http import url_has_allowed_host_and_scheme
+import json
 
-from .models import Categoria, Producto, VarianteProducto, ImagenProducto
+from .models import Categoria, Producto, VarianteProducto, ImagenProducto, ProduccionInterna
 from .forms import CategoriaForm, ProductoForm, ProduccionInternaForm, VarianteProductoForm
 
 
@@ -53,8 +55,19 @@ def crear_producto_base(request):
         if form.is_valid():
             producto = form.save()
             messages.success(request, f"Producto '{producto.nombre}' creado.")
+            # --- OPTIMIZACIÓN DE SEGURIDAD ---
             next_url = request.POST.get("next")
-            return redirect(next_url if next_url else "productos:producto_detalle", slug=producto.slug)
+            # Verificamos si la URL es segura y pertenece a nuestro host
+            is_safe = url_has_allowed_host_and_scheme(
+                url=next_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure(),
+            )
+            
+            if next_url and is_safe:
+                return redirect(next_url)
+            return redirect("productos:producto_detalle", slug=producto.slug)
+            # ---------------------------------
         else:
             # CAMBIO AQUÍ: Captura TODOS los errores de campos para saber qué falla
             for field, errors in form.errors.items():
@@ -62,9 +75,9 @@ def crear_producto_base(request):
                     messages.error(request, f"Error en {field}: {error}")
             
             # Devuelve a donde venía para que el usuario vea los mensajes
-            return redirect(request.META.get("HTTP_REFERER", "productos:lista_productos"))
+            return redirect(request.META.get("HTTP_REFERER", "productos:productos_index"))
 
-    return redirect("productos:lista_productos")
+    return redirect("productos:productos_index")
 
 
 @login_required
@@ -73,13 +86,11 @@ def producto_detalle(request, slug):
     Muestra el detalle completo de un producto.
     Incluye variantes, galería, stock y opciones de edición.
     """
-    producto = get_object_or_404(Producto, slug=slug)
-    # Obtenemos las variantes relacionadas para mostrarlas en el inventario
-    variantes = producto.variantes.all()
+    # Optimizamos la consulta para traer variantes junto con el producto
+    producto = get_object_or_404(Producto.objects.prefetch_related('variantes'), slug=slug)
 
     context = {
         "producto": producto,
-        "variantes": variantes,
     }
     return render(request, "productos/producto_detalle.html", context)
 
@@ -103,9 +114,45 @@ def editar_producto_base(request, producto_id):
         else:
             messages.error(request, "Error al actualizar el producto. Verifique los datos.")
 
-    return redirect("productos:lista_productos")
+    return redirect("productos:productos_index")
 
 
+@login_required
+def eliminar_producto_base(request, producto_id):
+    if request.method == "POST":
+        producto = get_object_or_404(Producto, id=producto_id)
+        
+        # 1. Verificar si hay variantes con stock físico
+        # Usamos el related_name "variantes" que definiste
+        tiene_stock = producto.variantes.filter(stock_disponible__gt=0).exists()
+        
+        # 2. Verificar si hay registros de Producción Interna
+        # Usamos el related_name "producciones" que está en tu clase ProduccionInterna
+        tiene_historial_produccion = ProduccionInterna.objects.filter(variante__producto=producto).exists()
+
+        # 3. Verificar si hay pedidos (a futuro la app pedidos 
+        # tal vez use una FK a VarianteProducto con related_name="items_pedido")
+        # Por ahora, lo dejamos asi en false
+        tiene_ventas = False 
+
+        if tiene_stock or tiene_historial_produccion or tiene_ventas:
+            # BORRADO LÓGICO: Solo lo ocultamos
+            producto.activo = False
+            producto.mostrar_en_web = False # Deja de mostrarlo en la parte publica
+            producto.save()
+            return JsonResponse({
+                "success": True, 
+                "message": "El producto tiene historial de producción o stock. Se ha desactivado para no afectar los registros históricos."
+            })
+        else:
+            # BORRADO FÍSICO: Se puede eliminar de la base de datos totalmente
+            producto.delete()
+            return JsonResponse({
+                "success": True, 
+                "message": "Producto eliminado permanentemente ya que no contenía registros vinculados."
+            })
+            
+    return JsonResponse({"success": False, "message": "Método no permitido"}, status=405)
 
 @login_required
 def eliminar_imagenes_producto_bulk(request):
@@ -183,6 +230,39 @@ def obtener_producto_json(request, pk):
     }
     return JsonResponse(data)
 
+@login_required
+def obtener_productos_archivados(request, categoria_id):
+    # Traemos solo los desactivados de ESTA categoría
+    productos = Producto.objects.filter(activo=False, categoria_id=categoria_id)
+    return render(request, "productos/partials/lista_prod_archivados.html", {"productos": productos})
+
+@login_required
+def reactivar_producto(request, producto_id):
+    if request.method == "POST":
+        producto = get_object_or_404(Producto, id=producto_id)
+        producto.mostrar_en_web = True
+        producto.activo = True
+        producto.save()
+        return JsonResponse({"success": True})
+    return JsonResponse({"success": False}, status=400)
+
+@login_required
+def reactivar_multiples_productos(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            ids = data.get("ids", [])
+            
+            if not ids:
+                return JsonResponse({"success": False, "message": "No se seleccionaron productos"}, status=400)
+            
+            # Actualización masiva eficiente
+            Producto.objects.filter(id__in=ids).update(activo=True, mostrar_en_web=True)
+            
+            return JsonResponse({"success": True, "message": f"{len(ids)} productos restaurados"})
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)}, status=500)
+    return JsonResponse({"success": False}, status=405)
 
 # ==============================================================================
 # --- VARIANTES DE PRODUCTO ---
@@ -305,7 +385,7 @@ def crear_categoria(request):
             for error in form.errors.values():
                 messages.error(request, error)
 
-    return redirect("productos:lista_productos")
+    return redirect("productos:productos_index")
 
 
 @login_required
@@ -316,7 +396,7 @@ def editar_categoria(request, categoria_id):
         if form.is_valid():
             form.save() # El form maneja el slug y la imagen internamente
             messages.success(request, f'Categoría "{categoria.nombre}" actualizada.')
-    return redirect("productos:lista_productos")
+    return redirect("productos:productos_index")
 
 @login_required
 def eliminar_categoria(request, categoria_id):
@@ -353,7 +433,7 @@ def categoria_detalle(request, slug):
     categoria = get_object_or_404(Categoria, slug=slug)
 
     # Filtramos los productos que pertenecen a esta categoría
-    productos = categoria.productos.all()
+    productos = categoria.productos.filter(activo=True  )
 
     todas_las_categorias = Categoria.objects.all()
 

@@ -515,8 +515,8 @@
 .swal2-close {
     position: absolute;
     z-index: 2;
-    top: 0;
-    right: 0;
+    top: 1.5rem;
+    right: 1.5rem;
     align-items: center;
     justify-content: center;
     width: 1.2em;
@@ -537,7 +537,7 @@
 .swal2-close:hover {
     transform: none;
     background: transparent;
-    color: #f27474;
+    color: #ffffff;
 }
 
 .swal2-close:focus {

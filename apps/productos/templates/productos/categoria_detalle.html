@@ -4,7 +4,7 @@
 {% block content %}
     <div class="space-y-6">
         <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest gap-2">
-            <a href="{% url 'productos:lista_productos' %}"
+            <a href="{% url 'productos:productos_index' %}"
                class="hover:text-white transition-colors">Catálogo de productos</a>
             <span>/</span>
             <span class="text-[#10b981]">{{ categoria.nombre }}</span>
@@ -32,13 +32,23 @@
                     <p class="text-gray-400 text-sm">{{ productos.count }} Productos registrados</p>
                 </div>
             </div>
-            <button onclick="preseleccionarCategoria(); abrirModal('modalNuevoProducto')"
-                    class="bg-[#10b981] hover:bg-[#059669] text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-emerald-900/20 flex items-center gap-2 text-sm uppercase tracking-wider">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 4v16m8-8H4" stroke-width="2.5" />
-                </svg>
-                Añadir Pieza Base
-            </button>
+            <div class="flex gap-3">
+                <button onclick="abrirArchivoProductos('{{ categoria.id }}')"
+                        class="bg-gray-800 text-gray-300 hover:bg-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border border-gray-700 flex items-center gap-2"
+                        title="Ver Archivados">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg>
+                    Productos Base Archivados
+                </button>
+                <button onclick="preseleccionarCategoria(); abrirModal('modalNuevoProducto')"
+                        class="bg-[#10b981] text-white hover:bg-[#059669] px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 4v16m8-8H4" stroke-width="2.5" />
+                    </svg>
+                    Añadir Pieza Base
+                </button>
+            </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {% for p in productos %}
@@ -52,6 +62,12 @@
                                  alt="Imagen del producto"
                                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
                         {% endif %}
+                        <div class="absolute top-3 left-3 flex gap-2">
+                            <span class="bg-gray-900/80 backdrop-blur-md text-[11px] text-white px-2 py-1 rounded-lg border border-white/10 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full {% if p.stock_total > 0 %}bg-emerald-500 animate-pulse{% else %}bg-red-500{% endif %}"></span>
+                                {{ p.variantes.all|length }} Variante{{ p.variantes.all|pluralize }}
+                            </span>
+                        </div>
                         <div class="absolute top-3 right-3">
                             <span class="bg-gray-900/80 backdrop-blur-md text-[10px] text-white px-2 py-1 rounded-md border border-white/10 font-mono">
                                 {{ p.peso_gramos }}g
@@ -63,20 +79,34 @@
                             <h3 class="font-bold text-white text-lg leading-tight group-hover:text-[#10b981] transition-colors line-clamp-1">
                                 {{ p.nombre }}
                             </h3>
+                            <div class="flex items-center gap-2 mt-2">
+                                <div class="flex-grow h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="h-full {% if p.stock_total < 5 %}bg-red-500{% else %}bg-emerald-500{% endif %}"
+                                         style="width: {{ p.stock_total }}%"></div>
+                                </div>
+                                <span class="text-[10px] font-mono text-gray-400">{{ p.stock_total }} uds.</span>
+                            </div>
                             <p class="text-gray-500 text-xs mt-1 line-clamp-2">{{ p.descripcion|default:"Sin descripción técnica." }}</p>
                         </div>
                         <div class="flex justify-between items-end">
                             <div>
-                                <p class="text-[9px] text-gray-500 uppercase font-bold tracking-tighter">Precio sugerido</p>
+                                <p class="text-[9px] text-gray-500 uppercase font-bold tracking-tighter">Precio base</p>
                                 <p class="text-xl font-mono font-bold text-emerald-400">RD$ {{ p.precio_venta|floatformat:2|intcomma }}</p>
                             </div>
-                            <button onclick="event.preventDefault(); event.stopPropagation(); abrirEditarProducto('{{ p.id }}')"
-                                        class="p-2 bg-gray-800 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
-                                >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
-                            </button>
+                            <div class="flex gap-3">
+                                <button onclick="event.preventDefault(); event.stopPropagation(); abrirEditarProducto('{{ p.id }}')"
+                                        class="p-2 bg-gray-800 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                </button>
+                                <button onclick="event.preventDefault(); event.stopPropagation(); confirmarEliminarProducto('{{ p.id }}', '{{ p.nombre }}')"
+                                        class="p-2 bg-gray-800 text-red-400 rounded-lg hover:bg-red-600 hover:text-white transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </a>
@@ -91,6 +121,7 @@
     </div>
     {% include "productos/modals/agregar_producto_base.html" with modal_id="modalNuevoProducto" current_page="categoria_detalle" categoria=categoria max_width="max-w-4xl" %}
     {% include "productos/modals/editar_producto.html" with modal_id="modalEditarProducto" max_width="max-w-4xl" %}
+    {% include "core/modal_base.html" with modal_id="modalArchivo" title="Productos Archivados" max_width="max-w-xl" %}
 {% endblock content %}
 {% block extra_js %}
     <script src="{% static 'productos/js/productos.js' %}"></script>

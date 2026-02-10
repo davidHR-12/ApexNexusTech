@@ -7,7 +7,7 @@
  * @param {number|string} id - ID de la categoría a editar
  */
 function abrirEditarCat(id) {
-    const url = `/administrador/inventario/productos/categorias/api/${id}/`;
+    const url = `/administrador/api/categorias/${id}/`;
 
     fetch(url)
         .then(response => {
@@ -51,7 +51,7 @@ function abrirEditarCat(id) {
             // Configurar action del formulario
             const form = document.getElementById('formEditarCategoria');
             if (form) {
-                form.action = `/administrador/inventario/productos/categorias/${id}/editar/`;
+                form.action = `/administrador/categorias/${id}/editar/`;
             }
 
             abrirModal('modalEditarCat');
@@ -84,11 +84,10 @@ function confirmarEliminarCategoria(id, nombre, redirectUrl) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch(`/administrador/inventario/productos/categorias/${id}/eliminar/`, {
+            fetch(`/administrador/categorias/${id}/eliminar/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'Content-Type': 'application/json'
                 }
             })
             .then(response => response.json())
@@ -96,13 +95,11 @@ function confirmarEliminarCategoria(id, nombre, redirectUrl) {
                 if (data.success) {
                     window.location.href = redirectUrl;
                 } else {
-                    Swal.close();
                     mostrarToast('error', data.message || 'Error al eliminar');
                 }
             })
             .catch(() => {
-                Swal.close();
-                mostrarToast('error', 'Error de conexión');
+                mostrarToast('error', 'Ocurrió un error en el servidor');
             });
         }
     });

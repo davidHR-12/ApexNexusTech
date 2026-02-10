@@ -147,7 +147,7 @@
             Gastos
           </a>
           <div class="pt-4 pb-2 px-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Inventario</div>
-          <a href="{% url 'productos:lista_productos' %}"
+          <a href="{% url 'productos:productos_index' %}"
              class="flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'productos' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />

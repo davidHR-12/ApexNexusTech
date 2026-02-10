@@ -328,7 +328,7 @@ class EntradaInventario(models.Model):
 
 class HistorialInventario(models.Model):
     """
-    Auditoría de todos los movimientos de inventario.
+    Auditoría de todos los movimientos de inventario de materiales.
     Registra entradas, ediciones, eliminaciones y consumos.
     """
     ACCIONES = (
