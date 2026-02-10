@@ -1,17 +1,89 @@
-
-// LÓGICA DEL SIDEBAR RESPONSIVO
+// LÓGICA DEL SIDEBAR COLAPSABLE MINI
 const btnToggle = document.getElementById('toggleSidebar');
 const sidebar = document.getElementById('sidebar');
 const overlay = document.getElementById('sidebarOverlay');
+const mainContent = document.getElementById('mainContent');
 
-function toggleMenu() {
-    sidebar.classList.toggle('-translate-x-full');
-    overlay.classList.toggle('hidden');
+// Verificar si hay un estado guardado en localStorage
+function checkSidebarState() {
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile) {
+        const savedState = localStorage.getItem('sidebarMini');
+        if (savedState === 'true') {
+            sidebar.classList.add('mini');
+            document.documentElement.classList.remove('sidebar-mini-init');
+            sidebar.style.width = '5rem';
+            mainContent.classList.replace('md:ml-64', 'md:ml-20');
+        } else {
+            // Asegurar que esté expandido si no está guardado como mini
+            sidebar.classList.remove('mini');
+            sidebar.style.width = '16rem';
+        }
+    }
 }
 
-btnToggle.addEventListener('click', toggleMenu);
-overlay.addEventListener('click', toggleMenu);
+function toggleMenu() {
+    const isMobile = window.innerWidth < 768;
 
+    if (isMobile) {
+        // Comportamiento en móvil: Se desliza sobre el contenido
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('hidden');
+    } else {
+        // Comportamiento en escritorio: Minimiza/Expande
+        const isCurrentlyMini = sidebar.classList.contains('mini');
+
+        if (!isCurrentlyMini) {
+            // Cambiar a modo mini (w-20)
+            sidebar.classList.add('mini');
+            sidebar.style.width = '5rem'; // 80px
+            mainContent.classList.replace('md:ml-64', 'md:ml-20');
+            localStorage.setItem('sidebarMini', 'true');
+        } else {
+            // Volver a modo expandido (w-64)
+            sidebar.classList.remove('mini');
+            sidebar.style.width = '16rem'; // 256px
+            mainContent.classList.replace('md:ml-20', 'md:ml-64');
+            localStorage.setItem('sidebarMini', 'false');
+        }
+    }
+}
+
+// Event listeners
+if (btnToggle) btnToggle.addEventListener('click', toggleMenu);
+if (overlay) overlay.addEventListener('click', toggleMenu);
+
+// Re-ajustar si el usuario cambia el tamaño de la ventana
+window.addEventListener('resize', () => {
+    const isMobile = window.innerWidth < 768;
+
+    if (!isMobile) {
+        // Asegurar que el overlay esté oculto en desktop
+        overlay.classList.add('hidden');
+        sidebar.classList.remove('-translate-x-full');
+
+        // Mantener el estado mini si estaba activo
+        const savedState = localStorage.getItem('sidebarMini');
+        if (savedState === 'true' && !sidebar.classList.contains('mini')) {
+            sidebar.classList.add('mini');
+            sidebar.style.width = '5rem';
+            mainContent.classList.replace('md:ml-64', 'md:ml-20');
+        } else if (savedState !== 'true' && sidebar.classList.contains('mini')) {
+            sidebar.classList.remove('mini');
+            sidebar.style.width = '16rem';
+            mainContent.classList.replace('md:ml-20', 'md:ml-64');
+        }
+    } else {
+        // En móvil, resetear estilos inline
+        sidebar.style.width = '';
+        sidebar.classList.remove('mini');
+        mainContent.classList.remove('md:ml-20');
+        mainContent.classList.add('md:ml-64');
+    }
+});
+
+// Cargar el estado del sidebar al cargar la página
+document.addEventListener('DOMContentLoaded', checkSidebarState);
 
 window.swalConfigBase = window.swalConfigBase || {
     background: '#1e293b',

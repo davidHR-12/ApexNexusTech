@@ -145,9 +145,9 @@ STATICFILES_FINDERS = [
 AUTH_USER_MODEL = 'usuarios.Usuario'
 
 # Configuración de redirección de Login
-LOGIN_URL = "/usuarios/login/"
+LOGIN_URL = "'usuarios:login'"
 LOGIN_REDIRECT_URL = "clientes:home"
-LOGOUT_REDIRECT_URL = "usuarios:login"
+LOGOUT_REDIRECT_URL = "clientes:index"
 
 EMAIL_BACKEND = env("EMAIL_BACKEND")
 EMAIL_HOST = env("EMAIL_HOST")
@@ -183,7 +183,7 @@ LOGGING = {
             "propagate": True,
         },
         # logger de tu app
-        "apps.gestion": {  # reemplaza con el nombre de tu app si tu logger es así
+        "apps.core": {
             "handlers": ["console"],
             "level": "INFO",
             "propagate": False,

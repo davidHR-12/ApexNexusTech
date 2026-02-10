@@ -207,7 +207,7 @@ function confirmarEliminarAtributo(tipo, id, nombre) {
 function cambiarTab(event, tabId) {
     // 1. Ocultar todos los contenidos
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-    
+
     // 2. Resetear todos los botones
     document.querySelectorAll('.tab-btn').forEach(btn => {
         // Quitamos el estado activo
@@ -228,10 +228,10 @@ function cambiarTab(event, tabId) {
 // Usamos un objeto global para evitar duplicados
 if (typeof window.MaterialesHandlers === 'undefined') {
     window.MaterialesHandlers = {
-        keydown: function(e) {
+        keydown: function (e) {
             const target = e.target;
             if (target.tagName === 'INPUT' && target.hasAttribute('hx-target')) {
-                
+
                 if (['ArrowUp', 'ArrowDown', 'Enter', 'Tab'].includes(e.key)) {
                     if (e.key !== 'Tab') e.stopPropagation();
                 }
@@ -250,13 +250,13 @@ if (typeof window.MaterialesHandlers === 'undefined') {
                     // Lógica estándar (Bajamos en la lista)
                     currentIndex = (currentIndex + 1 < items.length) ? currentIndex + 1 : 0;
                     window.MaterialesHandlers.actualizarSeleccion(items, currentIndex);
-                } 
+                }
                 else if (e.key === 'ArrowUp') {
                     e.preventDefault();
                     // Lógica estándar (Subimos en la lista)
                     currentIndex = (currentIndex <= 0) ? items.length - 1 : currentIndex - 1;
                     window.MaterialesHandlers.actualizarSeleccion(items, currentIndex);
-                } 
+                }
                 else if (e.key === 'Enter' || e.key === 'Tab') {
                     if (currentIndex >= 0) {
                         e.preventDefault();
@@ -265,18 +265,18 @@ if (typeof window.MaterialesHandlers === 'undefined') {
                 }
             }
         },
-        actualizarSeleccion: function(items, index) {
+        actualizarSeleccion: function (items, index) {
             items.forEach(item => {
                 item.classList.remove('item-active');
                 // Quitamos el estilo manual por si acaso
                 item.style.backgroundColor = "";
             });
-            
+
             const activeItem = items[index];
             if (activeItem) {
                 activeItem.classList.add('item-active');
                 // Forzamos el color con JS para asegurar que se vea
-                activeItem.style.backgroundColor = "rgba(37, 99, 235, 0.4)"; 
+                activeItem.style.backgroundColor = "rgba(37, 99, 235, 0.4)";
                 activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
             }
         }
@@ -285,5 +285,3 @@ if (typeof window.MaterialesHandlers === 'undefined') {
     // Solo agregamos el evento la PRIMERA vez que se carga el archivo
     document.addEventListener('keydown', window.MaterialesHandlers.keydown);
 }
-
-//Hasta ahora todo bien
