@@ -37,11 +37,16 @@ def material_list(request):
 
     # 3. Aplicar Búsqueda y Filtros
     if search_query:
-        materiales_qs = materiales_qs.filter(
-            Q(marca__nombre__icontains=search_query)
-            | Q(tipo__nombre__icontains=search_query)
-            | Q(color__nombre__icontains=search_query)
-        )
+        palabras = search_query.split()
+        for palabra in palabras:
+            # La clave es re-filtrar el queryset ya filtrado por la palabra anterior
+            materiales_qs = materiales_qs.filter(
+                Q(marca__nombre__icontains=palabra) |
+                Q(tipo__nombre__icontains=palabra) |
+                Q(color__nombre__icontains=palabra)
+            )
+        # Importante: usar distinct() si hay muchos joins para evitar duplicados
+        materiales_qs = materiales_qs.distinct()
     if tipo_filtro:
         materiales_qs = materiales_qs.filter(tipo_id=tipo_filtro)
 

@@ -103,6 +103,7 @@ function confirmarEliminarMaterial(id, nombre) {
         iconHtml: swalIcons.warningRed,
         confirmButtonText: 'Sí, Eliminar',
         cancelButtonText: 'Cancelar',
+        showCloseButton: true,
         customClass: {
             ...swalCustomClasses,
             icon: 'border-0'
@@ -150,6 +151,7 @@ function confirmarEliminarAtributo(tipo, id, nombre) {
         iconHtml: swalIcons.warningRed,
         confirmButtonText: 'Sí, Eliminar',
         cancelButtonText: 'Cancelar',
+        showCloseButton: true,
         customClass: {
             ...swalCustomClasses,
             icon: 'border-0'

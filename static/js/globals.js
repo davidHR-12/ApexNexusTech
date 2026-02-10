@@ -29,12 +29,18 @@ window.swalConfigBase = window.swalConfigBase || {
 };
 
 window.swalCustomClasses = window.swalCustomClasses || {
-    popup: 'bg-[#1e293b] border border-gray-800 rounded-2xl shadow-2xl',
+    popup: 'bg-[#1e293b] border border-gray-800 rounded-2xl shadow-2xl relative', 
     title: 'text-xl font-bold text-white',
     htmlContainer: 'text-gray-300',
-    confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase px-6 py-3 rounded-xl transition-colors mx-2',
-    cancelButton: 'bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs uppercase px-6 py-3 rounded-xl transition-colors mx-2',
-    actions: 'pb-4'
+    confirmButton: 'px-4 py-3 rounded-xl border border-red-500 text-white bg-red-500 hover:bg-red-600 transition-all font-bold text-sm mx-2',
+    cancelButton: 'px-4 py-3 rounded-xl border border-gray-700 text-gray-400 hover:bg-gray-800 transition-all font-bold text-sm mx-2',
+    closeButton: 'absolute top-6 right-6 text-gray-400 hover:text-white transition-colors border-0 focus:shadow-none outline-none',
+    actions: 'pb-4',
+    closeButtonHtml: `<div class="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors z-20">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </div>`,
 };
 
 window.swalIcons = window.swalIcons || {
@@ -91,7 +97,7 @@ function mostrarToast(type, message) {
         toast: true,
         position: 'top',
         showConfirmButton: false,
-        timer: 4000,
+        timer: 6000,
         background: '#1e293b',
         didOpen: (toast) => {
             toast.style.backdropFilter = 'blur(12px)';

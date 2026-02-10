@@ -18,6 +18,50 @@
     #sidebar {
     transition: transform 0.3s ease-in-out;
     }
+    ::-webkit-scrollbar {
+    width: 12px; /* Ancho del scroll */
+  }
+
+  /* El fondo del scroll (Track) */
+  ::-webkit-scrollbar-track {
+    background: #020617; /* El azul marino oscuro (slate-950 de Tailwind) */
+  }
+
+  /* La barrita que se mueve (Thumb) */
+  ::-webkit-scrollbar-thumb {
+    background: #10b981; /* Blanco */
+    border-radius: 10px;
+    border: 3px solid #020617; /* Crea un efecto de margen para que se vea estilizada */
+  }
+
+  /* Hover de la barrita */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #10b981; /* Un blanco azulado al pasar el mouse */
+  }
+
+/* Tamaño de los botones */
+  ::-webkit-scrollbar-button:single-button {
+    background-color: #020617; /* Tu azul oscuro */
+    display: block;
+    height: 12px;
+    width: 12px;
+    background-size: 10px;
+    background-repeat: no-repeat;
+  }
+
+  /* Flecha hacia arriba */
+  ::-webkit-scrollbar-button:single-button:vertical:decrement {
+    background-position: center bottom;
+    /* Flecha blanca en formato SVG */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%2310b981'><polygon points='50,20 10,80 90,80'/></svg>");
+  }
+
+  /* Flecha hacia abajo */
+  ::-webkit-scrollbar-button:single-button:vertical:increment {
+    background-position: center top;
+    /* Flecha blanca en formato SVG */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%2310b981'><polygon points='50,80 10,20 90,20'/></svg>");
+  }
     /* AUTOFILL FIX PARA DARK MODE */
     input,
     textarea,
@@ -89,14 +133,14 @@
             Dashboard
           </a>
           <a href="{% url 'pedidos:pedidos' %}"
-             class="flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'pedidos' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+             class="flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'pedidos' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
             Pedidos/Ventas
           </a>
           <a href="{% url 'finanzas:gastos' %}"
-             class="flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'gastos' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+             class="flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'finanzas' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -104,14 +148,14 @@
           </a>
           <div class="pt-4 pb-2 px-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Inventario</div>
           <a href="{% url 'productos:lista_productos' %}"
-             class="flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'lista_productos' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+             class="flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'productos' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
             Productos/Piezas
           </a>
           <a href="{% url 'materiales:lista_materiales' %}"
-             class="flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'lista_materiales' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+             class="flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'materiales' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
             </svg>
@@ -128,7 +172,7 @@
         </nav>
         <div class="p-4 border-t border-gray-800 space-y-1">
           <a href="{% url 'core:configuracion' %}"
-             class="flex items-center gap-3 p-3 rounded-xl text-gray-300 hover:bg-[#334155] hover:text-[#10b981] transition">
+             class="flex items-center gap-3 p-3 rounded-xl {% if request.resolver_match.url_name == 'configuracion' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %} transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
               </path>

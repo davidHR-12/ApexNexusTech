@@ -242,6 +242,7 @@ function eliminarImagenProducto(imagenId, wrapperElement) {
         iconHtml: swalIcons.deleteProduct,
         confirmButtonText: 'SÍ, ELIMINAR',
         cancelButtonText: 'CANCELAR',
+        showCloseButton: true,
         customClass: {
             ...swalCustomClasses,
             icon: 'border-0'
@@ -346,6 +347,7 @@ function limpiarPreviewImagen(previewId, contentId, inputId, flagId) {
         iconHtml: swalIcons.deleteProduct,
         confirmButtonText: 'SÍ, QUITAR',
         cancelButtonText: 'CANCELAR',
+        showCloseButton: true,
         customClass: {
             ...swalCustomClasses,
             icon: 'border-0',
@@ -525,140 +527,6 @@ function abrirEditarProducto(id) {
 
             mostrarToast('error', 'Error al cargar los datos del producto');
         });
-}
-
-
-// ----------------------------------------------------------------------------
-// FUNCIONES DE MODALES (CATEGORÍAS)
-// ----------------------------------------------------------------------------
-
-/**
- * Abre el modal de edición de categoría y carga sus datos
- * 
- * @param {number|string} id - ID de la categoría a editar
- */
-function abrirEditarCat(id) {
-    const url = `/administrador/inventario/productos/categorias/api/${id}/`;
-
-    fetch(url)
-        .then(response => {
-            if (!response.ok) throw new Error('Error al obtener datos');
-            return response.json();
-        })
-        .then(data => {
-            // Actualizar título del modal
-            const titulo = document.getElementById('edit_cat_nombre_titulo');
-            if (titulo) titulo.innerText = `Modificando: ${data.nombre}`;
-
-            // Rellenar campos
-            const inputNombre = document.getElementById('edit_cat_nombre');
-            const inputDesc = document.getElementById('edit_cat_descripcion');
-            if (inputNombre) inputNombre.value = data.nombre;
-            if (inputDesc) inputDesc.value = data.descripcion;
-
-            // Manejar imagen de portada
-            const preview = document.getElementById('previewEdit');
-            const zone = document.getElementById('zoneEdit');
-            const btnDelete = document.getElementById('btnDeleteCatEdit');
-            const inputHidden = document.getElementById('eliminar_imagen_input');
-
-            // Resetear flag de eliminación
-            if (inputHidden) inputHidden.value = "false";
-
-            if (data.imagen) {
-                if (preview) {
-                    preview.src = data.imagen;
-                    preview.classList.remove('hidden');
-                    preview.style.opacity = "1";
-                }
-                if (zone) zone.classList.add('border-solid', 'border-blue-500/60');
-                if (btnDelete) btnDelete.classList.remove('hidden');
-            } else {
-                if (preview) preview.classList.add('hidden');
-                if (zone) zone.classList.remove('border-solid', 'border-blue-500/60');
-                if (btnDelete) btnDelete.classList.add('hidden');
-            }
-
-            // Configurar action del formulario
-            const form = document.getElementById('formEditarCategoria');
-            if (form) {
-                form.action = `/administrador/inventario/productos/categorias/${id}/editar/`;
-            }
-
-            abrirModal('modalEditarCat');
-        })
-        .catch(error => {
-
-            mostrarToast('error', 'No se pudieron cargar los datos de la categoría');
-        });
-}
-
-/**
- * Confirma y ejecuta la eliminación de una categoría
- * 
- * @param {number|string} id - ID de la categoría
- * @param {string} nombre - Nombre de la categoría para mostrar en confirmación
- * @param {string} redirectUrl - URL a donde redirigir tras eliminar
- */
-function confirmarEliminarCategoria(id, nombre, redirectUrl) {
-    Swal.fire({
-        ...swalConfigBase,
-        title: 'Eliminar Categoría',
-        html: `
-            <div class="text-center">
-                <p class="text-gray-300 mb-2">Estás por eliminar:</p>
-                <p class="text-white font-semibold text-lg">${nombre}</p>
-                <p class="text-gray-400 text-sm mt-3 border-t border-gray-700/50 pt-3">Esta acción no se puede deshacer y los productos dentro de esta categoria se moveran a Sin Categorizar   .</p>
-            </div>`,
-        iconHtml: swalIcons.warningRed,
-        confirmButtonText: 'Sí, Eliminar',
-        cancelButtonText: 'Cancelar',
-        customClass: {
-            ...swalCustomClasses,
-            icon: 'border-0'
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Mostrar modal de carga
-            Swal.fire({
-                ...swalConfigBase,
-                title: 'Eliminando...',
-                html: `
-                    <div class="py-4">
-                        <svg class="animate-spin h-10 w-10 mx-auto text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    </div>`,
-                showConfirmButton: false,
-                allowOutsideClick: false,
-                customClass: { popup: swalCustomClasses.popup }
-            });
-
-            // Ejecutar eliminación
-            fetch(`/administrador/inventario/productos/categorias/${id}/eliminar/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'Content-Type': 'application/json'
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        window.location.href = redirectUrl;
-                    } else {
-                        Swal.close();
-                        mostrarToast('error', data.message || 'Error al eliminar la categoría');
-                    }
-                })
-                .catch(error => {
-
-                    Swal.close();
-                    mostrarToast('error', 'Error al procesar la solicitud');
-                });
-        }
-    });
 }
 
 

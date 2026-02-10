@@ -15,7 +15,7 @@
                        class="w-full bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5 transition-all"
                        placeholder="Buscar material, marca o color..."
                        hx-get="{% url 'materiales:lista_materiales' %}"
-                       hx-trigger="keyup changed delay:300ms"
+                       hx-trigger="keyup changed delay:500ms, search"
                        hx-target="#materiales-container"
                        hx-include="[name='tipo'], [name='orden']"
                        hx-push-url="true">

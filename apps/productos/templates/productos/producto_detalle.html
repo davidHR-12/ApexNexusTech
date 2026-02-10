@@ -1,5 +1,6 @@
 {% extends "core/base_admin.html" %}
 {% load humanize %}
+{% load static %}
 {% block content %}
   <div class="space-y-8">
     <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest gap-2">
@@ -45,8 +46,8 @@
               <p class="text-2xl font-mono text-white">RD$ {{ producto.costo_produccion|intcomma }}</p>
             </div>
             <div class="text-right">
-              <p class="text-gray-500 text-xs">Margen Sugerido</p>
-              <p class="text-xl font-mono text-emerald-400">+ RD$ {{ producto.precio_venta|intcomma }}</p>
+              <p class="text-gray-500 text-xs">Precio Base</p>
+              <p class="text-xl font-mono text-emerald-400">RD$ {{ producto.precio_venta|intcomma }}</p>
             </div>
           </div>
         </div>
@@ -68,7 +69,8 @@
               <tr class="bg-gray-900/50 border-b border-gray-800">
                 <th class="p-4 text-gray-400 text-[10px] uppercase font-bold">Material / Color</th>
                 <th class="p-4 text-gray-400 text-[10px] uppercase font-bold text-center">Stock</th>
-                <th class="p-4 text-gray-400 text-[10px] uppercase font-bold text-right">Acciones</th>
+                <th class="p-4 text-gray-400 text-[10px] uppercase font-bold text-center">Precio Adicional</th>
+                <th class="p-4 text-gray-400 text-[10px] uppercase text-center font-bold">Acciones</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-800">
@@ -89,19 +91,24 @@
                       {{ v.stock_disponible }} uds
                     </span>
                   </td>
-                  <td class="p-4 text-right">
-                    <div class="flex justify-end gap-2">
+                  <td class="p-4 text-center">
+                    <span class="{% if v.stock_disponible <= 2 %}text-red-400{% else %}text-white{% endif %} font-mono font-bold">
+                      RD$ {{ v.precio_adicional|intcomma }}
+                    </span>
+                  </td>
+                  <td class="p-4 text-center">
+                    <div class="flex justify-center gap-2">
                       <button onclick="abrirModalDinamico('{% url 'productos:registrar_produccion' v.id %}')"
                               title="Registrar impresión"
-                              class="p-2 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white rounded-lg transition-all">
+                              class="p-2 bg-gray-800 text-emerald-400 rounded-lg hover:bg-emerald-600 hover:text-white transition-all">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                       </button>
-                      <button onclick="confirmarEliminarVariante('{{ v.id }}', '{{ v.material.color.nombre }}')"
-                              class="p-2 text-gray-500 hover:text-red-500 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                      <button onclick="confirmarEliminarVariante('{{ v.id }}', '{{ v.material.color.nombre }}', '{{ v.material.tipo }}', '{{ v.material.marca.nombre }}')"
+                              class="p-2 text-red-400 hover:bg-red-600 hover:text-white rounded-lg transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
                     </div>
@@ -124,85 +131,5 @@
 {% endblock content %}
 
 {% block  extra_js %}
-  <script>
-    // Unificamos la lógica de cierre para esta página
-    function cerrarModales() {
-        const wrapper = document.getElementById('modal-dinamico-wrapper');
-        if (wrapper) wrapper.innerHTML = ''; // Eliminamos el HTML inyectado
-        
-        document.body.style.overflow = 'auto';
-        
-        // Cerramos cualquier otro modal estático por si acaso
-        document.querySelectorAll('.modal-overlay').forEach(m => {
-            m.classList.add('hidden');
-        });
-    }
-
-    async function abrirModalDinamico(url) {
-        // Limpieza preventiva antes de cargar uno nuevo
-        cerrarModales(); 
-
-        const wrapper = document.getElementById('modal-dinamico-wrapper');
-        try {
-            const response = await fetch(url);
-            const html = await response.text();
-            wrapper.innerHTML = html;
-            
-            // El modal base inyectado tiene la clase 'modal-overlay'
-            const modalElement = wrapper.querySelector('.modal-overlay');
-            if (modalElement) {
-                modalElement.classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            if (typeof mostrarToast === 'function') {
-                mostrarToast('error', 'No se pudo cargar el formulario');
-            }
-        }
-    }
-    
-    // LÓGICA DE ELIMINAR (Se mantiene igual)
-    function confirmarEliminarVariante(id, color) {
-        Swal.fire({
-            ...window.swalConfigBase,
-            title: '¿Eliminar variante?',
-            html: `Vas a eliminar la variante <b class="text-white">${color}</b>.`,
-            customClass: window.swalCustomClasses,
-            iconHtml: window.swalIcons.warningRed,
-        }).then((result) => {
-            if (result.isConfirmed) {
-                let urlEliminar = "{% url 'productos:eliminar_variante_json' 0 %}".replace('0', id);
-                fetch(urlEliminar, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': '{{ csrf_token }}',
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        mostrarToast('success', data.message);
-                        location.reload(); 
-                    } else {
-                        mostrarToast('error', data.error);
-                    }
-                });
-            }
-        });
-    }
-
-    // EVENTOS GLOBALES RE-VINCULADOS
-    // Usamos 'keydown' y 'click' para asegurar que llamen a NUESTRA cerrarModales
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') cerrarModales();
-    }, true); // El 'true' ayuda a que esta función tenga prioridad
-
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal-overlay')) {
-            cerrarModales();
-        }
-    }, true);
-  </script>
+  <script src="{% static 'productos/js/prod_variante.js' %}"></script>
 {% endblock %}  
