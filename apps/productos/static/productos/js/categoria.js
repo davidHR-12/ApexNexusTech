@@ -15,6 +15,11 @@ function abrirEditarCat(id) {
             return response.json();
         })
         .then(data => {
+            // Configurar action del formulario
+            const form = document.getElementById('formEditarCategoria');
+            if (form) {
+                form.action = `/administrador/categorias/${id}/editar/`;
+            }
             // Actualizar título del modal
             const titulo = document.getElementById('edit_cat_nombre_titulo');
             if (titulo) titulo.innerText = `Modificando: ${data.nombre}`;
@@ -25,6 +30,12 @@ function abrirEditarCat(id) {
             if (inputNombre) inputNombre.value = data.nombre;
             if (inputDesc) inputDesc.value = data.descripcion;
 
+            const inputOrden = document.getElementById('edit_cat_orden');
+            if (inputOrden) {
+                // Usamos Number() para asegurar que sea un dígito y || 0 por si viene null
+                const valorOrden = (data.orden !== undefined && data.orden !== null) ? data.orden : 0;
+                inputOrden.value = valorOrden;
+            }
             // Manejar imagen de portada
             const preview = document.getElementById('previewEdit');
             const zone = document.getElementById('zoneEdit');
@@ -46,12 +57,6 @@ function abrirEditarCat(id) {
                 if (preview) preview.classList.add('hidden');
                 if (zone) zone.classList.remove('border-solid', 'border-blue-500/60');
                 if (btnDelete) btnDelete.classList.add('hidden');
-            }
-
-            // Configurar action del formulario
-            const form = document.getElementById('formEditarCategoria');
-            if (form) {
-                form.action = `/administrador/categorias/${id}/editar/`;
             }
 
             abrirModal('modalEditarCat');
@@ -90,17 +95,17 @@ function confirmarEliminarCategoria(id, nombre, redirectUrl) {
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.href = redirectUrl;
-                } else {
-                    mostrarToast('error', data.message || 'Error al eliminar');
-                }
-            })
-            .catch(() => {
-                mostrarToast('error', 'Ocurrió un error en el servidor');
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = redirectUrl;
+                    } else {
+                        mostrarToast('error', data.message || 'Error al eliminar');
+                    }
+                })
+                .catch(() => {
+                    mostrarToast('error', 'Ocurrió un error en el servidor');
+                });
         }
     });
 }

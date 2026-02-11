@@ -119,8 +119,8 @@
     {% include "productos/modals/agregar_producto_base.html" with modal_id="modalNuevoProducto" current_page="productos" max_width="max-w-4xl" %}
 {% endblock content %}
 {% block extra_js %}
-    <script src="{% static 'productos/js/categoria.js' %}"></script>
     <script src="{% static 'productos/js/productos.js' %}"></script>
+    <script src="{% static 'productos/js/categoria.js' %}"></script>
     <script>
             // Envolvemos la llamada para pasarle la URL de redirección de Django
             function ejecutarEliminarCat(id, nombre) {

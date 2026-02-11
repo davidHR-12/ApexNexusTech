@@ -30,7 +30,7 @@ urlpatterns = [
     
     # API IDs
     path("api/productos/<int:pk>/", views.obtener_producto_json, name="obtener_producto_json"),
-    path("api/categorias/<int:pk>/", views.obtener_categoria_json, name="obtener_categoria_json"),
+    path("api/categorias/<int:categoria_id>/", views.obtener_categoria_json, name="obtener_categoria_json"),
     path("api/productos/archivados/<int:categoria_id>/", views.obtener_productos_archivados, name="api_productos_archivados"),
 
     # --- 3. RUTAS CON SLUG (Comodines de texto) ---

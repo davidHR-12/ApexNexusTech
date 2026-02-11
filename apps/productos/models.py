@@ -37,7 +37,9 @@ class Categoria(models.Model):
     orden = models.IntegerField(
         default=0,
         help_text="Orden de aparición en el catálogo",
-        verbose_name="Orden"
+        verbose_name="Orden",
+        blank=True,
+        null=True
     )
     activa = models.BooleanField(
         default=True,

@@ -363,6 +363,7 @@ function limpiarPreviewImagen(previewId, contentId, inputId, flagId) {
             }
             if (flag) {
                 flag.value = "true"; // Marcar para eliminar en backend
+                console.log("🗑️ Imagen marcada para eliminar");
             }
             if (btnDelete) {
                 btnDelete.classList.add('hidden');
@@ -433,6 +434,7 @@ function abrirEditarProducto(id) {
                 }
             }
 
+            console.log(data.mostrar_en_web);
             // 4. Rellenar campos del formulario
             if (elementos.nombre) elementos.nombre.value = data.nombre;
             if (elementos.categoria) elementos.categoria.value = data.categoria_id;
@@ -440,6 +442,9 @@ function abrirEditarProducto(id) {
             if (elementos.peso) elementos.peso.value = data.peso_gramos;
             if (elementos.web) elementos.web.checked = data.mostrar_en_web;
             if (elementos.descripcion) elementos.descripcion.value = data.descripcion || '';
+            // 4.1 Rellenar campo activo
+            const inputActivo = document.getElementById('edit_prod_activo');
+            if (inputActivo) inputActivo.value = data.activo;
 
             // 5. Manejar imagen de portada
             if (data.imagen_url && elementos.preview) {
@@ -504,6 +509,7 @@ function abrirEditarProducto(id) {
 
             // 9. Abrir el modal
             abrirModal('modalEditarProducto');
+            console.log(data.mostrar_en_web);
         })
         .catch(error => {
 
@@ -651,6 +657,113 @@ function reactivarMultiplesProductos() {
             .catch(error => {
                 console.error('Error:', error);
                 mostrarToast('error', 'Error de conexión con el servidor');
+            });
+        }
+    });
+}
+
+// ============================================================================
+// CATEGORIAS.JS - Gestión de Categorías
+// ============================================================================
+
+/**
+ * Abre el modal de edición de categoría y carga sus datos vía API
+ * @param {number|string} id - ID de la categoría a editar
+ */
+function abrirEditarCat(id) {
+    const url = `/administrador/api/categorias/${id}/`;
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error('Error al obtener datos');
+            return response.json();
+        })
+        .then(data => {
+            // Actualizar título del modal
+            const titulo = document.getElementById('edit_cat_nombre_titulo');
+            if (titulo) titulo.innerText = `Modificando: ${data.nombre}`;
+
+            // Rellenar campos
+            const inputNombre = document.getElementById('edit_cat_nombre');
+            const inputDesc = document.getElementById('edit_cat_descripcion');
+            if (inputNombre) inputNombre.value = data.nombre;
+            if (inputDesc) inputDesc.value = data.descripcion;
+
+            // Manejar imagen de portada
+            const preview = document.getElementById('previewEdit');
+            const zone = document.getElementById('zoneEdit');
+            const btnDelete = document.getElementById('btnDeleteCatEdit');
+            const inputHidden = document.getElementById('eliminar_imagen_input');
+
+            // Resetear flag de eliminación
+            if (inputHidden) inputHidden.value = "false";
+
+            if (data.imagen) {
+                if (preview) {
+                    preview.src = data.imagen;
+                    preview.classList.remove('hidden');
+                    preview.style.opacity = "1";
+                }
+                if (zone) zone.classList.add('border-solid', 'border-blue-500/60');
+                if (btnDelete) btnDelete.classList.remove('hidden');
+            } else {
+                if (preview) preview.classList.add('hidden');
+                if (zone) zone.classList.remove('border-solid', 'border-blue-500/60');
+                if (btnDelete) btnDelete.classList.add('hidden');
+            }
+
+            // Configurar action del formulario
+            const form = document.getElementById('formEditarCategoria');
+            if (form) {
+                form.action = `/administrador/categorias/${id}/editar/`;
+            }
+
+            abrirModal('modalEditarCat');
+        })
+        .catch(error => {
+            mostrarToast('error', 'No se pudieron cargar los datos de la categoría');
+        });
+}
+
+/**
+ * Confirma y ejecuta la eliminación de una categoría con SweetAlert2
+ */
+function confirmarEliminarCategoria(id, nombre, redirectUrl) {
+    Swal.fire({
+        ...swalConfigBase,
+        title: 'Eliminar Categoría',
+        html: `
+            <div class="text-center">
+                <p class="text-gray-300 mb-2">Estás por eliminar:</p>
+                <p class="text-white font-semibold text-lg">${nombre}</p>
+                <p class="text-gray-400 text-sm mt-3 border-t border-gray-700/50 pt-3">Esta acción no se puede deshacer y los productos se moverán a "Sin Categorizar".</p>
+            </div>`,
+        iconHtml: swalIcons.warningRed,
+        confirmButtonText: 'Sí, Eliminar',
+        cancelButtonText: 'Cancelar',
+        showCloseButton: true,
+        customClass: {
+            ...swalCustomClasses,
+            icon: 'border-0'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/administrador/categorias/${id}/eliminar/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = redirectUrl;
+                } else {
+                    mostrarToast('error', data.message || 'Error al eliminar');
+                }
+            })
+            .catch(() => {
+                mostrarToast('error', 'Ocurrió un error en el servidor');
             });
         }
     });

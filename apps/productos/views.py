@@ -16,7 +16,7 @@ from .forms import CategoriaForm, ProductoForm, ProduccionInternaForm, VarianteP
 
 @login_required
 def product_list(request):
-    categorias = Categoria.objects.annotate(total_productos=Count("productos"))
+    categorias = Categoria.objects.annotate(total_productos=Count("productos")).order_by("orden")
 
     # 1. Total de "Modelos" distintos (Buda, Maceta, etc.)
     total_modelos = Producto.objects.count()
@@ -402,8 +402,15 @@ def editar_categoria(request, categoria_id):
     if request.method == "POST":
         form = CategoriaForm(request.POST, request.FILES, instance=categoria)
         if form.is_valid():
-            form.save() # El form maneja el slug y la imagen internamente
+            form.save()
             messages.success(request, f'Categoría "{categoria.nombre}" actualizada.')
+        else:
+            # Esto te dirá en pantalla qué falló exactamente
+            for field, errors in form.errors.items():
+                for error in errors:
+                    print(f"Error en {field}: {error}")
+                    messages.error(request, f"Error en {field}: {error}")
+                    
     return redirect("productos:productos_index")
 
 @login_required
@@ -463,15 +470,16 @@ def categoria_detalle(request, slug):
 
 
 @login_required
-def obtener_categoria_json(request, pk):
+def obtener_categoria_json(request, categoria_id):
     """
     API JSON: Devuelve datos de una categoría para usar en modales de edición.
     """
-    categoria = get_object_or_404(Categoria, pk=pk)
+    categoria = get_object_or_404(Categoria, pk=categoria_id)
     data = {
         "id": categoria.id,
         "nombre": categoria.nombre,
         "descripcion": categoria.descripcion or "",
+        "orden": int(categoria.orden) if categoria.orden is not None else 0,
         "imagen": categoria.imagen.url if categoria.imagen else None,
     }
     return JsonResponse(data)

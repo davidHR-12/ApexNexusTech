@@ -5,7 +5,7 @@ from decimal import Decimal, InvalidOperation
 from .models import Categoria, Producto, ProduccionInterna, VarianteProducto, ImagenProducto, VarianteMaterialDetalle
 from apps.materiales.models import Material
 from django.forms import inlineformset_factory
-
+import logging
 
 # --- WIDGETS ---
 
@@ -81,9 +81,25 @@ class ProductoForm(TailwindModelForm):
 
 
 class CategoriaForm(TailwindModelForm):
+    # Campo extra que no está en el modelo pero usaremos para la lógica
+    eliminar_imagen = forms.CharField(required=False, widget=forms.HiddenInput())
+
     class Meta:
         model = Categoria
         fields = ["nombre", "descripcion", "imagen", "orden", "activa"]
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        # Si el usuario marcó eliminar imagen, la borramos físicamente
+        if self.cleaned_data.get('eliminar_imagen') == 'true':
+            if instance.imagen:
+                instance.imagen.delete(save=False)
+                instance.imagen = None
+        print("orden", self.cleaned_data.get("orden"))
+        
+        if commit:
+            instance.save()
+        return instance
 
 
 class VarianteProductoForm(TailwindModelForm):
