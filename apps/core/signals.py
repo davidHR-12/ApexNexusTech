@@ -81,22 +81,37 @@ def _inicializar_catalogo_background():
         # --- 2. Inicializar Atributos de Impresión ---
         marcas = ["Creality", "Bambu Lab", "eSun", "Hatchbox", "Polyterra", "Overture"]
         tipos = ["PLA", "PETG", "ABS", "ASA", "TPU"]
-        colores = [
-            "Negro",
-            "Blanco",
-            "Gris",
-            "Rojo",
-            "Azul",
-            "Verde",
-            "Dorado",
-            "Plateado",
-            "Amarillo",
-        ]
+        
+        # ✅ Colores con sus códigos hex
+        colores = {
+            "Negro": "#000000",
+            "Blanco": "#FFFFFF",
+            "Gris": "#808080",
+            "Rojo": "#FF0000",
+            "Azul": "#0000FF",
+            "Verde": "#00FF00",
+            "Dorado": "#FFD700",
+            "Plateado": "#C0C0C0",
+            "Amarillo": "#FFFF00",
+        }
 
-        # Creamos los objetos base con get_or_create (más lento pero seguro)
+        # Creamos los objetos base con get_or_create
         m_objs = [Marca.objects.get_or_create(nombre=m)[0] for m in marcas]
         t_objs = [TipoMaterial.objects.get_or_create(nombre=t)[0] for t in tipos]
-        c_objs = [Color.objects.get_or_create(nombre=c)[0] for c in colores]
+        
+        # ✅ Crear colores con su codigo_hex
+        c_objs = []
+        for nombre, hex_code in colores.items():
+            color, created = Color.objects.get_or_create(
+                nombre=nombre,
+                defaults={'codigo_hex': hex_code}
+            )
+            # Si ya existía pero no tiene hex, actualizarlo
+            if not created and (not color.codigo_hex or color.codigo_hex == ''):
+                color.codigo_hex = hex_code
+                color.save()
+                logger.info(f"  ✓ Color actualizado: {nombre} → {hex_code}")
+            c_objs.append(color)
 
         logger.info("Marcas, tipos y colores base configurados")
 

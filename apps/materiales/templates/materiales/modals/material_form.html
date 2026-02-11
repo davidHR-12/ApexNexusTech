@@ -26,11 +26,41 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
             </div>
-            <div>
-                <p id="edit_display_full_name"
-                   class="text-white font-bold text-lg leading-tight">
-                    {{ material.marca.nombre }} - {{ material.color.nombre }}
-                </p>
+            <div class="flex-1">
+                <div class="flex items-center gap-3">
+                    <p id="edit_display_full_name"
+                       class="text-white font-bold text-lg leading-tight">
+                        {{ material.marca.nombre }} - {{ material.color.nombre }}
+                    </p>
+                    <!-- ✅ PREVIEW DEL COLOR EN EDICIÓN -->
+                    <div class="flex flex-col items-center">
+                        <div class="relative w-10 h-10 group">
+                            <input type="color"
+                                   name="color_hex"
+                                   id="edit_color_hex_input"
+                                   form="formEditarMaterial"
+                                   value="{{ material.color.codigo_hex|default:'#10b981' }}"
+                                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20">
+                            <div id="edit_color_preview"
+                                 style="background-color: {{ material.color.codigo_hex|default:'#10b981' }}"
+                                 class="w-10 h-10 rounded-full border-2 border-gray-600 shadow-lg transition-transform group-hover:scale-110 z-10">
+                            </div>
+                            <div class="absolute -bottom-1 -right-1 bg-gray-800 rounded-full p-1 border border-gray-700 z-30 pointer-events-none">
+                                <svg class="w-2 h-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z">
+                                    </path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-2 bg-orange-500/5 border border-orange-500/10 rounded-lg">
+                        <p class="text-[9px] text-orange-400 leading-tight italic">
+                            <span class="font-bold uppercase not-italic">Aviso:</span>
+                            Editar este color afectará a todos los materiales que usen
+                            <span id="edit_display_color_nombre" class="font-bold text-orange-300"></span>.
+                        </p>
+                    </div>
+                </div>
                 <p id="edit_display_tipo" class="text-gray-500 text-xs font-medium">{{ material.tipo.nombre }}</p>
             </div>
         </div>
@@ -72,17 +102,40 @@
                 </div>
                 <div class="relative">
                     <label class="text-gray-400 text-xs uppercase mb-2 block font-semibold">Color</label>
-                    <input type="text"
-                           name="color_nombre"
-                           id="input-color"
-                           placeholder="Ej: Negro Mate"
-                           class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none transition-all"
-                           hx-get="{% url 'materiales:buscar_atributo_ajax' %}?tipo=color"
-                           hx-trigger="keyup[key!='ArrowDown'&&key!='ArrowUp'&&key!='Enter'&&key!='Tab'] changed delay:200ms"
-                           hx-target="#results-color"
-                           autocomplete="off"
-                           required>
-                    <div id="results-color" class="absolute z-50 w-full"></div>
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <input type="text"
+                                   name="color_nombre"
+                                   id="input-color"
+                                   placeholder="Ej: Negro Mate"
+                                   class="w-full bg-gray-900 border border-gray-700 rounded-l-lg p-2.5 text-white focus:border-blue-500 outline-none transition-all"
+                                   hx-get="{% url 'materiales:buscar_atributo_ajax' %}?tipo=color"
+                                   hx-trigger="keyup[key!='ArrowDown'&&key!='ArrowUp'&&key!='Enter'&&key!='Tab'] changed delay:200ms"
+                                   hx-target="#results-color"
+                                   autocomplete="off"
+                                   required>
+                            <div id="results-color" class="absolute z-50 w-full"></div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <div class="relative group h-full">
+                                <input type="color"
+                                       name="color_hex"
+                                       id="input-color-hex"
+                                       value="#10b981"
+                                       class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                                <div id="color-preview"
+                                     style="background-color: #10b981"
+                                     class="w-11 h-full rounded-r-lg border border-gray-700 border-l-0 shadow-inner transition-transform group-hover:scale-105 group-active:scale-95 flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-white mix-blend-difference opacity-50"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.172-1.172a4 4 0 115.656 5.656L10 17.657" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         {% endif %}

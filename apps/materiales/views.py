@@ -362,6 +362,19 @@ def buscar_material_ajax(request):
 @login_required
 def obtener_material_json(request, material_id):
     material = get_object_or_404(Material, id=material_id)
+    
+    # ✅ Manejar casos donde color_hex está vacío o None
+    color_hex = '#10b981'  # Color por defecto
+    if material.color and material.color.codigo_hex:
+        color_hex = material.color.codigo_hex.strip()
+        # Si después del strip está vacío, usar el default
+        if not color_hex or color_hex == '':
+            color_hex = '#10b981'
+    
+    print(f"🎨 DEBUG - Material: {material}")
+    print(f"🎨 DEBUG - Color original: '{material.color.codigo_hex if material.color else 'None'}'")
+    print(f"🎨 DEBUG - Color hex a enviar: '{color_hex}'")
+    
     return JsonResponse(
         {
             "id": material.id,
@@ -370,5 +383,8 @@ def obtener_material_json(request, material_id):
             "costo_por_gramo": "{:.2f}".format(material.costo_por_gramo),
             "stock_minimo": float(material.stock_minimo),
             "stock_actual": float(material.stock_actual),
+            "color_hex": color_hex,
+            "color_nombre": material.color.nombre if material.color else "",
         }
     )
+

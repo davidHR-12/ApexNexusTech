@@ -7,41 +7,38 @@ from django.utils.http import url_has_allowed_host_and_scheme
 import json
 
 from .models import Categoria, Producto, VarianteProducto, ImagenProducto, ProduccionInterna
-from .forms import CategoriaForm, ProductoForm, ProduccionInternaForm, VarianteProductoForm
+from .forms import CategoriaForm, ProductoForm, ProduccionInternaForm, VarianteProductoForm,MaterialDetalleFormSet
 
 
 # ==============================================================================
 # --- GESTIÓN DE PRODUCTOS ---
 # ==============================================================================
 
-
 @login_required
 def product_list(request):
-    """
-    Lista principal de productos agrupados o visualización general.
-    Muestra estadísticas globales del inventario.
-    """
-    # Traemos categorías con el conteo de sus productos
     categorias = Categoria.objects.annotate(total_productos=Count("productos"))
 
-    # Estadísticas para los cuadros superiores
-    total_productos = Producto.objects.count()
-    # Calculamos el valor del inventario (precio * stock de variantes)    
-    valor_inventario = (
-        Producto.objects.aggregate(
-            total=Sum(
-                F("precio_venta")
-            )  
-        )["total"]
-        or 0
-    )
+    # 1. Total de "Modelos" distintos (Buda, Maceta, etc.)
+    total_modelos = Producto.objects.count()
+
+    # 2. Total de piezas físicas en estantería (Suma del stock de todas las variantes)
+    total_stock_fisico = VarianteProducto.objects.aggregate(
+        total=Sum('stock_disponible')
+    )['total'] or 0
+
+    # 3. Valor Real del Inventario: (Precio de venta del producto base * stock de su variante)
+    # Esto nos dice cuánto dinero hay sentado en la estantería.
+    valor_inventario = VarianteProducto.objects.aggregate(
+        total=Sum(F('producto__precio_venta') * F('stock_disponible'))
+    )['total'] or 0
 
     return render(
         request,
         "productos/producto_list.html",
         {
             "categorias": categorias,
-            "total_productos": total_productos,
+            "total_modelos": total_modelos,
+            "total_stock_fisico": total_stock_fisico,
             "valor_inventario": valor_inventario,
         },
     )
@@ -279,14 +276,18 @@ def obtener_variantes_producto(request, producto_id):
     variantes = producto.variantes.all()
     data = []
     for v in variantes:
-        data.append(
-            {
-                "id": v.id,
-                # Mostramos Marca, Tipo y Color para que el admin sepa qué rollo usa
-                "nombre_material": f"{v.material.marca.nombre} {v.material.tipo.nombre} - {v.material.color.nombre}",
-                "stock_material": float(v.material.stock_actual),
-            }
-        )
+        # Creamos un string con todos los materiales de esta variante
+        materiales_nombres = ", ".join([
+            f"{d.material.color.nombre} ({d.material.tipo.nombre})" 
+            for d in v.detalles_material.all()
+        ])
+        data.append({
+            "id": v.id,
+            "nombre_material": materiales_nombres if materiales_nombres else "Sin materiales configurados",
+            # Nota: El stock de material ahora es individual por componente, 
+            # podrías enviar el del primer material o una lista.
+            "stock_disponible": v.stock_disponible,
+        })
     return JsonResponse({"variantes": data})
 
 
@@ -295,21 +296,28 @@ def crear_variante(request, producto_id):
     producto = get_object_or_404(Producto, id=producto_id)
     
     if request.method == "POST":
-        form = VarianteProductoForm(request.POST, producto=producto)
+        form = VarianteProductoForm(request.POST)
         if form.is_valid():
             variante = form.save(commit=False)
             variante.producto = producto
-            variante.save() # El modelo genera el SKU automáticamente
-            messages.success(request, "Variante añadida correctamente.")
-            return redirect("productos:producto_detalle", slug=producto.slug)
+            # El formset necesita la variante (aunque no tenga ID aún)
+            formset = MaterialDetalleFormSet(request.POST, instance=variante)
+            
+            if formset.is_valid():
+                variante.save() # Guardamos para tener ID
+                formset.save()  # Guardamos los materiales asociados
+                messages.success(request, "Variante y materiales configurados.")
+                return redirect("productos:producto_detalle", slug=producto.slug)
+        else:
+            formset = MaterialDetalleFormSet(request.POST)
     else:
-        form = VarianteProductoForm(producto=producto)
+        form = VarianteProductoForm()
+        formset = MaterialDetalleFormSet()
 
     return render(request, "productos/modals/agregar_variante_producto.html", {
         "producto": producto,
         "form": form,
-        "title": "Agregar Variante",      
-        "modal_id": "modalVariante"
+        "formset": formset,
     })
 
 @login_required
@@ -317,29 +325,31 @@ def registrar_produccion(request, variante_id):
     variante = get_object_or_404(VarianteProducto, id=variante_id)
     
     if request.method == "POST":
-        data = request.POST.copy()
-        data['variante'] = variante.id
-        data['material'] = variante.material.id
-        data['gramos_por_pieza'] = variante.producto.peso_gramos
-        data['cantidad_producida'] = request.POST.get('cantidad')
+        # Simplificamos: solo necesitamos la variante y la cantidad
+        # La lógica pesada de materiales ahora ocurre en el modelo
+        data = {
+            'variante': variante.id,
+            'cantidad_producida': request.POST.get('cantidad'),
+            'observaciones': request.POST.get('observaciones', '')
+        }
 
         form = ProduccionInternaForm(data)
         
         if form.is_valid():
-            form.save()
-            messages.success(request, "Producción registrada y stock actualizado.")
+            try:
+                form.save()
+                messages.success(request, f"Producción de {data['cantidad_producida']} unidades registrada.")
+            except ValueError as e:
+                messages.error(request, str(e)) # Captura "Stock insuficiente de..."
+            
             return redirect("productos:producto_detalle", slug=variante.producto.slug)
         else:
-            # Si hay error (como stock insuficiente), enviamos los errores a messages
-            for error in form.non_field_errors():
-                messages.error(request, error)
-            # Redirigimos de vuelta al detalle para que el usuario intente de nuevo
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
             return redirect("productos:producto_detalle", slug=variante.producto.slug)
     
-    # Si es GET, renderizamos el modal normal
-    return render(request, "productos/modals/registrar_produccion.html", {
-        "variante": variante,
-    })
+    return render(request, "productos/modals/registrar_produccion.html", {"variante": variante})
 
 
 @login_required
@@ -350,16 +360,15 @@ def eliminar_variante_json(request, variante_id):
     if request.method == "POST":
         variante = get_object_or_404(VarianteProducto, id=variante_id)
         try:
-            nombre_material = str(variante.material)
+            # Usamos el __str__ que ya configuramos para que diga "Producto (Color1, Color2)"
+            nombre_variante = str(variante)
             variante.delete()
-            # Devolvemos éxito para que el JS de SweetAlert sepa que todo salió bien
             return JsonResponse({
                 "success": True, 
-                "message": f"Variante {nombre_material} eliminada."
+                "message": f"Variante '{nombre_variante}' eliminada."
             })
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)}, status=400)
-            
     return JsonResponse({"success": False, "message": "Método no permitido"}, status=405)
     
 # ==============================================================================

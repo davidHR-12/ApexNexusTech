@@ -112,14 +112,6 @@ class Producto(models.Model):
     )
 
     # Datos técnicos para cálculos
-    material_base = models.ForeignKey(
-        "materiales.Material",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        help_text="Material por defecto para estimaciones",
-        verbose_name="Material base"
-    )
     peso_gramos = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -166,11 +158,10 @@ class Producto(models.Model):
 
     @property
     def costo_produccion(self):
-        """Calcula el costo estimado de producción"""
-        if self.material_base and self.peso_gramos:
-            return Decimal(
-                self.material_base.costo_por_gramo * self.peso_gramos
-            ).quantize(Decimal("0.01"))
+        """Calcula el costo basado en la variante por defecto (la primera)"""
+        primera_variante = self.variantes.first()
+        if primera_variante:
+            return primera_variante.costo_materiales
         return Decimal("0.00")
 
     @property
@@ -200,73 +191,74 @@ class Producto(models.Model):
 # =============================
 
 class VarianteProducto(models.Model):
-    """
-    Variantes de un producto (diferentes colores/materiales).
-    Ejemplo: "Soporte de celular" en PLA Negro, PLA Rojo, PETG Azul.
-    """
     producto = models.ForeignKey(
         Producto,
         on_delete=models.CASCADE,
         related_name="variantes",
         verbose_name="Producto"
     )
-    material = models.ForeignKey(
+    materiales_consumidos = models.ManyToManyField(
         "materiales.Material",
-        on_delete=models.PROTECT,
-        verbose_name="Material"
+        through='VarianteMaterialDetalle',
+        related_name="variantes_que_lo_usan"
     )
-    stock_disponible = models.IntegerField(
-        default=0,
-        verbose_name="Stock disponible"
-    )
+    stock_disponible = models.IntegerField(default=0, verbose_name="Stock disponible")
     precio_adicional = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0,
-        help_text="Sobreprecio respecto al precio base del producto",
+        max_digits=10, decimal_places=2, default=0,
+        help_text="Sobreprecio respecto al precio base",
         verbose_name="Precio adicional"
     )
-    codigo_sku = models.CharField(
-        max_length=50,
-        blank=True,
-        unique=True,
-        null=True,
-        verbose_name="SKU"
-    )
-    activa = models.BooleanField(
-        default=True,
-        verbose_name="Activa"
-    )
+    codigo_sku = models.CharField(max_length=50, blank=True, unique=True, null=True, verbose_name="SKU")
+    activa = models.BooleanField(default=True, verbose_name="Activa")
 
     @property
     def precio_final(self):
-        """Precio total de esta variante"""
         return self.producto.precio_venta + self.precio_adicional
 
+    @property
+    def costo_materiales(self):
+        """Calcula el costo sumando todos los materiales del detalle"""
+        total = sum(d.gramos_usados * d.material.costo_por_gramo for d in self.detalles_material.all())
+        return Decimal(total).quantize(Decimal("0.01"))
+
     def save(self, *args, **kwargs):
-        # Auto-generar SKU si no existe
+        super().save(*args, **kwargs) # Guardamos primero para tener ID si es nuevo
+        
         if not self.codigo_sku:
-            # Incluimos la marca para evitar colisiones entre marcas del mismo color
-            marca = self.material.marca.nombre.lower().replace(' ', '-')
-            color = self.material.color.nombre.lower().replace(' ', '-')
-            tipo = self.material.tipo.nombre.lower().replace(' ', '-')
-        
-            nuevo_sku = f"{self.producto.slug}-{marca}-{color}-{tipo}"
-        
-            # Si el SKU es muy largo, lo cortamos, pero aseguramos unicidad
-            self.codigo_sku = nuevo_sku[:50]
-        
-        super().save(*args, **kwargs)
+            # Para el SKU, tomamos el nombre del primer material disponible
+            primer_detalle = self.detalles_material.first()
+            if primer_detalle:
+                material_slug = slugify(f"{primer_detalle.material.color.nombre}-{primer_detalle.material.tipo.nombre}")
+                self.codigo_sku = f"{self.producto.slug}-{material_slug}"[:50]
+                # Guardamos de nuevo para actualizar el SKU
+                super().save(update_fields=['codigo_sku'])
 
     def __str__(self):
-        return f"{self.producto.nombre} ({self.material.color})"
+        # Muestra algo como: "Cráneo T-Rex (Rojo, Dorado)"
+        materiales = ", ".join([d.material.color.nombre for d in self.detalles_material.all()])
+        return f"{self.producto.nombre} ({materiales if materiales else 'Sin materiales'})"
 
     class Meta:
         verbose_name = "Variante de Producto"
         verbose_name_plural = "Variantes de Productos"
-        unique_together = ("producto", "material")
-        ordering = ["producto__nombre", "material__color__nombre"]
+        ordering = ["producto__nombre"]
 
+
+class VarianteMaterialDetalle(models.Model):
+    """
+
+    Modelo intermedio para definir cuántos gramos de qué material 
+
+    usa una variante específica.
+
+    """
+    variante = models.ForeignKey(VarianteProducto, on_delete=models.CASCADE, related_name="detalles_material")
+    material = models.ForeignKey("materiales.Material", on_delete=models.CASCADE)
+    gramos_usados = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    class Meta:
+        verbose_name = "Detalle de Material de Variante"
+        unique_together = ('variante', 'material')
 
 # =============================
 # GALERÍA DE IMÁGENES
@@ -309,10 +301,6 @@ class ImagenProducto(models.Model):
 # =============================
 
 class ProduccionInterna(models.Model):
-    """
-    Registro de producción para stock.
-    Permite fabricar productos por adelantado.
-    """
     variante = models.ForeignKey(
         VarianteProducto,
         on_delete=models.CASCADE,
@@ -323,63 +311,47 @@ class ProduccionInterna(models.Model):
         help_text="Cantidad de piezas impresas para stock",
         verbose_name="Cantidad producida"
     )
-    material = models.ForeignKey(
-        "materiales.Material",
-        on_delete=models.PROTECT,
-        help_text="Material usado para esta producción",
-        verbose_name="Material"
-    )
-    gramos_por_pieza = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        help_text="Consumo de material por unidad",
-        verbose_name="Gramos por pieza"
-    )
-    fecha = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Fecha"
-    )
-    observaciones = models.TextField(
-        blank=True,
-        verbose_name="Observaciones"
-    )
+    fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha")
+    observaciones = models.TextField(blank=True, verbose_name="Observaciones")
 
     @property
-    def gramos_totales(self):
-        """Total de gramos consumidos en esta producción"""
-        return self.cantidad_producida * self.gramos_por_pieza
-
-    @property
-    def costo_material(self):
-        """Costo total del material usado"""
-        return Decimal(self.gramos_totales * self.material.costo_por_gramo).quantize(Decimal("0.01"))
+    def costo_total_produccion(self):
+        """Costo total basado en la receta de la variante"""
+        return (self.variante.costo_materiales * self.cantidad_producida).quantize(Decimal("0.01"))
 
     def save(self, *args, **kwargs):
         nueva = self.pk is None
-
-        # Validar stock de material antes de guardar
-        gramos_totales = self.cantidad_producida * self.gramos_por_pieza
-        if nueva and self.material.stock_actual < gramos_totales:
-            raise ValueError(
-                f"Stock insuficiente de {self.material}. "
-                f"Necesitas {gramos_totales}g y solo hay {self.material.stock_actual}g."
-            )
-
-        super().save(*args, **kwargs)
-
         if nueva:
-            # Registrar consumo de material
-            from apps.materiales.models import ConsumoMaterial
-            ConsumoMaterial.objects.create(
-                pedido=None,
-                material=self.material,
-                gramos_usados=gramos_totales,
-                notas=f"Producción interna: {self.cantidad_producida}x {self.variante}"
-            )
+            # 1. Validar stock de TODOS los materiales definidos en la variante
+            detalles = self.variante.detalles_material.all()
+            if not detalles.exists():
+                raise ValueError(f"La variante {self.variante} no tiene materiales configurados.")
 
-            # Aumentar stock de la variante
+            for detalle in detalles:
+                total_necesario = detalle.gramos_usados * self.cantidad_producida
+                if detalle.material.stock_actual < total_necesario:
+                    raise ValueError(
+                        f"Stock insuficiente de {detalle.material}. "
+                        f"Necesitas {total_necesario}g y hay {detalle.material.stock_actual}g."
+                    )
+
+            super().save(*args, **kwargs)
+
+            # 2. Registrar el consumo de cada material en la app materiales
+            from apps.materiales.models import ConsumoMaterial
+            for detalle in detalles:
+                total_usado = detalle.gramos_usados * self.cantidad_producida
+                ConsumoMaterial.objects.create(
+                    material=detalle.material,
+                    gramos_usados=total_usado,
+                    notas=f"Producción stock: {self.cantidad_producida}x {self.variante}"
+                )
+
+            # 3. Aumentar stock de la variante
             self.variante.stock_disponible += self.cantidad_producida
             self.variante.save()
+        else:
+            super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Producción {self.cantidad_producida}x {self.variante} ({self.fecha.date()})"

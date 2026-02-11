@@ -8,34 +8,44 @@
         </svg>
     </div>
     <h2 class="text-xl font-bold text-white">Registrar Producción</h2>
-    <p class="text-gray-400 text-xs">Variante: <span class="text-emerald-400">{{ variante.producto.nombre }} ({{ variante.material.color.nombre }})</span></p>
+    <p class="text-gray-400 text-xs">Variante: <span class="text-emerald-400">{{ variante }}</span></p>
 </div>
 
 <form action="{% url 'productos:registrar_produccion' variante.id %}" method="POST" class="space-y-4">
     {% csrf_token %}
     
     <div class="bg-gray-900/50 p-4 rounded-2xl border border-gray-800 mb-4">
-        <div class="flex justify-between text-xs mb-2">
-            <span class="text-gray-500">Material disponible:</span>
-            <span class="text-white font-mono">{{ variante.material.stock_actual }}g</span>
-        </div>
-        <div class="flex justify-between text-xs">
-            <span class="text-gray-500">Consumo por pieza:</span>
-            <span class="text-white font-mono">{{ variante.producto.peso_gramos }}g</span>
+        <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-3 border-b border-gray-800 pb-2">Materiales a descontar</p>
+        <div class="space-y-3">
+            {% for detalle in variante.detalles_material.all %}
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full" style="background-color: {{ detalle.material.color.codigo_hex }}"></div>
+                    <span class="text-xs text-gray-300">{{ detalle.material.color.nombre }} ({{ detalle.material.tipo.nombre }})</span>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] text-white font-mono">{{ detalle.gramos_usados }}g <span class="text-gray-500">/ pieza</span></p>
+                    <p class="text-[9px] {% if detalle.material.stock_actual < detalle.gramos_usados %}text-red-400 font-bold{% else %}text-gray-500{% endif %}">
+                        Disponible: {{ detalle.material.stock_actual }}g
+                    </p>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 
     <div>
-        <label class="text-gray-400 text-[10px] uppercase font-bold mb-2 block tracking-widest">¿Cuántas piezas imprimiste?</label>
+        <label class="text-gray-400 text-[10px] uppercase font-bold mb-2 block tracking-widest">Cantidad a añadir al Stock</label>
         <input type="number" name="cantidad" value="1" min="1" required
                class="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white focus:border-emerald-500 outline-none text-center font-mono text-2xl">
+        <p class="text-[10px] text-gray-500 mt-2 text-center italic">Se sumarán al stock actual de la variante ({{ variante.stock_disponible }} uds)</p>
     </div>
 
     <div>
-        <label class="text-gray-400 text-[10px] uppercase font-bold mb-2 block tracking-widest">Notas / Observaciones</label>
+        <label class="text-gray-400 text-[10px] uppercase font-bold mb-2 block tracking-widest">Notas de Producción</label>
         <textarea name="observaciones" rows="2" 
                   class="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none" 
-                  placeholder="Ej: Impreso con boquilla 0.6mm..."></textarea>
+                  placeholder="Ej: Impreso en batch, excelente calidad..."></textarea>
     </div>
 
     <div class="pt-4 flex gap-3">
@@ -45,7 +55,7 @@
         </button>
         <button type="submit"
                 class="flex-1 px-4 py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-900/20 text-xs uppercase tracking-[0.2em]">
-            Finalizar y Descontar
+            Confirmar e Imprimir
         </button>
     </div>
 </form>

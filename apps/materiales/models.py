@@ -78,6 +78,7 @@ class Color(models.Model):
     codigo_hex = models.CharField(
         max_length=7,
         blank=True,
+        default='#10b981',
         help_text="Código hexadecimal del color (ej: #FF0000)",
         verbose_name="Código Hex"
     )

@@ -1,47 +1,127 @@
 {% extends "core/modal_base.html" %}
-
 {% block modal_content %}
-<div class="mb-6">
-    <h2 class="text-xl font-bold text-white">Asociar Material</h2>
-    <p class="text-gray-400 text-xs">Crea una variante física para: <span class="text-emerald-400">{{ producto.nombre }}</span></p>
-</div>
-
-<form action="{% url 'productos:crear_variante' producto.id %}" 
-      method="POST" 
-      class="space-y-4">
-    {% csrf_token %}
-    
-    <div>
-        <label class="text-gray-400 text-[10px] uppercase font-bold mb-2 block tracking-widest">Seleccionar Material del Inventario</label>
-        {{ form.material }}
-        {% if form.material.errors %}
-            <p class="text-red-500 text-[10px] mt-1">{{ form.material.errors.0 }}</p>
-        {% endif %}
-    </div>
-
-    <div class="grid grid-cols-2 gap-4">
-        <div>
-            <label class="text-gray-400 text-[10px] uppercase font-bold mb-2 block tracking-widest">Stock ya Impreso</label>
-            {{ form.stock_disponible }}
-            <p class="text-[9px] text-gray-500 mt-1 italic">Unidades físicas listas para entrega.</p>
+    <div class="flex flex-col h-auto max-h-[90vh] w-full max-w-2xl mx-auto">
+        <!-- Header fijo -->
+        <div class="flex-shrink-0 mb-6">
+            <h2 class="text-xl font-bold text-white">Configurar Variante</h2>
+            <p class="text-gray-400 text-xs">
+                Define los materiales para: <span class="text-emerald-400">{{ producto.nombre }}</span>
+            </p>
         </div>
 
-        <div>
-            <label class="text-gray-400 text-[10px] uppercase font-bold mb-2 block tracking-widest">Precio Extra (RD$)</label>
-            {{ form.precio_adicional }}
-            <p class="text-[9px] text-gray-500 mt-1 italic">Suma al precio base de RD$ {{ producto.precio_venta }}.</p>
-        </div>
+        <form action="{% url 'productos:crear_variante' producto.id %}"
+              method="POST"
+              class="flex flex-col min-h-0">
+            {% csrf_token %}
+            
+            <!-- Stock y Precio (fijo arriba) -->
+            <div class="flex-shrink-0 mb-6">
+                <div class="grid grid-cols-2 gap-4 bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+                    <div>
+                        <label class="text-gray-400 text-[10px] uppercase font-bold mb-2 block tracking-widest">Stock Físico</label>
+                        <p class="text-[9px] text-gray-500 mt-1 italic">Unidades físicas listas para entrega.</p>
+                        {{ form.stock_disponible }}
+                    </div>
+                    <div>
+                        <label class="text-gray-400 text-[10px] uppercase font-bold mb-2 block tracking-widest">Precio Extra</label>
+                        <p class="text-[9px] text-gray-500 mt-1 italic">Costo adicional por esta variante.</p>
+                        {{ form.precio_adicional }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Área scrolleable de materiales -->
+            <div class="flex-1 min-h-0 flex flex-col">
+                <div class="flex items-center justify-between mb-3 flex-shrink-0">
+                    <label class="text-emerald-400 text-[10px] uppercase font-bold tracking-widest">Composición de Materiales</label>
+                    <span id="contador-materiales" class="text-xs text-gray-500 font-mono">0 materiales</span>
+                </div>
+                
+                {{ formset.management_form }}
+                
+                <!-- Lista scrolleable -->
+                <div id="material-list" 
+                     class="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar transition-all"
+                     style="max-height: 320px;">
+                    {% for form_m in formset %}
+                        <div class="material-form-row bg-gray-800/30 p-4 rounded-xl border border-gray-700 hover:border-gray-600 transition-all group">
+                            <div class="flex items-start gap-3">
+                                <!-- Número de material -->
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+                                    <span class="material-number text-emerald-400 text-xs font-bold">1</span>
+                                </div>
+                                
+                                <!-- Campos del formulario -->
+                                <div class="flex-1 grid grid-cols-12 gap-3">
+                                    <div class="col-span-7">
+                                        <label class="text-[9px] text-gray-500 mb-1.5 block uppercase tracking-wider">Material / Color</label>
+                                        {{ form_m.material }}
+                                    </div>
+                                    <div class="col-span-5">
+                                        <label class="text-[9px] text-gray-500 mb-1.5 block uppercase tracking-wider">Gramos</label>
+                                        {{ form_m.gramos_usados }}
+                                    </div>
+                                </div>
+                                
+                                <!-- Botón eliminar (solo visible con más de 1 material) -->
+                                <button type="button"
+                                        class="eliminar-material flex-shrink-0 w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 hidden"
+                                        title="Eliminar material">
+                                    <svg class="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Botón añadir (fijo abajo del área scrolleable) -->
+                <div class="flex-shrink-0 mt-4">
+                    <button type="button"
+                            id="add-material"
+                            data-max-materials="{{ form_m.material.queryset.count }}"
+                            class="w-full py-3 px-4 border-2 border-dashed border-gray-700 rounded-xl text-emerald-400 hover:border-emerald-500 hover:bg-emerald-500/5 font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Añadir otro material
+                    </button>
+                </div>
+            </div>
+
+            <!-- Botones de acción (fijos abajo) -->
+            <div class="flex-shrink-0 pt-6 mt-6 border-t border-gray-800">
+                <div class="flex gap-3">
+                    <button type="button"
+                            onclick="cerrarModales()"
+                            class="flex-1 px-4 py-3 rounded-xl border border-gray-700 text-gray-400 font-bold text-sm hover:bg-gray-800 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            class="flex-1 px-4 py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-500 text-xs uppercase tracking-widest transition-colors shadow-lg shadow-emerald-600/20">
+                        Guardar Variante
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
 
-    <div class="pt-4 flex gap-3">
-        <button type="button" onclick="cerrarModales()"
-                class="flex-1 px-4 py-3 rounded-xl border border-gray-700 text-gray-400 hover:bg-gray-800 transition-all font-bold text-sm">
-            Cancelar
-        </button>
-        <button type="submit"
-                class="flex-1 px-4 py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-900/20 text-xs uppercase tracking-[0.2em]">
-            Guardar Variante
-        </button>
-    </div>
-</form>
+    <style>
+        /* Animación suave al agregar */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .material-form-row {
+            animation: slideIn 0.3s ease-out;
+        }
+    </style>
 {% endblock %}

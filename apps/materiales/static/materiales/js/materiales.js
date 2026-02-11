@@ -1,17 +1,69 @@
 // ============================================================================
-// CONFIGURACIÓN DE SWEETALERT2
+// GESTIÓN DE COLORES
 // ============================================================================
+
+// Sincronizar el input type="color" con el div de previsualización
+document.addEventListener('input', function(e) {
+    if (e.target && e.target.name === 'color_hex') {
+        console.log('🎨 Color cambiado:', e.target.value);
+        
+        // Para el modal de CREAR
+        const previewCrear = document.getElementById('color-preview');
+        if (previewCrear) {
+            previewCrear.style.backgroundColor = e.target.value;
+            console.log('✅ Preview actualizado (crear)');
+        }
+        
+        // Para el modal de EDITAR
+        const previewEditar = document.getElementById('edit_color_preview');
+        if (previewEditar) {
+            previewEditar.style.backgroundColor = e.target.value;
+            console.log('✅ Preview actualizado (editar)');
+        }
+    }
+});
+
+// Función para cuando el usuario selecciona un color del autocompletado (AJAX)
+function seleccionarColor(nombre, hex) {
+    console.log('🎨 Color seleccionado del autocompletado:', nombre, hex);
+    
+    const inputNombre = document.getElementById('input-color');
+    const inputHex = document.getElementById('input-color-hex');
+    const preview = document.getElementById('color-preview');
+
+    if (inputNombre) inputNombre.value = nombre;
+    if (inputHex) {
+        inputHex.value = hex;
+        // Disparar evento para que se actualice el preview
+        inputHex.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    
+    // Limpiar resultados de búsqueda
+    const results = document.getElementById('results-color');
+    if (results) results.innerHTML = '';
+}
+
+// ============================================================================
+// EDITAR MATERIAL
+// ============================================================================
+
 function abrirEditar(id) {
     const url = `/administrador/api/materiales/${id}/`;
 
     fetch(url)
         .then(r => r.json())
         .then(data => {
+            console.log('📦 Datos del material:', data);
+            
             const costo = document.getElementById('edit_costo');
             const stock = document.getElementById('edit_stock_minimo');
             const nombre = document.getElementById('edit_display_full_name');
             const tipo = document.getElementById('edit_display_tipo');
             const form = document.getElementById('formEditarMaterial');
+
+            const colorNombreSpan = document.getElementById('edit_display_color_nombre');
+            const inputHex = document.getElementById('edit_color_hex_input');
+            const preview = document.getElementById('edit_color_preview');
 
             // Llenar campos numéricos
             if (costo) costo.value = data.costo_por_gramo;
@@ -21,9 +73,24 @@ function abrirEditar(id) {
             if (nombre) nombre.innerText = data.nombre || '';
             if (tipo) tipo.innerText = data.tipo || '';
 
+            if (colorNombreSpan) {
+                // 'color_nombre' debe venir en tu respuesta JSON de la API
+                colorNombreSpan.innerText = `"${data.color_nombre || 'Color sin asignar'}"`;
+            }
+            // ✅ ASIGNAR EL COLOR
+            if (inputHex && data.color_hex) {
+                inputHex.value = data.color_hex;
+                console.log('🎨 Color hex asignado al input:', data.color_hex);
+            }
+            if (preview && data.color_hex) {
+                preview.style.backgroundColor = data.color_hex;
+                console.log('✅ Preview actualizado con color:', data.color_hex);
+            }
+
             // Actualizar Action del Formulario
             if (form) {
                 form.action = `/administrador/materiales/${id}/editar/`;
+                console.log('📝 Form action actualizado:', form.action);
             }
 
             // Resetear el checkbox de pérdida al abrir (por seguridad UX)
@@ -36,48 +103,42 @@ function abrirEditar(id) {
 
             abrirModal('modalEditarMaterial');
         })
-        .catch(err => console.error("Error al obtener material:", err));
+        .catch(err => console.error("❌ Error al obtener material:", err));
 }
 
 function togglePerdida() {
     const section = document.getElementById('seccionPerdida');
     const check = document.getElementById('checkPerdida');
     if (section && check) {
-        // "Toggle" la clase 'hidden' basado en si el check NO está marcado
         section.classList.toggle('hidden', !check.checked);
     }
 }
-// Función para seleccionar un material de la lista de resultados
+
+// ============================================================================
+// SELECCIÓN DE MATERIALES Y ATRIBUTOS
+// ============================================================================
+
 function seleccionarMaterial(id, textoCompleto) {
-    // 1. Ponemos el nombre bonito en el buscador para que el usuario sepa qué eligió
-    const inputBusqueda = document.getElementById('material-search-input'); // El ID de tu input hx-get
+    const inputBusqueda = document.getElementById('material-search-input');
     if (inputBusqueda) inputBusqueda.value = textoCompleto;
 
-    // 2. Seteamos el ID real en el campo oculto del formulario
-    // Asegúrate de que tu EntradaInventarioForm tenga un input hidden con este ID
     const inputHidden = document.getElementById('material-id-hidden');
     if (inputHidden) inputHidden.value = id;
 
-    // 3. Limpiamos la lista de resultados
     const resultados = document.getElementById('search-results');
     if (resultados) resultados.innerHTML = '';
 
-    // Salto automático al siguiente input para velocidad de escritura
     const proximoInput = document.querySelector('input[name="cantidad_gramos"]');
     if (proximoInput) proximoInput.focus();
-
-    document.querySelector('input[name="cantidad_gramos"]').focus();
 }
 
 function seleccionarAtributo(tipo, nombre) {
     const input = document.getElementById(`input-${tipo}`);
     if (input) {
         input.value = nombre;
-        // Importante: le decimos a HTMX que no busque esto
         input.dispatchEvent(new Event('htmx:abort'));
     }
 
-    // Limpia los resultados
     const resContainer = document.getElementById(`results-${tipo}`);
     if (resContainer) resContainer.innerHTML = '';
 
@@ -92,20 +153,23 @@ function seleccionarAtributo(tipo, nombre) {
     }
 }
 
+// Cerrar resultados al hacer clic fuera
 document.addEventListener('click', function (event) {
-    // Definimos los IDs de los contenedores de resultados
     const contenedores = ['results-marca', 'results-tipo', 'results-color', 'search-results'];
 
     contenedores.forEach(id => {
         const resContainer = document.getElementById(id);
         const inputContainer = document.getElementById(`input-${id.split('-')[1]}`);
 
-        // Si el clic no fue en el input ni en el contenedor de resultados, limpiamos
         if (resContainer && !resContainer.contains(event.target) && event.target !== inputContainer) {
             resContainer.innerHTML = '';
         }
     });
 });
+
+// ============================================================================
+// ELIMINACIÓN
+// ============================================================================
 
 function confirmarEliminarMaterial(id, nombre) {
     Swal.fire({
@@ -138,13 +202,8 @@ function confirmarEliminarMaterial(id, nombre) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Mostramos el toast de éxito
                     mostrarToast('success', data.message);
-
-                    // Esperamos un momento breve para que el usuario vea el toast antes de recargar
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1000);
+                    setTimeout(() => location.reload(), 1000);
                 } else {
                     Swal.close();
                     mostrarToast('error', data.message || 'Error al eliminar el material');
@@ -158,7 +217,6 @@ function confirmarEliminarMaterial(id, nombre) {
     });
 }
 
-// Función para confirmar eliminación de atributos
 function confirmarEliminarAtributo(tipo, id, nombre) {
     Swal.fire({
         ...swalConfigBase,
@@ -186,16 +244,21 @@ function confirmarEliminarAtributo(tipo, id, nombre) {
                 .then(data => {
                     if (data.success) {
                         mostrarToast('success', data.message);
-                        // Cerramos modales y recargamos para limpiar la lista principal
                         cerrarModales();
                         setTimeout(() => location.reload(), 800);
                     } else {
-                        // Si tiene materiales asociados, la vista devolverá success: false
                         Swal.fire({
                             ...swalConfigBase,
                             title: 'No se puede eliminar',
                             text: data.message,
-                            icon: 'error'
+                            iconHtml: swalIcons.warningRed,
+                            confirmButtonText: 'Entendido',
+                            showCloseButton: true,
+                            showCancelButton: false,
+                            customClass: {
+                                ...swalCustomClasses,
+                                icon: 'border-0'
+                            }
                         });
                     }
                 })
@@ -204,28 +267,29 @@ function confirmarEliminarAtributo(tipo, id, nombre) {
     });
 }
 
+// ============================================================================
+// TABS
+// ============================================================================
+
 function cambiarTab(event, tabId) {
-    // 1. Ocultar todos los contenidos
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
 
-    // 2. Resetear todos los botones
     document.querySelectorAll('.tab-btn').forEach(btn => {
-        // Quitamos el estado activo
         btn.classList.remove('bg-emerald-600', 'text-white');
-        // Devolvemos el estado inactivo
         btn.classList.add('text-gray-500', 'hover:text-gray-300');
     });
 
-    // 3. Mostrar el contenido seleccionado
     document.getElementById(tabId).classList.remove('hidden');
 
-    // 4. Activar el botón clicado
     const activo = event.currentTarget;
     activo.classList.remove('text-gray-500', 'hover:text-gray-300');
     activo.classList.add('bg-emerald-600', 'text-white');
 }
 
-// Usamos un objeto global para evitar duplicados
+// ============================================================================
+// NAVEGACIÓN CON TECLADO
+// ============================================================================
+
 if (typeof window.MaterialesHandlers === 'undefined') {
     window.MaterialesHandlers = {
         keydown: function (e) {
@@ -247,13 +311,11 @@ if (typeof window.MaterialesHandlers === 'undefined') {
 
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    // Lógica estándar (Bajamos en la lista)
                     currentIndex = (currentIndex + 1 < items.length) ? currentIndex + 1 : 0;
                     window.MaterialesHandlers.actualizarSeleccion(items, currentIndex);
                 }
                 else if (e.key === 'ArrowUp') {
                     e.preventDefault();
-                    // Lógica estándar (Subimos en la lista)
                     currentIndex = (currentIndex <= 0) ? items.length - 1 : currentIndex - 1;
                     window.MaterialesHandlers.actualizarSeleccion(items, currentIndex);
                 }
@@ -268,20 +330,17 @@ if (typeof window.MaterialesHandlers === 'undefined') {
         actualizarSeleccion: function (items, index) {
             items.forEach(item => {
                 item.classList.remove('item-active');
-                // Quitamos el estilo manual por si acaso
                 item.style.backgroundColor = "";
             });
 
             const activeItem = items[index];
             if (activeItem) {
                 activeItem.classList.add('item-active');
-                // Forzamos el color con JS para asegurar que se vea
                 activeItem.style.backgroundColor = "rgba(37, 99, 235, 0.4)";
                 activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
             }
         }
     };
 
-    // Solo agregamos el evento la PRIMERA vez que se carga el archivo
     document.addEventListener('keydown', window.MaterialesHandlers.keydown);
 }

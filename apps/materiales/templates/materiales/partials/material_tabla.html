@@ -19,8 +19,12 @@
             {% for m in materiales %}
                 <tr class="hover:bg-gray-800/30 transition-colors group">
                     <td class="p-4">
-                        <div class="font-bold text-white group-hover:text-blue-400 transition-colors">{{ m.marca.nombre }}</div>
-                        <div class="text-gray-500 text-xs">{{ m.tipo.nombre }}</div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full border border-gray-700 shrink-0"
+                                 style="background-color: {{ m.color.codigo_hex }}"></div>
+                            <div class="font-bold text-white group-hover:text-blue-400 transition-colors">{{ m.marca.nombre }}</div>
+                        </div>
+                        <div class="text-gray-500 text-xs ml-5">{{ m.tipo.nombre }}</div>
                     </td>
                     <td class="p-4 text-gray-300 text-sm">
                         <div class="flex items-center gap-2">{{ m.color.nombre }}</div>
