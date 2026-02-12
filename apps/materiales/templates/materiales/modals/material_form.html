@@ -117,7 +117,18 @@
                             <div id="results-color" class="absolute z-50 w-full"></div>
                         </div>
                         <div class="flex-shrink-0">
-                            <div class="relative group h-full">
+                            <div class="relative group h-full transition-all duration-300">
+                                <div class="absolute -top-2 -right-2 z-20 flex items-center justify-center">
+                                    <div class="group/tooltip relative">
+                                        <div class="bg-gray-800 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center cursor-help border border-gray-600 shadow-sm">
+                                            i
+                                        </div>
+                                        <div class="absolute bottom-full mb-2 right-0 w-48 p-2 bg-black text-white text-xs rounded shadow-lg opacity-0 pointer-events-none group-hover/tooltip:opacity-100 transition-opacity duration-200 z-30">
+                                            Selector opcional (por defecto verde esmeralda).
+                                            <div class="absolute top-full right-1 border-4 border-transparent border-t-black"></div>
+                                        </div>
+                                    </div>
+                                </div>
                                 <input type="color"
                                        name="color_hex"
                                        id="input-color-hex"

@@ -34,7 +34,7 @@ class MaterialForm(TailwindModelForm):
 
     def save(self, commit=True):
         marca_txt = self.cleaned_data['marca_nombre'].strip().capitalize()
-        tipo_txt = self.cleaned_data['tipo_nombre'].strip().capitalize()
+        tipo_txt = self.cleaned_data['tipo_nombre'].strip().upper()
         color_txt = self.cleaned_data['color_nombre'].strip().capitalize()
         hex_txt = self.cleaned_data.get('color_hex', '#10b981')
 
@@ -46,9 +46,7 @@ class MaterialForm(TailwindModelForm):
         if not color_obj:
             color_obj = Color.objects.create(nombre=color_txt, codigo_hex=hex_txt)
         else:
-            # Actualizar el hex si ya existe el color
-            color_obj.codigo_hex = hex_txt
-            color_obj.save()
+            pass
 
         material, created = Material.objects.get_or_create(
             tipo=tipo_obj,

@@ -21,6 +21,7 @@
                     <div class="w-10 h-10 rounded-lg bg-gray-800 overflow-hidden">
                         {% if p.imagen %}
                             <img src="{{ p.imagen.url }}"
+                                 loading="lazy"
                                  class="w-full h-full object-cover opacity-60">
                         {% endif %}
                     </div>

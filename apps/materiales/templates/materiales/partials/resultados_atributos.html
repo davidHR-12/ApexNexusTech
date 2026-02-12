@@ -1,10 +1,19 @@
 <div id="results-{{ tipo }}-container" class="bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden mt-1 max-h-40 overflow-y-auto">
     {% for r in resultados %}
     <button type="button" 
-            onclick="seleccionarAtributo('{{ tipo }}', '{{ r.nombre }}')"
-            {# Añadimos 'resultado-item' para el JS y marcamos el primero como activo #}
+            {% if tipo == 'color' %}
+                onclick="seleccionarColor('{{ r.nombre }}', '{{ r.codigo_hex }}')"
+            {% else %}
+                onclick="seleccionarAtributo('{{ tipo }}', '{{ r.nombre }}')"
+            {% endif %}
             class="resultado-item w-full text-left p-2 hover:bg-blue-600/30 text-sm text-gray-200 border-b border-gray-700 last:border-0 transition-colors {% if forloop.first %}item-active{% endif %}">
-        {{ r.nombre }}
+        
+        <div class="flex items-center gap-2">
+            {% if tipo == 'color' %}
+                <span class="w-3 h-3 rounded-full border border-gray-600" style="background-color: {{ r.codigo_hex }}"></span>
+            {% endif %}
+            <span>{{ r.nombre }}</span>
+        </div>
     </button>
     {% empty %}
     <div class="p-2 text-xs text-gray-500 italic">No se encontraron coincidencias</div>

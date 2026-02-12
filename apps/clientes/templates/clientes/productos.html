@@ -20,6 +20,7 @@
             {% if p.imagen %}
               <img src="{{ p.imagen.url }}"
                    alt="{{ p.nombre }}"
+                   loading="lazy"
                    class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500">
             {% else %}
               <div class="flex flex-col items-center text-gray-700 italic text-xs">

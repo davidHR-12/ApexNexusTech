@@ -13,12 +13,12 @@
           <div id="thumbnailContainer" class="grid grid-cols-4 sm:grid-cols-5 gap-4">
             <button onclick="changeImage('{{ producto.imagen.url }}', this)"
                     class="thumb-btn aspect-square rounded-2xl overflow-hidden border-2 border-[#10b981] bg-gray-900/50 p-1 transition-all">
-              <img src="{{ producto.imagen.url }}" class="w-full h-full object-contain">
+              <img src="{{ producto.imagen.url }}" loading="lazy" class="w-full h-full object-contain">
             </button>
             {% for img in galeria %}
               <button onclick="changeImage('{{ img.imagen.url }}', this)"
                       class="thumb-btn aspect-square rounded-2xl overflow-hidden border-2 border-transparent hover:border-gray-600 bg-gray-900/50 p-1 transition-all">
-                <img src="{{ img.imagen.url }}" class="w-full h-full object-contain">
+                <img src="{{ img.imagen.url }}" loading="lazy" class="w-full h-full object-contain">
               </button>
             {% endfor %}
           </div>

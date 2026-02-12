@@ -129,7 +129,7 @@ function handleMultiplePreviewsWithDelete(input, containerId, textId) {
                 wrapper.dataset.fileId = fileId;
 
                 wrapper.innerHTML = `
-                    <img src="${e.target.result}" class="w-full h-full object-cover rounded-lg border border-purple-500/50 shadow-md">
+                    <img src="${e.target.result}" loading="lazy" class="w-full h-full object-cover rounded-lg border border-purple-500/50 shadow-md">
                     <button type="button" class="btn-delete absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg z-50">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -479,7 +479,7 @@ function abrirEditarProducto(id) {
 
                     // CORRECCIÓN: Pasar this.parentElement correctamente
                     wrapper.innerHTML = `
-                        <img src="${imgData.url}" class="w-full h-full object-cover rounded-lg border border-purple-500/20 shadow-sm transition-all">
+                        <img src="${imgData.url}" loading="lazy" class="w-full h-full object-cover rounded-lg border border-purple-500/20 shadow-sm transition-all">
                         <button type="button" 
                                 onclick="eliminarImagenProducto('${imgData.id}', this.parentElement)" 
                                 class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg z-50">

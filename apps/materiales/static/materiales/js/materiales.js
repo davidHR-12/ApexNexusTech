@@ -25,24 +25,97 @@ document.addEventListener('input', function(e) {
 
 // Función para cuando el usuario selecciona un color del autocompletado (AJAX)
 function seleccionarColor(nombre, hex) {
-    console.log('🎨 Color seleccionado del autocompletado:', nombre, hex);
-    
     const inputNombre = document.getElementById('input-color');
     const inputHex = document.getElementById('input-color-hex');
     const preview = document.getElementById('color-preview');
 
+    // 1. Asignar el nombre al campo de texto
     if (inputNombre) inputNombre.value = nombre;
+
+    // 2. Asignar el valor HEX al input color y disparar el evento input
     if (inputHex) {
         inputHex.value = hex;
-        // Disparar evento para que se actualice el preview
+        inputHex.disabled = true; 
+        inputHex.parentElement.classList.add('pointer-events-none', 'opacity-70');
+        // Importante: forzamos el evento 'input' para que otros listeners (como el de previsualización) reaccionen
         inputHex.dispatchEvent(new Event('input', { bubbles: true }));
     }
+    if (preview) {
+        preview.style.backgroundColor = hex;
+        preview.classList.add('ring-2', 'ring-blue-500');
+        // Cambiamos el icono a un candado
+        preview.innerHTML = `
+            <svg class="w-4 h-4 text-white mix-blend-difference" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+            </svg>`;
+    }
     
-    // Limpiar resultados de búsqueda
+    // 3. Limpiar los resultados
     const results = document.getElementById('results-color');
     if (results) results.innerHTML = '';
+
+    // 4. Salto de foco al costo
+    const costoInput = document.querySelector('input[name="costo_por_gramo"]');
+    if (costoInput) costoInput.focus();
 }
 
+// Si el usuario empieza a escribir manualmente, desbloqueamos y reseteamos
+document.getElementById('input-color')?.addEventListener('input', function() {
+    const inputHex = document.getElementById('input-color-hex');
+    const preview = document.getElementById('color-preview');
+    
+    if (inputHex && inputHex.disabled) {
+        inputHex.disabled = false;
+        inputHex.parentElement.classList.remove('pointer-events-none', 'opacity-70');
+        inputHex.value = "#10b981";
+        
+        if (preview) {
+            preview.style.backgroundColor = "#10b981";
+            preview.classList.remove('ring-2', 'ring-blue-500');
+            // Restaurar icono original del gotero
+            preview.innerHTML = `
+                <svg class="w-4 h-4 text-white mix-blend-difference opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.172-1.172a4 4 0 115.656 5.656L10 17.657" />
+                </svg>`;
+        }
+    }
+});
+
+// Función para: "negro mate" -> "Negro mate"
+function aplicarCapitalize(text) {
+    if (!text) return "";
+    // Solo capitalizamos la primera letra del string total
+    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+}
+
+// 1. Lógica para MARCA y COLOR (Primera letra Mayúscula)
+['input-marca', 'input-color'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    el.addEventListener('input', function(e) {
+        const start = this.selectionStart; // Guardar posición del cursor
+        this.value = aplicarCapitalize(this.value);
+        this.setSelectionRange(start, start); // Restaurar posición del cursor
+    });
+});
+
+// 2. Lógica para TIPO (Todo Mayúsculas: PLA, PETG)
+const inputTipo = document.getElementById('input-tipo');
+if (inputTipo) {
+    inputTipo.addEventListener('input', function(e) {
+        const start = this.selectionStart;
+        this.value = this.value.toUpperCase();
+        this.setSelectionRange(start, start);
+    });
+}
+// Asegurar que los datos bloqueados se envíen al servidor
+document.getElementById('formCrearMaterial')?.addEventListener('submit', function() {
+    const inputHex = document.getElementById('input-color-hex');
+    if (inputHex) {
+        inputHex.disabled = false; // Lo habilitamos justo al enviar
+    }
+});
 // ============================================================================
 // EDITAR MATERIAL
 // ============================================================================
