@@ -15,19 +15,28 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
       <div class="lg:col-span-5 space-y-6">
         <div class="bg-gray-900 border border-gray-800 rounded-3xl overflow-hidden shadow-2xl">
-          <div class="relative aspect-square bg-black">
-            {% if producto.imagen %}
-              <img width="100%"
-                   height="100%"
-                   alt="{{ producto.imagen.url }}"
-                   src="{{ producto.imagen.url }}"
-                   class="w-full h-full object-cover"
-                   id="main-image" />
+          <div class="relative aspect-square bg-black flex items-center justify-center">
+            <img width="100%"
+                 height="100%"
+                 alt="Imagen del producto"
+                 src="{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}"
+                 class="w-full h-full object-cover {% if not producto.imagen %}hidden{% endif %}"
+                 id="main-image" />
+            {% if not producto.imagen %}
+              <div id="image-placeholder" class="text-gray-500 text-center p-4">
+                <svg class="w-12 h-12 mx-auto mb-2 opacity-20"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p class="text-xs uppercase tracking-widest font-bold opacity-90">Sin imagen principal</p>
+              </div>
             {% endif %}
           </div>
           <div class="p-4 flex gap-3 overflow-x-auto">
             {% for img in producto.imagenes.all %}
-              <button onclick="document.getElementById('main-image').src='{{ img.imagen.url }}'"
+              <button onclick="cambiarVisor('{{ img.imagen.url }}')"
                       class="w-16 h-16 rounded-lg border border-gray-700 overflow-hidden shrink-0 hover:border-[#10b981] transition-all">
                 <img width="100%"
                      height="100%"
@@ -35,6 +44,10 @@
                      src="{{ img.imagen.url }}"
                      class="w-full h-full object-cover" />
               </button>
+              {% empty %}
+              <div class="w-full text-center py-2">
+                <p class="text-gray-500 text-xs italic">No hay imágenes en galería</p>
+              </div>
             {% endfor %}
           </div>
         </div>
@@ -55,10 +68,10 @@
         </div>
       </div>
       <div class="lg:col-span-7 space-y-6">
-        <div class="flex justify-between items-center">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h2 class="text-3xl font-bold text-white">Inventario de {{ producto.nombre }}</h2>
           <button onclick="abrirModalDinamico('{% url 'productos:crear_variante' producto.id %}')"
-                  class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2">
+                  class="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center justify-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
@@ -66,75 +79,77 @@
           </button>
         </div>
         <div class="bg-[#1e293b] border border-gray-800 rounded-3xl overflow-hidden">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-gray-900/50 border-b border-gray-800">
-                <th class="p-4 text-gray-400 text-[10px] uppercase font-bold">Material / Color</th>
-                <th class="p-4 text-gray-400 text-[10px] uppercase font-bold text-center">Stock</th>
-                <th class="p-4 text-gray-400 text-[10px] uppercase font-bold text-center">Precio Adicional</th>
-                <th class="p-4 text-gray-400 text-[10px] uppercase text-center font-bold">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-700/50">
-              {% for v in producto.variantes.all %}
-                <tr class="hover:bg-gray-800/30 transition-colors">
-                  <td class="p-4">
-                    <div class="flex flex-col gap-2">
-                      {% for detalle in v.detalles_material.all %}
-                        <div class="flex items-center gap-3">
-                          <div class="w-3 h-3 rounded-full shadow-[0_0_8px]"
-                               style="background-color: {{ detalle.material.color.codigo_hex }}"></div>
-                          <div>
-                            <p class="text-white font-medium text-sm">
-                              {{ detalle.material.color.nombre }}
-                              <span class="text-gray-500 text-xs">({{ detalle.gramos_usados }}g)</span>
-                            </p>
-                            <p class="text-gray-500 text-[10px] uppercase">{{ detalle.material.marca.nombre }} {{ detalle.material.tipo }}</p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[600px]">
+              <thead>
+                <tr class="bg-gray-900/50 border-b border-gray-800">
+                  <th class="p-4 text-gray-400 text-[10px] uppercase font-bold">Material / Color</th>
+                  <th class="p-4 text-gray-400 text-[10px] uppercase font-bold text-center">Stock</th>
+                  <th class="p-4 text-gray-400 text-[10px] uppercase font-bold text-center">Precio Adicional</th>
+                  <th class="p-4 text-gray-400 text-[10px] uppercase text-center font-bold">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-700/50">
+                {% for v in producto.variantes.all %}
+                  <tr class="hover:bg-gray-800/30 transition-colors">
+                    <td class="p-4">
+                      <div class="flex flex-col gap-2">
+                        {% for detalle in v.detalles_material.all %}
+                          <div class="flex items-center gap-3">
+                            <div class="w-3 h-3 rounded-full shadow-[0_0_8px]"
+                                 style="background-color: {{ detalle.material.color.codigo_hex }}"></div>
+                            <div>
+                              <p class="text-white font-medium text-sm">
+                                {{ detalle.material.color.nombre }}
+                                <span class="text-gray-500 text-xs">({{ detalle.gramos_usados }}g)</span>
+                              </p>
+                              <p class="text-gray-500 text-[10px] uppercase">{{ detalle.material.marca.nombre }} {{ detalle.material.tipo }}</p>
+                            </div>
                           </div>
-                        </div>
-                      {% empty %}
-                        <p class="text-red-400 text-xs italic">Sin materiales configurados</p>
-                      {% endfor %}
-                    </div>
-                  </td>
-                  <td class="p-4 text-center">
-                    <span class="{% if v.stock_disponible <= 2 %}text-red-400{% else %}text-white{% endif %} font-mono font-bold text-sm">
-                      {{ v.stock_disponible }} uds
-                    </span>
-                  </td>
-                  <td class="p-4 text-center">
-                    <span class="text-emerald-400 font-mono font-bold text-sm">RD$ {{ v.precio_adicional|intcomma }}</span>
-                  </td>
-                  <td class="p-4 text-center">
-                    <div class="flex justify-center gap-2">
-                      <button onclick="abrirModalDinamico('{% url 'productos:registrar_produccion' v.id %}')"
-                              title="Registrar impresión"
-                              class="p-2 bg-gray-800 text-emerald-400 rounded-lg hover:bg-emerald-600 hover:text-white transition-all">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                      </button>
-                      <button onclick="confirmarEliminarVariante(this)"
-                              data-variante-id="{{ v.id }}"
-                              data-nombre="{{ v|escapejs }}"
-                              data-url-eliminar="{% url 'productos:eliminar_variante_json' v.id %}"
-                              class="p-2 text-red-400 hover:bg-red-600 hover:text-white rounded-lg transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              {% empty %}
-                <tr>
-                  <td colspan="3" class="p-12 text-center text-gray-500 italic text-sm">
-                    No has definido variantes para este producto.
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+                        {% empty %}
+                          <p class="text-red-400 text-xs italic">Sin materiales configurados</p>
+                        {% endfor %}
+                      </div>
+                    </td>
+                    <td class="p-4 text-center">
+                      <span class="{% if v.stock_disponible <= 2 %}text-red-400{% else %}text-white{% endif %} font-mono font-bold text-sm">
+                        {{ v.stock_disponible }} uds
+                      </span>
+                    </td>
+                    <td class="p-4 text-center">
+                      <span class="text-emerald-400 font-mono font-bold text-sm">RD$ {{ v.precio_adicional|intcomma }}</span>
+                    </td>
+                    <td class="p-4 text-center">
+                      <div class="flex justify-center gap-2">
+                        <button onclick="abrirModalDinamico('{% url 'productos:registrar_produccion' v.id %}')"
+                                title="Registrar impresión"
+                                class="p-2 bg-gray-800 text-emerald-400 rounded-lg hover:bg-emerald-600 hover:text-white transition-all">
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                          </svg>
+                        </button>
+                        <button onclick="confirmarEliminarVariante(this)"
+                                data-variante-id="{{ v.id }}"
+                                data-nombre="{{ v|escapejs }}"
+                                data-url-eliminar="{% url 'productos:eliminar_variante_json' v.id %}"
+                                class="p-2 text-red-400 hover:bg-red-600 hover:text-white rounded-lg transition-colors">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="3" class="p-12 text-center text-gray-500 italic text-sm">
+                      No has definido variantes para este producto.
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

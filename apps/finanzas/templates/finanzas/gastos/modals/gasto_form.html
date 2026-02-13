@@ -16,6 +16,7 @@
       </label>
       <input type="text"
              name="descripcion"
+             placeholder="Ej: Pago de luz por el mes de enero"
              class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-white focus:border-red-500 outline-none transition-all"
              required>
     </div>
@@ -30,7 +31,7 @@
           <option value="Herramientas">Herramientas y accesorios</option>
           <option value="Energia">Energía</option>
           <option value="Compra_Material">Compra de Material</option>
-          <option value="Servicios">Servicios</option>
+          <option value="Servicios">Servicios (internet, teléfono, etc.)</option>
           <option value="Otro">Otro</option>
         </select>
       </div>
@@ -40,7 +41,8 @@
       <div class="bg-red-500/5 p-3 rounded-2xl border border-red-500/20 group">
         <label class="text-red-400/70 text-[10px] uppercase mb-1 block font-bold">Monto (RD$)</label>
         <input type="number"
-               step="0.01"
+               step="1"
+               placeholder="0"
                name="monto"
                class="w-full bg-transparent text-white font-mono text-xl outline-none readonly:text-gray-500"
                required>
@@ -48,6 +50,7 @@
       <div class="bg-gray-800/40 p-3 rounded-2xl border border-gray-700/50">
         <label class="text-gray-400 text-[10px] uppercase mb-1 block font-bold text-gray-500">Fecha</label>
         <input type="date"
+               placeholder="Selecciona una fecha"
                name="fecha"
                class="w-full bg-transparent text-white text-sm outline-none readonly:text-gray-500"
                required>
@@ -56,6 +59,7 @@
     <div>
       <label class="text-gray-400 text-[10px] uppercase mb-2 block font-bold tracking-widest text-gray-500">Notas</label>
       <textarea name="notas"
+                placeholder="Escribe comentarios u observaciones..."
                 rows="2"
                 class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-white focus:border-red-500 outline-none text-sm"></textarea>
     </div>

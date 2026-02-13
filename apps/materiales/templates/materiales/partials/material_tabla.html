@@ -3,81 +3,83 @@
     <div id="barra-filtros-container" hx-swap-oob="true">{% include "materiales/partials/barra_filtros.html" %}</div>
 </template>
 {# TABLA DE MATERIALES #}
-<div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden shadow-sm">
-    <table class="w-full text-left border-collapse">
-        <thead>
-            <tr class="bg-gray-800/50 text-gray-400 text-[10px] uppercase tracking-widest">
-                <th class="p-4 font-bold">Material / Marca</th>
-                <th class="p-4 font-bold">Color</th>
-                <th class="p-4 font-bold">Stock Actual</th>
-                <th class="p-4 font-bold">Costo/g</th>
-                <th class="p-4 font-bold">Estado</th>
-                <th class="p-4 font-bold text-center">Acciones</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-800">
-            {% for m in materiales %}
-                <tr class="hover:bg-gray-800/30 transition-colors group">
-                    <td class="p-4">
-                        <div class="flex items-center gap-2">
-                            <div class="w-3 h-3 rounded-full border border-gray-700 shrink-0"
-                                 style="background-color: {{ m.color.codigo_hex }}"></div>
-                            <div class="font-bold text-white group-hover:text-blue-400 transition-colors">{{ m.marca.nombre }}</div>
-                        </div>
-                        <div class="text-gray-500 text-xs ml-5">{{ m.tipo.nombre }}</div>
-                    </td>
-                    <td class="p-4 text-gray-300 text-sm">
-                        <div class="flex items-center gap-2">{{ m.color.nombre }}</div>
-                    </td>
-                    <td class="p-4">
-                        <span class="font-mono font-bold {% if m.stock_actual <= m.stock_minimo %}text-red-400 animate-pulse{% else %}text-emerald-400{% endif %}">
-                            {{ m.stock_actual|floatformat:0 }}g
-                        </span>
-                    </td>
-                    <td class="p-4 text-gray-400 text-sm font-medium">RD$ {{ m.costo_por_gramo|floatformat:2|intcomma }}</td>
-                    <td class="p-4">
-                        {% if m.stock_actual <= m.stock_minimo %}
-                            <span class="px-2.5 py-1 rounded-lg bg-red-500/10 text-red-500 text-[10px] font-bold uppercase border border-red-500/20">Crítico</span>
-                        {% else %}
-                            <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase border border-emerald-500/20">Óptimo</span>
-                        {% endif %}
-                    </td>
-                    <td class="p-4 text-center">
-                        <div class="flex items-center gap-2 justify-center">
-                            <button onclick="abrirEditar('{{ m.id }}')"
-                                    class="p-2 bg-gray-800 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
-                                    title="Editar">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
-                            </button>
-                            <button onclick="confirmarEliminarMaterial('{{ m.id }}', '{{ m.tipo.nombre }} {{ m.marca.nombre }}')"
-                                    class="p-2 bg-gray-800 text-red-400 rounded-lg hover:bg-red-600 hover:text-white transition-all"
-                                    title="Eliminar o Desactivar">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
-                        </div>
-                    </td>
+<div class="relative overflow-hidden shadow-2xl rounded-2xl border border-gray-700/50 bg-gray-900/40">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse min-w-[800px]">
+            <thead>
+                <tr class="bg-[#1e293b]/60 text-gray-400 text-[10px] uppercase tracking-widest">
+                    <th class="p-4 font-bold">Material / Marca</th>
+                    <th class="p-4 font-bold">Color</th>
+                    <th class="p-4 font-bold">Stock Actual</th>
+                    <th class="p-4 font-bold">Costo/g</th>
+                    <th class="p-4 font-bold">Estado</th>
+                    <th class="p-4 font-bold text-center">Acciones</th>
                 </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="6" class="p-12 text-center">
-                        <div class="flex flex-col items-center">
-                            <svg class="w-12 h-12 text-gray-700 mb-4"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                            </svg>
-                            <p class="text-gray-500 italic font-medium">No hay materiales registrados.</p>
-                        </div>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody class="divide-y divide-gray-800">
+                {% for m in materiales %}
+                    <tr class="hover:bg-gray-800/30 transition-colors group">
+                        <td class="p-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full border border-gray-700 shrink-0"
+                                     style="background-color: {{ m.color.codigo_hex }}"></div>
+                                <div class="font-bold text-white group-hover:text-blue-400 transition-colors">{{ m.marca.nombre }}</div>
+                            </div>
+                            <div class="text-gray-500 text-xs ml-5">{{ m.tipo.nombre }}</div>
+                        </td>
+                        <td class="p-4 text-gray-300 text-sm">
+                            <div class="flex items-center gap-2">{{ m.color.nombre }}</div>
+                        </td>
+                        <td class="p-4">
+                            <span class="font-mono font-bold {% if m.stock_actual <= m.stock_minimo %}text-red-400 animate-pulse{% else %}text-emerald-400{% endif %}">
+                                {{ m.stock_actual|floatformat:0 }}g
+                            </span>
+                        </td>
+                        <td class="p-4 text-gray-400 text-sm font-medium">RD$ {{ m.costo_por_gramo|floatformat:2|intcomma }}</td>
+                        <td class="p-4">
+                            {% if m.stock_actual <= m.stock_minimo %}
+                                <span class="px-2.5 py-1 rounded-lg bg-red-500/10 text-red-500 text-[10px] font-bold uppercase border border-red-500/20">Crítico</span>
+                            {% else %}
+                                <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase border border-emerald-500/20">Óptimo</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center gap-2 justify-center">
+                                <button onclick="abrirEditar('{{ m.id }}')"
+                                        class="p-2 bg-gray-800 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+                                        title="Editar">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                </button>
+                                <button onclick="confirmarEliminarMaterial('{{ m.id }}', '{{ m.tipo.nombre }} {{ m.marca.nombre }}')"
+                                        class="p-2 bg-gray-800 text-red-400 rounded-lg hover:bg-red-600 hover:text-white transition-all"
+                                        title="Eliminar o Desactivar">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="p-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <svg class="w-12 h-12 text-gray-700 mb-4"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                                <p class="text-gray-500 italic font-medium">No hay materiales registrados.</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {# PAGINACIÓN INFERIOR #}
 <div class="bg-[#1e293b] border-t border-gray-800 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-b-2xl">

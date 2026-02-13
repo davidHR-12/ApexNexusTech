@@ -6,7 +6,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" type="image/x-icon" href="{% static 'img/Logo-figura.ico' %}">
+    <link rel="icon"
+          type="image/x-icon"
+          href="{% static 'img/Logo-figura.ico' %}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
           rel="stylesheet">
     <title>A.N.T - 3D Print Service</title>
@@ -83,39 +85,37 @@
     <nav class="border-b border-gray-800 bg-[#0f172a]/80 backdrop-blur-md sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-20 items-center">
-<a href="{% url 'clientes:index' %}"
-   class="flex items-center gap-3 hover:opacity-80 transition group">
-  <!-- Logo Figura -->
-  <div class="p-2 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.4)] group-hover:scale-110 transition-transform bg-transparent w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center flex-shrink-0">
-    <img src="{% static 'img/Logo-figura.ico' %}"
-         loading="lazy"
-         alt="A.N.T Logo"
-         class="w-full h-full object-contain" />
-  </div>
-  
-  <!-- Logo Texto (HTML/CSS) -->
-  <div class="flex flex-col">
-    <!-- A.N.T -->
-    <div class="flex items-end gap-0.5">
-      <div class="flex items-end">
-        <span class="text-2xl sm:text-3xl font-black text-white tracking-tighter leading-none">A</span>
-        <span class="text-xl sm:text-2xl font-black text-white leading-none mb-0.5">.</span>
-      </div>
-      <div class="flex items-end">
-        <span class="text-2xl sm:text-3xl font-black text-white tracking-tighter leading-none">N</span>
-        <span class="text-xl sm:text-2xl font-black text-white leading-none mb-0.5">.</span>
-      </div>
-      <span class="text-2xl sm:text-3xl font-black text-white tracking-tighter leading-none">T</span>
-    </div>
-    
-    <!-- APEX NEXUS TECHNOLOGY -->
-    <div class="flex items-center gap-1.5 sm:gap-2">
-      <span class="text-[8px] sm:text-[10px] font-bold text-[#10b981] tracking-[0.25em] sm:tracking-[0.3em] leading-none uppercase">APEX</span>
-      <span class="text-[8px] sm:text-[10px] font-bold text-[#10b981] tracking-[0.25em] sm:tracking-[0.3em] leading-none uppercase">NEXUS</span>
-      <span class="text-[8px] sm:text-[10px] font-bold text-[#10b981] tracking-[0.25em] sm:tracking-[0.3em] leading-none uppercase">TECHNOLOGY</span>
-    </div>
-  </div>
-</a>
+          <a href="{% url 'clientes:index' %}"
+             class="flex items-center gap-3 hover:opacity-80 transition group">
+            <!-- Logo Figura -->
+            <div class="p-2 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.4)] group-hover:scale-110 transition-transform bg-transparent w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center flex-shrink-0">
+              <img src="{% static 'img/Logo-figura.ico' %}"
+                   loading="lazy"
+                   alt="A.N.T Logo"
+                   class="w-full h-full object-contain" />
+            </div>
+            <!-- Logo Texto (HTML/CSS) -->
+            <div class="flex flex-col">
+              <!-- A.N.T -->
+              <div class="flex items-end gap-0.5">
+                <div class="flex items-end">
+                  <span class="text-2xl sm:text-3xl font-black text-white tracking-tighter leading-none">A</span>
+                  <span class="text-xl sm:text-2xl font-black text-white leading-none mb-0.5">.</span>
+                </div>
+                <div class="flex items-end">
+                  <span class="text-2xl sm:text-3xl font-black text-white tracking-tighter leading-none">N</span>
+                  <span class="text-xl sm:text-2xl font-black text-white leading-none mb-0.5">.</span>
+                </div>
+                <span class="text-2xl sm:text-3xl font-black text-white tracking-tighter leading-none">T</span>
+              </div>
+              <!-- APEX NEXUS TECHNOLOGY -->
+              <div class="flex items-center gap-1.5 sm:gap-2">
+                <span class="text-[8px] sm:text-[10px] font-bold text-[#10b981] tracking-[0.25em] sm:tracking-[0.3em] leading-none uppercase">APEX</span>
+                <span class="text-[8px] sm:text-[10px] font-bold text-[#10b981] tracking-[0.25em] sm:tracking-[0.3em] leading-none uppercase">NEXUS</span>
+                <span class="text-[8px] sm:text-[10px] font-bold text-[#10b981] tracking-[0.25em] sm:tracking-[0.3em] leading-none uppercase">TECHNOLOGY</span>
+              </div>
+            </div>
+          </a>
           <div class="hidden md:flex items-center space-x-8 text-sm font-medium">
             <a href="{% url 'clientes:materiales' %}"
                class="text-gray-400 hover:text-[#10b981] transition">Materiales</a>
@@ -180,37 +180,35 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div class="col-span-1 md:col-span-2">
             <div class="flex items-center gap-2 mb-4">
-  <!-- Logo Figura pequeño -->
-  <div class="w-8 h-8 flex items-center justify-center flex-shrink-0">
-    <img src="{% static 'img/Logo-figura.ico' %}"
-         loading="lazy"
-         alt="A.N.T Logo"
-         class="w-full h-full object-contain" />
-  </div>
-  
-  <!-- Logo Texto -->
-  <div class="flex flex-col">
-    <!-- A.N.T -->
-    <div class="flex items-end gap-0.5">
-      <div class="flex items-end">
-        <span class="text-xl font-black text-white tracking-tighter leading-none">A</span>
-        <span class="text-lg font-black text-white leading-none mb-0.5">.</span>
-      </div>
-      <div class="flex items-end">
-        <span class="text-xl font-black text-white tracking-tighter leading-none">N</span>
-        <span class="text-lg font-black text-white leading-none mb-0.5">.</span>
-      </div>
-      <span class="text-xl font-black text-white tracking-tighter leading-none">T</span>
-    </div>
-    
-    <!-- APEX NEXUS TECHNOLOGY -->
-    <div class="flex items-center gap-1.5">
-      <span class="text-[7px] font-bold text-[#10b981] tracking-[0.25em] leading-none uppercase">APEX</span>
-      <span class="text-[7px] font-bold text-[#10b981] tracking-[0.25em] leading-none uppercase">NEXUS</span>
-      <span class="text-[7px] font-bold text-[#10b981] tracking-[0.25em] leading-none uppercase">TECHNOLOGY</span>
-    </div>
-  </div>
-</div>
+              <!-- Logo Figura pequeño -->
+              <div class="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                <img src="{% static 'img/Logo-figura.ico' %}"
+                     loading="lazy"
+                     alt="A.N.T Logo"
+                     class="w-full h-full object-contain" />
+              </div>
+              <!-- Logo Texto -->
+              <div class="flex flex-col">
+                <!-- A.N.T -->
+                <div class="flex items-end gap-0.5">
+                  <div class="flex items-end">
+                    <span class="text-xl font-black text-white tracking-tighter leading-none">A</span>
+                    <span class="text-lg font-black text-white leading-none mb-0.5">.</span>
+                  </div>
+                  <div class="flex items-end">
+                    <span class="text-xl font-black text-white tracking-tighter leading-none">N</span>
+                    <span class="text-lg font-black text-white leading-none mb-0.5">.</span>
+                  </div>
+                  <span class="text-xl font-black text-white tracking-tighter leading-none">T</span>
+                </div>
+                <!-- APEX NEXUS TECHNOLOGY -->
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[7px] font-bold text-[#10b981] tracking-[0.25em] leading-none uppercase">APEX</span>
+                  <span class="text-[7px] font-bold text-[#10b981] tracking-[0.25em] leading-none uppercase">NEXUS</span>
+                  <span class="text-[7px] font-bold text-[#10b981] tracking-[0.25em] leading-none uppercase">TECHNOLOGY</span>
+                </div>
+              </div>
+            </div>
             <p class="text-gray-500 mt-4 max-w-sm text-sm leading-relaxed">
               Transformamos tus archivos digitales en objetos físicos de alta calidad.
               Expertos en prototipado rápido y fabricación aditiva en República Dominicana.

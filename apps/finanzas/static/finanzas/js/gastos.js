@@ -3,7 +3,11 @@ function prepararNuevoGasto(urlCrear) {
   const form = document.getElementById('formGasto');
   form.reset();
   form.action = urlCrear;
-  
+
+  const inputFecha = form.querySelector('[name="fecha"]');
+  const hoy = new Date().toISOString().split('T')[0];
+  inputFecha.value = hoy;
+
   // Resetear títulos y UI
   document.getElementById('modalGastoTitulo').innerText = "Registrar Nuevo Gasto";
   document.getElementById('modalGastoSubtitulo').innerText = "Egreso de Caja";

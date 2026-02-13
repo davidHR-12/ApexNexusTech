@@ -1,19 +1,20 @@
 <div id="{{ modal_id }}"
-     class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-hidden modal-overlay">
+     class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-overlay">
   
-  <div class="bg-[#1e293b] border border-gray-800 p-8 rounded-2xl w-full {{ max_width|default:'max-w-md' }} shadow-2xl flex flex-col {{ max_height|default:'max-h-[95vh]' }} relative animate-in fade-in zoom-in duration-200">
+  <div class="bg-[#1e293b] border border-gray-800 rounded-2xl w-full {{ max_width|default:'max-w-md' }} shadow-2xl flex flex-col {{ max_height|default:'max-h-[90vh]' }} relative animate-in fade-in zoom-in duration-200 overflow-hidden">
     
-    <h2 class="text-2xl font-bold text-white">{{ title }}</h2>
-    <hr class="border-gray-800 my-4" />
-    
-    <button onclick="cerrarModales()"
-            class="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors z-20">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-      </svg>
-    </button>
+    <div class="p-8 pb-0">
+        <h2 class="text-2xl font-bold text-white">{{ title }}</h2>
+        <button onclick="cerrarModales()"
+                class="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors z-20">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+        <hr class="border-gray-800 mt-4" />
+    </div>
 
-    <div class="custom-scrollbar overflow-y-visible"> 
+    <div class="custom-scrollbar overflow-y-auto flex-1 p-8 pt-4"> 
       {% block modal_content %}
       {% endblock modal_content %}
     </div>

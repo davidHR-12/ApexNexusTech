@@ -274,6 +274,20 @@ function confirmarEliminarVariante(buttonElement) {
     });
 }
 
+function cambiarVisor(url) {
+    const mainImg = document.getElementById('main-image');
+    const placeholder = document.getElementById('image-placeholder');
+
+    if (mainImg) {
+        mainImg.src = url;
+        mainImg.classList.remove('hidden'); // Muestra la imagen si estaba oculta
+    }
+
+    if (placeholder) {
+        placeholder.classList.add('hidden'); // Oculta el texto de "Sin imagen"
+    }
+}
+
 /* Eventos Globales */
 window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') cerrarModales();

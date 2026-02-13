@@ -45,6 +45,12 @@ class TailwindModelForm(forms.ModelForm):
 class ProductoForm(TailwindModelForm):
     imagenes_galeria = MultipleFileField(
         required=False, label="Imágenes de galería")
+    
+    eliminar_portada = forms.BooleanField(
+        required=False, 
+        initial=False, 
+        widget=forms.HiddenInput()
+    )
 
     class Meta:
         model = Producto
@@ -71,6 +77,10 @@ class ProductoForm(TailwindModelForm):
     def save(self, commit=True):
         producto = super().save(commit=False)
         producto.slug = slugify(producto.nombre)
+        if self.cleaned_data.get('eliminar_portada'):
+            if producto.imagen:
+                producto.imagen.delete(save=False)
+                producto.imagen = None
         if commit:
             producto.save()
             imagenes = self.cleaned_data.get('imagenes_galeria')

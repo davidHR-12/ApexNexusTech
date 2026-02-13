@@ -97,7 +97,12 @@ def editar_producto_base(request, producto_id):
     producto = get_object_or_404(Producto, id=producto_id)
 
     if request.method == "POST":
-        # El form maneja el borrado de portada y actualización de slug internamente
+        eliminar_portada = request.POST.get('eliminar_portada_flag') == 'true'
+        
+        if eliminar_portada and producto.imagen:
+            producto.imagen.delete(save=False)
+            producto.imagen = None
+        
         form = ProductoForm(request.POST, request.FILES, instance=producto)
 
         if form.is_valid():

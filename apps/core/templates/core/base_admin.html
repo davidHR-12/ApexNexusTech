@@ -7,13 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Panel Administrativo - 3D PRINT</title>
     <script>
-      (function () {
-        try {
-          if (localStorage.getItem('sidebarMini') === 'true') {
-            document.documentElement.classList.add('sidebar-mini-init');
-          }
-        } catch (e) {}
-      })();
+  (function () {
+    try {
+      const isMini = localStorage.getItem('sidebarMini') === 'true';
+      const isMobile = window.innerWidth < 768;
+      if (isMini && !isMobile) {
+        // Añadimos una clase al HTML para que el CSS sepa que empezamos en mini
+        document.documentElement.classList.add('sidebar-is-mini');
+      }
+    } catch (e) {}
+  })();
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon"
@@ -24,33 +27,44 @@
       /* ============================================
          ESTADO INICIAL DEL SIDEBAR (Sin flash)
          ============================================ */
-      .sidebar-mini-init #sidebar {
-        width: 5rem;
+      /* Estado inicial cuando cargamos en MINI para evitar saltos visuales */
+      .sidebar-is-mini #sidebar {
+          width: 5rem !important; /* w-20 */
       }
-      
-      .sidebar-mini-init #mainContent {
-        margin-left: 5rem;
+
+      @media (min-width: 768px) {
+          .sidebar-is-mini #mainContent {
+              margin-left: 5rem !important; /* ml-20 */
+          }
       }
-      
-      .sidebar-mini-init #sidebar .nav-text,
-      .sidebar-mini-init #sidebar .section-title,
-      .sidebar-mini-init #sidebar .logo-text {
-        opacity: 0;
-        width: 0;
-        overflow: hidden;
-      }
-      
-      .sidebar-mini-init #sidebar .nav-link {
-        justify-content: center;
-        gap: 0;
+
+      /* Forzar ocultar elementos en mini al cargar */
+      .sidebar-is-mini #sidebar .nav-text,
+      .sidebar-is-mini #sidebar .section-title,
+      .sidebar-is-mini #sidebar .logo-text {
+          opacity: 0;
+          width: 0;
+          overflow: hidden;
+          display: none;
       }
       
       /* ============================================
          TRANSICIONES DEL SIDEBAR
          ============================================ */
-      #sidebar {
-        transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
-        overflow-x: hidden;
+      /* Cuando el sidebar está abierto en móvil, escondemos el header superior */
+      body.sidebar-open .md\:hidden.bg-\[\#1e293b\] {
+          display: none !important;
+      }
+
+      /* Ajuste de altura para que el sidebar ocupe TODO el alto cuando el header no está */
+      body.sidebar-open #sidebar {
+          top: 0;
+          height: 100vh;
+      }
+
+      /* Evitar que el fondo se mueva cuando el menú está abierto */
+      body.sidebar-open {
+          overflow: hidden;
       }
       
       main {
@@ -326,13 +340,26 @@
     </style>
   </head>
   <body class="bg-[#0f172a] text-gray-100 font-sans">
+    <div class="md:hidden bg-[#1e293b] border-b border-gray-800 p-4 flex items-center justify-between sticky top-0 z-50 h-16">
+      <div class="flex items-center gap-2">
+        <img src="{% static 'img/Logo-figura.ico' %}"
+             class="w-8 h-8 object-contain"
+             alt="Logo">
+        <span class="font-bold text-sm tracking-tight text-[#FFFFFF]">A.N.T</span>
+      </div>
+      <button id="mobileMenuBtn"
+              class="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+        </svg>
+      </button>
+    </div>
     <div class="flex min-h-screen">
       <div id="sidebarOverlay"
-           class="fixed inset-0 bg-black/50 z-40 hidden md:hidden"></div>
+           class="fixed inset-0 bg-black/60 z-40 hidden md:hidden backdrop-blur-sm"></div>
       <aside id="sidebar"
-             class="w-64 bg-[#1e293b] border-r border-gray-800 flex flex-col fixed h-full z-40 shadow-2xl md:shadow-none">
-        <!-- Header del Sidebar -->
-        <div class="sidebar-header p-6 flex flex-col gap-4">
+             class="w-64 bg-[#1e293b] border-r border-gray-800 flex flex-col fixed h-full z-[60] shadow-2xl md:shadow-none transition-transform duration-300 -translate-x-full md:translate-x-0 overflow-hidden">
+        <div class="sidebar-header hidden md:flex p-6 flex-col gap-4 flex-shrink-0">
           <div class="logo-container flex items-center justify-between">
             <div class="logo-full flex items-center gap-2">
               <div class="p-2 rounded-lg shadow-[0_0_10px_rgba(16,185,129,0.3)] flex items-center justify-center w-12 h-12 flex-shrink-0">
@@ -358,9 +385,9 @@
             </div>
           </div>
           <button id="toggleSidebar"
-                  class="hidden md:flex items-center justify-center p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
+                  class="flex items-center justify-center p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
             <svg id="hamburgerIcon"
-                 class="w-5 h-5 transition-transform duration-300"
+                 class="w-5 h-5"
                  fill="none"
                  stroke="currentColor"
                  viewBox="0 0 24 24">
@@ -369,8 +396,7 @@
           </button>
         </div>
         <div class="mini-separator"></div>
-        <!-- Navegación -->
-        <nav class="flex-1 px-4 space-y-1 overflow-y-auto">
+        <nav class="flex-1 px-4 space-y-1 overflow-y-auto mt-4 md:mt-0 custom-scrollbar">
           <a href="{% url 'core:dashboard-admin' %}"
              data-tooltip="Dashboard"
              class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'dashboard-admin' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
@@ -383,7 +409,7 @@
             <span class="nav-text whitespace-nowrap">Dashboard</span>
           </a>
           <div class="mini-separator"></div>
-          <a href="{% url 'pedidos:pedidos' %}"
+          <a href="{% url 'pedidos:pedidos_lista' %}"
              data-tooltip="Pedidos/Ventas"
              class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'pedidos' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
             <svg class="w-5 h-5 flex-shrink-0"
@@ -444,8 +470,7 @@
             <span class="nav-text whitespace-nowrap">Calculadora</span>
           </a>
         </nav>
-        <!-- Footer del Sidebar -->
-        <div class="sidebar-footer p-4 border-t border-gray-800 space-y-1">
+        <div class="sidebar-footer flex-shrink-0 p-4 border-t border-gray-800 space-y-1">
           <div class="mini-separator"></div>
           <a href="{% url 'core:configuracion' %}"
              data-tooltip="Configuración"
@@ -492,7 +517,8 @@
           </form>
         </div>
       </aside>
-      <main id="mainContent" class="md:ml-64 flex-1 p-4 md:p-8">
+      <main id="mainContent"
+            class="flex-1 w-full min-w-0 transition-all duration-300 md:ml-64 p-4 md:p-8 overflow-x-hidden ml-0">
         {% block content %}
         {% endblock content %}
       </main>

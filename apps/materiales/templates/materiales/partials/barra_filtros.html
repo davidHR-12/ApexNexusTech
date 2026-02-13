@@ -1,7 +1,7 @@
 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-[#1e293b] p-4 rounded-2xl border border-gray-800 shadow-sm">
     <form method="get" class="flex flex-1 flex-col md:flex-row gap-3">
-        <div class="flex flex-1 flex-col md:flex-row gap-3">
-            <div class="relative w-full md:w-64 lg:w-72">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 w-full items-center">
+            <div class="relative w-full md:col-span-2">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -26,7 +26,7 @@
                     hx-target="#materiales-container"
                     hx-include="[name='search'], [name='orden']"
                     hx-push-url="true"
-                    class="bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 p-2.5 outline-none">
+                    class="bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 p-2.5 outline-none w-full md:w-auto">
                 <option value="">Todos los Tipos</option>
                 {% for t in tipos_list %}
                     <option value="{{ t.id }}"
@@ -39,7 +39,7 @@
                     hx-target="#materiales-container"
                     hx-include="[name='search'], [name='tipo']"
                     hx-push-url="true"
-                    class="bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 p-2.5 outline-none">
+                    class="bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 p-2.5 outline-none w-full md:w-auto">
                 <option value="">Ordenar por (Defecto)</option>
                 <option value="stock_desc"
                         {% if orden_actual == "stock_desc" %}selected{% endif %}>Mayor Stock</option>
@@ -61,9 +61,10 @@
             </div>
         </div>
     </form>
-    <div class="flex items-center gap-3 self-end lg:self-auto">
+    <div class="grid grid-cols-1 md:grid-cols-4 lg:flex lg:flex-row items-center gap-3 w-full lg:w-auto mt-4 lg:mt-0">
+
         {# PAGINACIÓN SUPERIOR CON HTMX #}
-        <div class="flex items-center bg-gray-900 rounded-xl border border-gray-700 p-1 mr-2">
+        <div class="flex items-center justify-center bg-gray-900 rounded-xl border border-gray-700 p-1 md:col-span-1">
             {% if materiales.has_previous %}
                 <a href="?page={{ materiales.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
                    hx-get="{% url 'materiales:lista_materiales' %}?page={{ materiales.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
@@ -101,27 +102,29 @@
             {% endif %}
         </div>
         <button onclick="abrirModal('modalCatalogo')"
-                class="bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/30 text-indigo-400 hover:text-white px-3 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
-                title="Corregir Marcas, Tipos o Colores">
+                title="Corregir Marcas, Tipos o Colores"
+                class="md:col-span-1 bg-gray-600/90 hover:bg-gray-600 border border-gray-500/30 text-gray-300 hover:text-white px-3 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            Corregir(Marcas, Tipos o Colores)
+            <span class="hidden sm:inline">Corregir</span>
         </button>
         <button onclick="abrirModal('modalEntrada')"
-                class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-900/20 flex items-center gap-2">
+        title="Cargar Stock"
+                class="md:col-span-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
             </svg>
-            Cargar Stock
+           <span class="hidden sm:inline">Cargar Stock</span>
         </button>
         <button onclick="abrirModal('modalMaterial')"
-                class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-900/20 flex items-center gap-2">
+        title="Nuevo Material"
+                class="md:col-span-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            <span class="hidden md:inline">Nuevo Material</span>
+            <span class="hidden sm:inline">Nuevo Material</span>
         </button>
     </div>
 </div>
