@@ -1,7 +1,38 @@
 from django import forms
 from .models import Usuario
+import uuid
 
-# ESTILO ÚNICO PARA TODOS LOS FORMULARIOS DEL PROYECTO
+class RegistroExpressClienteForm(forms.ModelForm):
+    email = forms.EmailField(required=False)
+    class Meta:
+        model = Usuario
+        fields = ['first_name', 'last_name', 'email', 'telefono']
+
+    def clean_telefono(self):
+        telefono = self.cleaned_data.get('telefono')
+        if telefono and not telefono.isdigit():
+            raise forms.ValidationError("El teléfono solo debe contener números.")
+        return telefono
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.rol = "Cliente"
+        user.is_manual = True
+        user.is_email_verified = False
+        # Generamos un username aleatorio si no se provee email
+        if not user.email:
+            temp_id = uuid.uuid4().hex[:8]
+            user.email = f"manual_{temp_id}@imp3d.com"
+        
+        user.username = user.email
+        # Password aleatorio e inaccesible para que no puedan loguearse
+        user.set_unusable_password() 
+        
+        if commit:
+            user.save()
+        return user
+
+# ESTILO ÚNICO PARA FORMULARIOS
 INPUT_CLASSES = "w-full bg-[#334155] border border-gray-600 rounded-xl p-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-[#10b981] focus:border-transparent outline-none transition-all"
 
 

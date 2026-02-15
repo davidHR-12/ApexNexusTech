@@ -231,32 +231,65 @@ function mostrarToast(type, message) {
     });
 }
 
+
+let modalStack = [];
+
 // Abrir modal
 function abrirModal(id) {
     const modal = document.getElementById(id);
     if (modal) {
         modal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
+
+        // Agregamos al stack si no estaba ya (evita duplicados)
+        if (!modalStack.includes(id)) {
+            modalStack.push(id);
+        }
+
+        modal.style.zIndex = 50 + (modalStack.length * 10);
+    }
+}
+
+
+// Función para cerrar SOLO el modal más reciente
+function cerrarUltimoModal() {
+    if (modalStack.length > 0) {
+        const idParaCerrar = modalStack.pop();
+        const modal = document.getElementById(idParaCerrar);
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        
+        // Si ya no quedan modales abiertos, devolvemos el scroll al body
+        if (modalStack.length === 0) {
+            document.body.style.overflow = 'auto';
+        }
     }
 }
 
 // Cerrar modal
 function cerrarModales() {
-    const modales = document.querySelectorAll('[id^="modal"]');
-    modales.forEach(modal => modal.classList.add('hidden'));
+    modalStack.forEach(id => {
+        const modal = document.getElementById(id);
+        if (modal) modal.classList.add('hidden');
+    });
+    modalStack = [];
     document.body.style.overflow = 'auto';
 }
 
-// Cerrar modales con la tecla Escape
+// Cerrar SOLO EL ÚLTIMO con Escape
 window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        cerrarModales();
+    if (e.key === 'Escape' && modalStack.length > 0) {
+        cerrarUltimoModal();
     }
 });
 
-// Cerrar modales al hacer clic fuera de ellos
+// Cerrar SOLO EL ÚLTIMO al hacer clic fuera
 document.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal-overlay')) {
-        cerrarModales();
+        // Importante: El overlay que clickeas debe ser el del modal superior
+        if (e.target.id === modalStack[modalStack.length - 1]) {
+            cerrarUltimoModal();
+        }
     }
 });

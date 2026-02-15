@@ -42,7 +42,7 @@
                     </svg>
                     Productos Base Archivados
                 </button>
-                <button onclick="preseleccionarCategoria(); abrirModal('modalNuevoProducto')"
+                <button onclick="abrirModal('modalNuevoProducto')"
                         class="flex-1 md:flex-none bg-[#10b981] text-white hover:bg-[#059669] px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path d="M12 4v16m8-8H4" stroke-width="2.5" />
@@ -126,7 +126,7 @@
             {% empty %}
                 <div class="col-span-full py-24 text-center bg-gray-900/20 border-2 border-dashed border-gray-800 rounded-3xl">
                     <p class="text-gray-500 font-medium">No hay productos en esta categoría aún.</p>
-                    <button onclick="preseleccionarCategoria(); abrirModal('modalNuevoProducto')"
+                    <button onclick="abrirModal('modalNuevoProducto')"
                             class="text-[#10b981] font-bold mt-2 hover:underline">Crear el primero</button>
                 </div>
             {% endfor %}
@@ -138,16 +138,4 @@
 {% endblock content %}
 {% block extra_js %}
     <script src="{% static 'productos/js/productos.js' %}"></script>
-    <script>
-        // Función para preseleccionar la categoría en el modal de nuevo producto, se deja en el HTML para evitar problemas con django
-        function preseleccionarCategoria() {
-            const selectCat = document.querySelector('#modalNuevoProducto select[name="categoria"]');
-            const categoriaActualId = "{{ categoria.id }}";
-            if (selectCat && categoriaActualId) {
-                selectCat.value = categoriaActualId;
-                selectCat.style.pointerEvents = 'none';
-                selectCat.classList.add('opacity-50');
-            }
-        }
-    </script>
 {% endblock extra_js %}

@@ -55,6 +55,11 @@ class Usuario(AbstractUser):
         verbose_name="Último email de verificación"
     )
 
+    is_manual = models.BooleanField(
+        default=False,
+        verbose_name="Cliente manual (Sin login)"
+    )
+
     # Configuramos Django para que pida el email al iniciar sesión
     USERNAME_FIELD = "email"
     # Campos que pide el comando createsuperuser aparte del email y password

@@ -5,7 +5,7 @@
         <p class="text-gray-400 text-sm">Define las especificaciones base para tu catálogo.</p>
     </div>
     <form id="formNuevoProducto"
-          action="{% url 'productos:crear_producto_base' %}"
+          action="{% if categoria %}{% url 'productos:crear_producto_base' categoria.id %}{% else %}{% url 'productos:crear_producto_base_general' %}{% endif %}"
           method="post"
           enctype="multipart/form-data"
           class="space-y-4">
@@ -25,14 +25,25 @@
             <div>
                 <label class="text-gray-400 text-[11px] uppercase mb-2 block font-bold tracking-widest">Categoría</label>
                 <div class="relative">
-                    <select name="categoria"
-                            class="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 text-white focus:border-emerald-500 outline-none appearance-none cursor-pointer"
+                    <select id="select-categoria-modal"
+                            {% if categoria %}disabled tabindex="-1"{% endif %}
+                            class="w-full rounded-xl p-4 outline-none appearance-none transition-all border {% if categoria %} bg-[#111827] border-gray-800 text-gray-500 opacity-70 cursor-not-allowed pointer-events-none {% else %} bg-gray-900 border-gray-700 text-white focus:border-emerald-500 cursor-pointer {% endif %}"
                             required>
                         <option value="" disabled selected>Selecciona una categoría...</option>
-                        {% for cat in categorias %}<option value="{{ cat.id }}">{{ cat.nombre }}</option>{% endfor %}
+                        {% for cat in categorias %}
+                            <option value="{{ cat.id }}"
+                                    {% if categoria and cat.id == categoria.id %}selected{% endif %}>
+                                {{ cat.nombre }}
+                            </option>
+                        {% endfor %}
                     </select>
+                    {% if categoria %}
+                        <input type="hidden" name="categoria" value="{{ categoria.id }}">
+                    {% else %}
+                        <script>document.getElementById('select-categoria-modal').name = "categoria";</script>
+                    {% endif %}
                     <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                        <svg class="w-4 h-4 text-gray-500"
+                        <svg class="w-4 h-4 {% if categoria %}text-gray-600{% else %}text-gray-500{% endif %}"
                              fill="none"
                              stroke="currentColor"
                              viewBox="0 0 24 24">
@@ -61,14 +72,23 @@
                        class="w-full bg-transparent text-white font-mono text-2xl outline-none"
                        required>
             </div>
-            <div class="flex items-center justify-center bg-gray-900/50 border border-gray-800 rounded-2xl p-2 group hover:border-emerald-500/30 transition-all">
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox"
-                           name="mostrar_en_web"
-                           checked
-                           class="w-6 h-6 rounded border-gray-700 text-emerald-500 bg-gray-800 focus:ring-0">
-                    <span class="text-gray-400 group-hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Visible en Web</span>
-                </label>
+            <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-2 group hover:border-emerald-500/30 transition-all">
+                <div class="grid grid-cols-2 gap-2 h-full">
+                    <label class="flex items-center justify-center gap-2 cursor-pointer hover:bg-emerald-500/5 rounded-xl transition-colors">
+                        <input type="checkbox"
+                               name="mostrar_en_web"
+                               checked
+                               class="w-5 h-5 rounded border-gray-700 text-emerald-500 bg-gray-800 focus:ring-0">
+                        <span class="text-gray-400 group-hover:text-white text-[10px] font-bold uppercase tracking-tight">Visible</span>
+                    </label>
+                    <label class="flex items-center justify-center gap-2 cursor-pointer hover:bg-emerald-500/5 rounded-xl transition-colors border-l border-gray-800">
+                        <input type="checkbox"
+                               name="activo"
+                               checked
+                               class="w-5 h-5 rounded border-gray-700 text-emerald-500 bg-gray-800 focus:ring-0">
+                        <span class="text-gray-400 group-hover:text-white text-[10px] font-bold uppercase tracking-tight">Activo</span>
+                    </label>
+                </div>
             </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -162,7 +182,7 @@
         </div>
         <div class="flex gap-3 border-t border-gray-800 pt-4">
             <button type="button"
-                    onclick="cerrarModales()"
+                    onclick="cerrarUltimoModal()"
                     class="flex-1 px-4 py-3 rounded-xl border border-gray-700 text-gray-400 hover:bg-gray-800 transition-all font-bold text-sm">
                 Descartar
             </button>

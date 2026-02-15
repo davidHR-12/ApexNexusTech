@@ -3,6 +3,7 @@ Modelos para la gestión financiera y contabilidad
 """
 from django.db import models
 from decimal import Decimal
+from django.utils import timezone
 
 
 # =============================
@@ -23,8 +24,9 @@ class Gasto(models.Model):
         ("Otro", "Otro"),
     )
 
+    # Campos principales (REQUERIDOS)
     descripcion = models.CharField(
-        max_length=200,
+        max_length=255,
         verbose_name="Descripción"
     )
     monto = models.DecimalField(
@@ -33,7 +35,8 @@ class Gasto(models.Model):
         verbose_name="Monto"
     )
     fecha = models.DateField(
-        verbose_name="Fecha"
+        verbose_name="Fecha",
+        default=timezone.now
     )
     tipo = models.CharField(
         max_length=20,
@@ -50,7 +53,7 @@ class Gasto(models.Model):
         verbose_name="Entrada de inventario"
     )
 
-    # Información adicional
+    # Información adicional (OPCIONAL)
     proveedor = models.CharField(
         max_length=200,
         blank=True,
@@ -79,9 +82,25 @@ class Gasto(models.Model):
         verbose_name="Gasto recurrente"
     )
 
+    # Timestamps (auditoría)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    # ===== MÉTODOS =====
+
+    def get_tipo_display(self):
+        """Retorna el nombre descriptivo del tipo de gasto"""
+        return dict(self.TIPOS).get(self.tipo, self.tipo)
+
     @property
     def es_automatico(self):
-        """Si el gasto viene de inventario, es automático"""
+        """
+        PROPIEDAD CALCULADA (NO es un campo de BD).
+        Retorna True si el gasto fue generado automáticamente desde inventario.
+        
+        ✅ IMPORTANTE: Esta es una PROPIEDAD (@property), no un campo.
+           Se calcula dinámicamente basado en entrada_inventario.
+        """
         return self.entrada_inventario is not None
     
     def __str__(self):
@@ -90,7 +109,8 @@ class Gasto(models.Model):
     class Meta:
         verbose_name = "Gasto"
         verbose_name_plural = "Gastos"
-        ordering = ["-fecha"]
+        ordering = ['-fecha', '-id']
+
 
 
 # =============================

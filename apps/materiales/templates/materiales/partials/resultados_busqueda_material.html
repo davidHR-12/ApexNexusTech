@@ -10,9 +10,15 @@
           </div>
           <div class="text-[10px] text-gray-500 uppercase">{{ m.tipo.nombre }}</div>
         </div>
-        <div class="text-xs font-mono text-gray-400 bg-gray-900 px-2 py-1 rounded border border-gray-700">
-          {{ m.stock_actual|floatformat:0 }}g
+        {% if m.stock_actual > m.stock_minimo %}
+        <div class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase border border-emerald-500/20">
+          {{ m.stock_actual|floatformat:0 }}g Óptimo
         </div>
+        {% else %}
+        <div class="px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-500 text-[10px] font-bold uppercase border border-rose-500/20">
+          {{ m.stock_actual|floatformat:0 }}g Crítico
+        </div>
+        {% endif %}
       </div>
     </button>
   {% empty %}

@@ -85,30 +85,70 @@ document.getElementById('input-color')?.addEventListener('input', function() {
 function aplicarCapitalize(text) {
     if (!text) return "";
     // Solo capitalizamos la primera letra del string total
-    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+    return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-// 1. Lógica para MARCA y COLOR (Primera letra Mayúscula)
-['input-marca', 'input-color'].forEach(id => {
+// ============================================================================
+// LÓGICA DE TRANSFORMACIÓN Y LIMPIEZA DE INPUTS
+// ============================================================================
+
+// 1. COLOR: Primera letra Mayúscula + Limpieza
+['input-color'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
 
-    el.addEventListener('input', function(e) {
-        const start = this.selectionStart; // Guardar posición del cursor
+    el.addEventListener('input', function() {
+        // Limpieza si está vacío
+        const targetSelector = this.getAttribute('hx-target');
+        if (this.value.trim() === '') {
+            const container = document.querySelector(targetSelector);
+            if (container) container.innerHTML = '';
+            return;
+        }
+
+        // Transformación: Rojo mate
+        const start = this.selectionStart;
         this.value = aplicarCapitalize(this.value);
-        this.setSelectionRange(start, start); // Restaurar posición del cursor
+        this.setSelectionRange(start, start);
     });
 });
 
-// 2. Lógica para TIPO (Todo Mayúsculas: PLA, PETG)
-const inputTipo = document.getElementById('input-tipo');
-if (inputTipo) {
-    inputTipo.addEventListener('input', function(e) {
+// 2. TIPO: Todo Mayúsculas (PLA, PETG) + Limpieza
+['input-tipo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    el.addEventListener('input', function() {
+        // Limpieza si está vacío
+        const targetSelector = this.getAttribute('hx-target');
+        if (this.value.trim() === '') {
+            const container = document.querySelector(targetSelector);
+            if (container) container.innerHTML = '';
+            return;
+        }
+
+        // Transformación: PLA
         const start = this.selectionStart;
         this.value = this.value.toUpperCase();
         this.setSelectionRange(start, start);
     });
-}
+});
+
+// 3. MARCA: Sin transformación (Libre) + Solo Limpieza
+['input-marca'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    el.addEventListener('input', function() {
+        // Solo limpieza: si el usuario borra, se cierra el div de sugerencias
+        const targetSelector = this.getAttribute('hx-target');
+        if (this.value.trim() === '') {
+            const container = document.querySelector(targetSelector);
+            if (container) container.innerHTML = '';
+        }
+    });
+});
+
 // Asegurar que los datos bloqueados se envíen al servidor
 document.getElementById('formCrearMaterial')?.addEventListener('submit', function() {
     const inputHex = document.getElementById('input-color-hex');
@@ -126,10 +166,11 @@ function abrirEditar(id) {
     fetch(url)
         .then(r => r.json())
         .then(data => {
-            console.log('📦 Datos del material:', data);
             
             const costo = document.getElementById('edit_costo');
             const stock = document.getElementById('edit_stock_minimo');
+
+            const enlace = document.getElementById('edit_enlace_compra');
             const nombre = document.getElementById('edit_display_full_name');
             const tipo = document.getElementById('edit_display_tipo');
             const form = document.getElementById('formEditarMaterial');
@@ -142,28 +183,26 @@ function abrirEditar(id) {
             if (costo) costo.value = data.costo_por_gramo;
             if (stock) stock.value = data.stock_minimo;
 
+            
             // Llenar textos de visualización
             if (nombre) nombre.innerText = data.nombre || '';
             if (tipo) tipo.innerText = data.tipo || '';
-
+            if (enlace) enlace.value = data.enlace_compra || '';
+            
             if (colorNombreSpan) {
                 // 'color_nombre' debe venir en tu respuesta JSON de la API
                 colorNombreSpan.innerText = `"${data.color_nombre || 'Color sin asignar'}"`;
             }
-            // ✅ ASIGNAR EL COLOR
             if (inputHex && data.color_hex) {
                 inputHex.value = data.color_hex;
-                console.log('🎨 Color hex asignado al input:', data.color_hex);
             }
             if (preview && data.color_hex) {
                 preview.style.backgroundColor = data.color_hex;
-                console.log('✅ Preview actualizado con color:', data.color_hex);
             }
 
             // Actualizar Action del Formulario
             if (form) {
                 form.action = `/administrador/materiales/${id}/editar/`;
-                console.log('📝 Form action actualizado:', form.action);
             }
 
             // Resetear el checkbox de pérdida al abrir (por seguridad UX)
@@ -176,7 +215,7 @@ function abrirEditar(id) {
 
             abrirModal('modalEditarMaterial');
         })
-        .catch(err => console.error("❌ Error al obtener material:", err));
+        .catch(err => console.error("Error al obtener material:", err));
 }
 
 function togglePerdida() {

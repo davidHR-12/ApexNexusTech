@@ -6,10 +6,21 @@ app_name = "productos"
 urlpatterns = [
     # --- 1. RUTAS ESTÁTICAS / FIJAS (Sin variables o parámetros) ---
     path("productos/", views.product_list, name="productos_index"),
-    path("productos/nuevo/", views.crear_producto_base, name="crear_producto_base"),
+
+    # Crear productos base
+    path("productos/nuevo/", views.crear_producto_base, name="crear_producto_base_general"),
+    # Crear productos base por categoría
+    path("productos/nuevo/<int:categoria_id>/", views.crear_producto_base, name="crear_producto_base"),
+
+    # Crear categorías
     path("categorias/crear/", views.crear_categoria, name="crear_categoria"),
+
+    # Eliminar imágenes de productos
     path("api/productos/eliminar-imagenes/", views.eliminar_imagenes_producto_bulk, name="eliminar_imagenes_producto_bulk"),
+    # Reactivar múltiples productos
     path("productos/reactivar-multiples/", views.reactivar_multiples_productos, name="reactivar_multiples"),
+    # Buscar material variante
+    path("api/buscar-material-variante/", views.buscar_material_variante, name="buscar_material_variante"),
 
     # --- 2. RUTAS CON ID (Números) ---
     # Productos
@@ -32,6 +43,8 @@ urlpatterns = [
     path("api/productos/<int:pk>/", views.obtener_producto_json, name="obtener_producto_json"),
     path("api/categorias/<int:categoria_id>/", views.obtener_categoria_json, name="obtener_categoria_json"),
     path("api/productos/archivados/<int:categoria_id>/", views.obtener_productos_archivados, name="api_productos_archivados"),
+    path("api/variante/<int:variante_id>/precio/", views.obtener_precio_variante, name="obtener_precio_variante"),
+    
 
     # --- 3. RUTAS CON SLUG (Comodines de texto) ---
     path("productos/<str:slug>/", views.producto_detalle, name="producto_detalle"),

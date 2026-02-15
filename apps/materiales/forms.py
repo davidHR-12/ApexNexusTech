@@ -30,7 +30,7 @@ class MaterialForm(TailwindModelForm):
 
     class Meta:
         model = Material
-        fields = ["costo_por_gramo", "stock_minimo"]
+        fields = ["costo_por_gramo", "stock_minimo","enlace_compra"]
 
     def save(self, commit=True):
         marca_txt = self.cleaned_data['marca_nombre'].strip().capitalize()
@@ -56,8 +56,14 @@ class MaterialForm(TailwindModelForm):
                 "costo_por_gramo": self.cleaned_data["costo_por_gramo"],
                 "stock_minimo": self.cleaned_data["stock_minimo"],
                 "stock_actual": 0,
+                "enlace_compra": self.cleaned_data["enlace_compra"],
             },
         )
+        # Si ya existe pero queremos actualizar el enlace al "re-crearlo"
+        if not created and self.cleaned_data.get("enlace_compra"):
+            material.enlace_compra = self.cleaned_data.get("enlace_compra")
+            material.save()
+            
         material.just_created = created
         return material
 
@@ -68,7 +74,7 @@ class EditarMaterialForm(TailwindModelForm):
     
     class Meta:
         model = Material
-        fields = ["costo_por_gramo", "stock_minimo"]
+        fields = ["costo_por_gramo", "stock_minimo","enlace_compra"]
 
     def clean(self):
         cleaned_data = super().clean()

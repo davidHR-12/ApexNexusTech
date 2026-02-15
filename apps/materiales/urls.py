@@ -22,6 +22,7 @@ urlpatterns = [
     path("materiales/gestionar-atributo/<str:modelo_tipo>/<int:objeto_id>/", views.gestionar_atributo, name="gestionar_atributo"),
     path("materiales/atributos/<str:tipo_atrib>/<int:id_atrib>/eliminar/", views.eliminar_atributo, name="eliminar_atributo"),
 
-    # API IDs (JSON)
+    # API IDs (JSON
     path("api/materiales/<int:material_id>/", views.obtener_material_json, name="obtener_material_json"),
+    path("api/materiales/<int:material_id>/precio/", views.obtener_precio_material, name="obtener_precio_material"),
 ]

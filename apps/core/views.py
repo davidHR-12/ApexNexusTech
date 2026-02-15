@@ -23,9 +23,11 @@ def dashboard_admin(request):
         fecha__month=ahora.month, fecha__year=ahora.year
     ).aggregate(total=Sum("monto"))["total"] or Decimal("0.00")
 
-    materiales = Material.objects.all().order_by("-stock_actual")
+    materiales = Material.objects.all()
     total_gramos = materiales.aggregate(Sum("stock_actual"))[
         "stock_actual__sum"] or 0
+    alertas_stock = [m for m in materiales if m.stock_actual <= m.stock_minimo]
+    materiales_ok = [m for m in materiales if m.stock_actual > m.stock_minimo]
 
     context = {
         "ingresos_mes": ingresos_mes,
@@ -36,6 +38,8 @@ def dashboard_admin(request):
         ).count(),
         "total_kg": total_gramos / 1000,
         "materiales": materiales,
+        "alertas_stock": alertas_stock[:5],
+        "materiales_ok": materiales_ok[:5],
     }
     return render(request, "core/dashboard_admin.html", context)
 

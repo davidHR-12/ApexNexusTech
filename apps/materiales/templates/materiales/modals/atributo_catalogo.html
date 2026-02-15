@@ -2,14 +2,13 @@
 {% load static %}
 {% block modal_content %}
     <div class="mb-6">
-        <h2 class="text-xl font-bold text-white">Mantenimiento de Catálogo</h2>
-        <p class="text-gray-400 text-xs">Corrige errores ortográficos o fusiona atributos duplicados.</p>
         <div class="mt-2 bg-emerald-600/10 p-2 rounded-lg border border-emerald-600/50">
-            <p class="text-emerald-400 text-xs">
-                <strong>Nota:</strong> Para empezar a editar un atributo, haz clic en el campo y luego presiona enter o el boton guardar.
+            <p class="text-emerald-400 text-xs text-center">
+                <strong>💡 Tip:</strong> Haz clic en un campo para editarlo. Presiona <strong>Enter</strong> para guardar los cambios.
             </p>
         </div>
     </div>
+
     <div class="space-y-4">
         <div class="flex bg-gray-900/50 p-1 rounded-xl border border-gray-800">
             <button onclick="cambiarTab(event, 'tab-marcas')"
@@ -25,26 +24,30 @@
                 COLORES
             </button>
         </div>
-        <div class="max-h-96 overflow-y-auto pr-2 space-y-2">
+
+        <div class="max-h-96 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
             <div id="tab-marcas" class="tab-content">
                 {% for m in marcas_list %}
                     <form action="{% url 'materiales:gestionar_atributo' 'marca' m.id %}"
                           hx-target="#materiales-container"
                           method="post"
-                          class="flex gap-2 mb-2 p-2 bg-gray-800/40 rounded-lg border border-gray-700/50 group">
+                          class="flex gap-2 mb-2 p-1.5 bg-gray-900/40 rounded-xl border border-gray-800 group hover:border-emerald-500/30 transition-all">
                         {% csrf_token %}
                         <input type="text"
                                name="nuevo_nombre"
                                value="{{ m.nombre }}"
-                               class="flex-1 bg-transparent text-sm text-white outline-none focus:ring-1 focus:ring-emerald-500 rounded px-1">
+                               class="flex-1 bg-emerald-500/5 border border-emerald-500/10 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 rounded-lg px-3 py-1.5 transition-all"
+                               placeholder="Nombre de marca...">
+                        
                         <button type="submit"
-                                class="hidden group-focus-within:block text-[10px] bg-emerald-600 px-2 py-1 rounded text-white font-bold uppercase">
-                            Guardar
+                                class="hidden group-focus-within:flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 px-3 rounded-lg text-white font-bold text-[9px] uppercase transition-colors">
+                            OK
                         </button>
+                        
                         <button type="button"
                                 onclick="confirmarEliminarAtributo('marcas', '{{ m.id }}', '{{ m.nombre }}')"
-                                class="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-red-500 transition-all"
-                                title="Eliminar permanentemente">
+                                class="p-2 text-gray-600 hover:text-red-500 transition-colors"
+                                title="Eliminar">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -52,25 +55,27 @@
                     </form>
                 {% endfor %}
             </div>
+
             <div id="tab-tipos" class="tab-content hidden">
                 {% for t in tipos_list %}
                     <form action="{% url 'materiales:gestionar_atributo' 'tipo' t.id %}"
                           hx-target="#materiales-container"
                           method="post"
-                          class="flex gap-2 mb-2 p-2 bg-gray-800/40 rounded-lg border border-gray-700/50 group">
+                          class="flex gap-2 mb-2 p-1.5 bg-gray-900/40 rounded-xl border border-gray-800 group hover:border-emerald-500/30 transition-all">
                         {% csrf_token %}
                         <input type="text"
                                name="nuevo_nombre"
                                value="{{ t.nombre }}"
-                               class="flex-1 bg-transparent text-sm text-white outline-none focus:ring-1 focus:ring-emerald-500 rounded px-1">
+                               class="flex-1 bg-emerald-500/5 border border-emerald-500/10 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 rounded-lg px-3 py-1.5 transition-all">
+                        
                         <button type="submit"
-                                class="hidden group-focus-within:block text-[10px] bg-emerald-600 px-2 py-1 rounded text-white font-bold uppercase">
-                            Guardar
+                                class="hidden group-focus-within:flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 px-3 rounded-lg text-white font-bold text-[9px] uppercase transition-colors">
+                            OK
                         </button>
+                        
                         <button type="button"
                                 onclick="confirmarEliminarAtributo('tipos', '{{ t.id }}', '{{ t.nombre }}')"
-                                class="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-red-500 transition-all"
-                                title="Eliminar permanentemente">
+                                class="p-2 text-gray-600 hover:text-red-500 transition-colors">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -78,25 +83,27 @@
                     </form>
                 {% endfor %}
             </div>
+
             <div id="tab-colores" class="tab-content hidden">
                 {% for c in colores_list %}
                     <form action="{% url 'materiales:gestionar_atributo' 'color' c.id %}"
                           hx-target="#materiales-container"
                           method="post"
-                          class="flex gap-2 mb-2 p-2 bg-gray-800/40 rounded-lg border border-gray-700/50 group">
+                          class="flex gap-2 mb-2 p-1.5 bg-gray-900/40 rounded-xl border border-gray-800 group hover:border-emerald-500/30 transition-all">
                         {% csrf_token %}
                         <input type="text"
                                name="nuevo_nombre"
                                value="{{ c.nombre }}"
-                               class="flex-1 bg-transparent text-sm text-white outline-none focus:ring-1 focus:ring-emerald-500 rounded px-1">
+                               class="flex-1 bg-emerald-500/5 border border-emerald-500/10 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 rounded-lg px-3 py-1.5 transition-all">
+                        
                         <button type="submit"
-                                class="hidden group-focus-within:block text-[10px] bg-emerald-600 px-2 py-1 rounded text-white font-bold uppercase">
-                            Guardar
+                                class="hidden group-focus-within:flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 px-3 rounded-lg text-white font-bold text-[9px] uppercase transition-colors">
+                            OK
                         </button>
+                        
                         <button type="button"
                                 onclick="confirmarEliminarAtributo('colores', '{{ c.id }}', '{{ c.nombre }}')"
-                                class="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-red-500 transition-all"
-                                title="Eliminar permanentemente">
+                                class="p-2 text-gray-600 hover:text-red-500 transition-colors">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -106,11 +113,12 @@
             </div>
         </div>
     </div>
-    <div class="pt-4 border-t border-gray-800">
+
+    <div class="pt-6">
         <button type="button"
-                onclick="cerrarModales()"
-                class="w-full py-3 text-gray-500 border border-gray-700 hover:bg-gray-800 transition-all text-[10px] font-bold uppercase hover:text-white transition-colors tracking-widest">
-            Cerrar
+                onclick="cerrarUltimoModal()"
+                class="w-full py-3 bg-gray-800/50 hover:bg-gray-800 text-gray-500 hover:text-white border border-gray-700/50 rounded-xl transition-all text-[11px] font-bold uppercase tracking-[0.2em]">
+            Finalizar Corrección
         </button>
     </div>
     <script src="{% static 'materiales/js/materiales.js' %}"></script>

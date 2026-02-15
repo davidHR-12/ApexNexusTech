@@ -1,20 +1,25 @@
 """
 Modelos para la gestión de pedidos y cotizaciones
 """
+
 from django.db import models
 from django.conf import settings
 from decimal import Decimal
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 
 # =============================
 # SOLICITUDES DE COTIZACIÓN
 # =============================
 
+
 class SolicitudCotizacion(models.Model):
     """
     Solicitud de cotización iniciada por un cliente.
     Puede convertirse en un pedido una vez cotizada y aceptada.
     """
+
     ESTADOS = (
         ("Pendiente", "Pendiente de revisión"),
         ("Cotizada", "Cotización enviada"),
@@ -26,39 +31,34 @@ class SolicitudCotizacion(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="solicitudes_cotizacion",
-        verbose_name="Cliente"
+        verbose_name="Cliente",
     )
     descripcion = models.TextField(
-        help_text="Descripción del producto a cotizar",
-        verbose_name="Descripción"
+        help_text="Descripción del producto a cotizar", verbose_name="Descripción"
     )
     imagen_referencia = models.ImageField(
         upload_to="pedidos/referencias/",
         blank=True,
         null=True,
-        verbose_name="Imagen de referencia"
+        verbose_name="Imagen de referencia",
     )
     enlace_referencia = models.URLField(
         blank=True,
         null=True,
         help_text="Link a un modelo 3D o referencia",
-        verbose_name="Enlace de referencia"
+        verbose_name="Enlace de referencia",
     )
     dimensiones_aprox = models.CharField(
         max_length=100,
         help_text="Ej: 10x10x5 cm",
         blank=True,
-        verbose_name="Dimensiones aproximadas"
+        verbose_name="Dimensiones aproximadas",
     )
     estado = models.CharField(
-        max_length=15,
-        choices=ESTADOS,
-        default="Pendiente",
-        verbose_name="Estado"
+        max_length=15, choices=ESTADOS, default="Pendiente", verbose_name="Estado"
     )
     fecha_solicitud = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Fecha de solicitud"
+        auto_now_add=True, verbose_name="Fecha de solicitud"
     )
 
     # Respuesta del admin
@@ -67,26 +67,49 @@ class SolicitudCotizacion(models.Model):
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name="Precio cotizado"
+        verbose_name="Precio cotizado",
     )
     tiempo_estimado = models.CharField(
         max_length=100,
         blank=True,
         help_text="Ej: 2-3 días hábiles",
-        verbose_name="Tiempo estimado"
+        verbose_name="Tiempo estimado",
     )
-    notas_admin = models.TextField(
-        blank=True,
-        verbose_name="Notas del administrador"
-    )
+    notas_admin = models.TextField(blank=True, verbose_name="Notas del administrador")
     fecha_respuesta = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha de respuesta"
+        null=True, blank=True, verbose_name="Fecha de respuesta"
     )
 
+    def convertir_a_pedido(self):
+        """Crea un pedido a partir de esta solicitud aceptada"""
+        if self.estado != "Aceptada":
+            return None
+
+        nuevo_pedido = Pedido.objects.create(
+            usuario=self.usuario,
+            solicitud=self,
+            descripcion=f"Pedido personalizado: {self.descripcion}",
+            precio_total=self.precio_cotizado or 0,
+            peso_estimado_g=0,
+            tiempo_estimado_h=0,  # Esto luego lo editas en el admin
+            estado_pedido="En_Espera",
+        )
+
+        # Crear el item. Al no pasar 'variante', Django lo deja en Null
+        ItemPedido.objects.create(
+            pedido=nuevo_pedido,
+            descripcion=self.descripcion[:300],  # Cortamos por si es muy largo
+            cantidad=1,
+            precio_unitario=self.precio_cotizado or 0,
+            gramos_por_unidad=0,
+        )
+
+        return nuevo_pedido
+
     def __str__(self):
-        return f"Solicitud #{self.id} - {self.usuario.email} ({self.get_estado_display()})"
+        return (
+            f"Solicitud #{self.id} - {self.usuario.email} ({self.get_estado_display()})"
+        )
 
     class Meta:
         verbose_name = "Solicitud de Cotización"
@@ -98,11 +121,13 @@ class SolicitudCotizacion(models.Model):
 # PEDIDOS
 # =============================
 
+
 class Pedido(models.Model):
     """
     Pedido confirmado de impresión 3D.
     Puede originarse de una solicitud de cotización o directamente del catálogo.
     """
+
     ESTADOS_PEDIDO = (
         ("En_Espera", "En espera de pago"),
         ("Confirmado", "Confirmado - Pendiente de producción"),
@@ -117,7 +142,7 @@ class Pedido(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="pedidos",
-        verbose_name="Cliente"
+        verbose_name="Cliente",
     )
 
     # Relación opcional con solicitud de cotización
@@ -126,25 +151,20 @@ class Pedido(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name="Solicitud de cotización"
+        verbose_name="Solicitud de cotización",
     )
 
     # Detalles del pedido
     descripcion = models.TextField(
-        help_text="Descripción del pedido",
-        verbose_name="Descripción"
+        help_text="Descripción del pedido", verbose_name="Descripción"
     )
 
     # Datos técnicos
     peso_estimado_g = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        verbose_name="Peso estimado (gramos)"
+        max_digits=12, decimal_places=2, verbose_name="Peso estimado (gramos)"
     )
     tiempo_estimado_h = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        verbose_name="Tiempo estimado (horas)"
+        max_digits=10, decimal_places=2, verbose_name="Tiempo estimado (horas)"
     )
 
     # Costos
@@ -153,31 +173,23 @@ class Pedido(models.Model):
         decimal_places=2,
         default=15.00,
         help_text="Costo de energía por kWh",
-        verbose_name="Precio kWh"
+        verbose_name="Precio kWh",
     )
     costo_material = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        default=0,
-        verbose_name="Costo de material"
+        max_digits=12, decimal_places=2, default=0, verbose_name="Costo de material"
     )
     costo_energia = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        default=0,
-        verbose_name="Costo de energía"
+        max_digits=12, decimal_places=2, default=0, verbose_name="Costo de energía"
     )
     otros_costos = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=0,
         help_text="Costos adicionales (envío, acabados, etc.)",
-        verbose_name="Otros costos"
+        verbose_name="Otros costos",
     )
     precio_total = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        verbose_name="Precio total"
+        max_digits=12, decimal_places=2, verbose_name="Precio total"
     )
 
     # Estado y fechas
@@ -185,28 +197,20 @@ class Pedido(models.Model):
         max_length=20,
         choices=ESTADOS_PEDIDO,
         default="En_Espera",
-        verbose_name="Estado"
+        verbose_name="Estado",
     )
     fecha_creacion = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Fecha de creación"
+        auto_now_add=True, verbose_name="Fecha de creación"
     )
     fecha_inicio_produccion = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha inicio producción"
+        null=True, blank=True, verbose_name="Fecha inicio producción"
     )
     fecha_entrega = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Fecha de entrega"
+        null=True, blank=True, verbose_name="Fecha de entrega"
     )
 
     # Información adicional
-    notas = models.TextField(
-        blank=True,
-        verbose_name="Notas"
-    )
+    notas = models.TextField(blank=True, verbose_name="Notas")
 
     @property
     def costo_total_produccion(self):
@@ -241,6 +245,48 @@ class Pedido(models.Model):
         """Verifica si el pedido está completamente pagado"""
         return self.total_pagado >= self.precio_total
 
+    @property
+    def porcentaje_progreso(self):
+        progresos = {
+            "En_Espera": 10,
+            "Confirmado": 25,
+            "En_Produccion": 60,
+            "Listo": 90,
+            "Entregado": 100,
+            "Cancelado": 0,
+        }
+        return progresos.get(self.estado_pedido, 0)
+
+    def actualizar_totales(self):
+        items = self.items.all()
+        total_costo_prod = Decimal('0.00')
+        total_venta = Decimal('0.00')
+        total_peso = Decimal('0.00')
+
+        for item in items:
+            cantidad = Decimal(item.cantidad or 0)
+            
+            # Lógica de Costo
+            if item.variante:
+                costo_u = item.variante.costo_produccion_total
+            else:
+                # Si es manual, usamos los gramos por el costo del material asociado
+                costo_u = Decimal(item.gramos_por_unidad or 0) * Decimal(item.costo_material_unitario or 0)
+            
+            total_costo_prod += (costo_u * cantidad)
+            total_venta += (Decimal(item.precio_unitario or 0) * cantidad)
+            total_peso += (Decimal(item.gramos_por_unidad or 0) * cantidad)
+
+        self.costo_material = total_costo_prod
+        self.precio_total = total_venta
+        self.peso_estimado_g = total_peso
+        self.save(update_fields=['costo_material', 'precio_total', 'peso_estimado_g'])
+
+        # Guardamos los cambios
+        super(Pedido, self).save(
+            update_fields=["costo_material", "precio_total", "peso_estimado_g"]
+        )
+
     def __str__(self):
         return f"Pedido #{self.id} - {self.usuario.email} ({self.get_estado_pedido_display()})"
 
@@ -251,46 +297,81 @@ class Pedido(models.Model):
 
 
 # =============================
+# IMPRESORAS
+# =============================
+class Impresora(models.Model):
+    nombre = models.CharField(max_length=100, verbose_name="Nombre de la Impresora")
+    modelo = models.CharField(max_length=100, help_text="Ej: Ender 3, Artillery X2")
+    estado = models.CharField(
+        max_length=20,
+        choices=(
+            ("Disponible", "Disponible"),
+            ("Imprimiendo", "Imprimiendo"),
+            ("Mantenimiento", "En Mantenimiento"),
+        ),
+        default="Disponible",
+    )
+
+    def __str__(self):
+        return self.nombre
+
+
+# =============================
 # ITEMS DE PEDIDO
 # =============================
+
 
 class ItemPedido(models.Model):
     """
     Producto individual dentro de un pedido.
     Permite pedidos con múltiples productos.
     """
+
     pedido = models.ForeignKey(
-        Pedido,
-        on_delete=models.CASCADE,
-        related_name="items",
-        verbose_name="Pedido"
+        Pedido, on_delete=models.CASCADE, related_name="items", verbose_name="Pedido"
     )
     variante = models.ForeignKey(
         "productos.VarianteProducto",
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        verbose_name="Variante de producto"
+        verbose_name="Variante de producto",
     )
+
+    # Relación directa con material para piezas personalizadas
+    material_personalizado = models.ForeignKey(
+        "materiales.Material",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Material utilizado",
+    )
+
     descripcion = models.CharField(
         max_length=300,
+        null=True,
+        blank=True,
         help_text="Descripción del ítem (para productos personalizados)",
-        verbose_name="Descripción"
+        verbose_name="Descripción/Nombre de pieza",
     )
-    cantidad = models.PositiveIntegerField(
-        default=1,
-        verbose_name="Cantidad"
-    )
+    cantidad = models.PositiveIntegerField(default=1, verbose_name="Cantidad")
     precio_unitario = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        verbose_name="Precio unitario"
+        max_digits=12, decimal_places=2, default=0.00, verbose_name="Precio unitario"
     )
     gramos_por_unidad = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0,
-        verbose_name="Gramos por unidad"
+        default=0.00,
+        max_digits=10, decimal_places=2, verbose_name="Gramos por unidad"
+    )
+    costo_material_unitario = models.DecimalField(
+        max_digits=12, decimal_places=4, default=0.00
+    )
+    impresora_asignada = models.ForeignKey(
+        Impresora,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="items_asignados",
+        verbose_name="Impresora",
     )
 
     @property
@@ -308,6 +389,24 @@ class ItemPedido(models.Model):
             return f"{self.cantidad}x {self.variante}"
         return f"{self.cantidad}x {self.descripcion}"
 
+    def save(self, *args, **kwargs):
+        if self.variante and (
+            self.precio_unitario is None or self.precio_unitario == 0
+        ):
+            self.precio_unitario = self.variante.precio_final
+
+        if self.variante and (
+            self.gramos_por_unidad is None or self.gramos_por_unidad == 0
+        ):
+            # Si el producto base tiene el peso, lo traemos
+            self.gramos_por_unidad = self.variante.producto.peso_base_g
+
+        # Guardamos el ítem
+        super(ItemPedido, self).save(*args, **kwargs)
+
+        # Después de guardar el ítem, disparamos el recálculo del pedido padre
+        self.pedido.actualizar_totales()
+
     class Meta:
         verbose_name = "Ítem de Pedido"
         verbose_name_plural = "Ítems de Pedido"
@@ -317,8 +416,10 @@ class ItemPedido(models.Model):
 # PAGOS
 # =============================
 
+
 class Pago(models.Model):
     """Registro de pagos realizados por el cliente"""
+
     METODOS = (
         ("Efectivo", "Efectivo"),
         ("Transferencia", "Transferencia bancaria"),
@@ -328,41 +429,26 @@ class Pago(models.Model):
     )
 
     pedido = models.ForeignKey(
-        Pedido,
-        on_delete=models.CASCADE,
-        related_name="pagos",
-        verbose_name="Pedido"
+        Pedido, on_delete=models.CASCADE, related_name="pagos", verbose_name="Pedido"
     )
-    monto = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        verbose_name="Monto"
-    )
+    monto = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto")
     metodo = models.CharField(
-        max_length=20,
-        choices=METODOS,
-        verbose_name="Método de pago"
+        max_length=20, choices=METODOS, verbose_name="Método de pago"
     )
-    fecha_pago = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Fecha de pago"
-    )
+    fecha_pago = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de pago")
     referencia = models.CharField(
         max_length=200,
         blank=True,
         help_text="Número de referencia, transacción, etc.",
-        verbose_name="Referencia"
+        verbose_name="Referencia",
     )
     comprobante = models.ImageField(
         upload_to="pagos/comprobantes/",
         blank=True,
         null=True,
-        verbose_name="Comprobante"
+        verbose_name="Comprobante",
     )
-    notas = models.TextField(
-        blank=True,
-        verbose_name="Notas"
-    )
+    notas = models.TextField(blank=True, verbose_name="Notas")
 
     def __str__(self):
         return f"Pago #{self.id} - Pedido #{self.pedido.id} - ${self.monto} ({self.get_metodo_display()})"
@@ -377,41 +463,38 @@ class Pago(models.Model):
 # COMENTARIOS/ACTUALIZACIONES
 # =============================
 
+
 class ActualizacionPedido(models.Model):
     """
     Actualizaciones sobre el progreso del pedido.
     Permite mantener al cliente informado.
     """
+
     pedido = models.ForeignKey(
         Pedido,
         on_delete=models.CASCADE,
         related_name="actualizaciones",
-        verbose_name="Pedido"
+        verbose_name="Pedido",
     )
-    mensaje = models.TextField(
-        verbose_name="Mensaje"
-    )
+    mensaje = models.TextField(verbose_name="Mensaje")
     imagen = models.ImageField(
         upload_to="pedidos/actualizaciones/",
         blank=True,
         null=True,
         help_text="Foto del progreso",
-        verbose_name="Imagen"
+        verbose_name="Imagen",
     )
     visible_cliente = models.BooleanField(
         default=True,
         help_text="¿El cliente puede ver esta actualización?",
-        verbose_name="Visible para cliente"
+        verbose_name="Visible para cliente",
     )
-    fecha = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Fecha"
-    )
+    fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha")
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
-        verbose_name="Registrado por"
+        verbose_name="Registrado por",
     )
 
     def __str__(self):
@@ -421,3 +504,16 @@ class ActualizacionPedido(models.Model):
         verbose_name = "Actualización de Pedido"
         verbose_name_plural = "Actualizaciones de Pedidos"
         ordering = ["-fecha"]
+
+
+# =============================
+# SIGNALS
+# =============================
+
+@receiver(post_delete, sender=ItemPedido)
+def recalcular_pedido_al_borrar_item(sender, instance, **kwargs):
+    """
+    Cuando se elimina un ítem, forzamos el recálculo de los totales del pedido.
+    """
+    if instance.pedido:
+        instance.pedido.actualizar_totales()

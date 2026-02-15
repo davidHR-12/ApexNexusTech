@@ -223,6 +223,14 @@ class VarianteProducto(models.Model):
         total = sum(d.gramos_usados * d.material.costo_por_gramo for d in self.detalles_material.all())
         return Decimal(total).quantize(Decimal("0.01"))
 
+    @property
+    def costo_produccion_total(self):
+        """Suma costo de materiales + costo estimado de energía"""
+        # Calculamos costo de energía: (Tiempo en horas * Consumo Promedio Kw * Precio Kwh)
+        # Por ahora, para no complicar, usamos solo materiales o una fórmula simple:
+        costo_energia_estimado = self.producto.tiempo_impresion_horas * Decimal("2.5") # Ejemplo: RD$2.5 por hora
+        return self.costo_materiales + costo_energia_estimado
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs) # Guardamos primero para tener ID si es nuevo
         
@@ -239,6 +247,52 @@ class VarianteProducto(models.Model):
         # Muestra algo como: "Cráneo T-Rex (Rojo, Dorado)"
         materiales = ", ".join([d.material.color.nombre for d in self.detalles_material.all()])
         return f"{self.producto.nombre} ({materiales if materiales else 'Sin materiales'})"
+
+    @classmethod
+    def obtener_materiales_normalizados(cls, detalles_material):
+        """
+        Extrae y normaliza los materiales de un formset o QuerySet.
+        Retorna lista ordenada de tuplas (material_id, gramos)
+        """
+        materiales = []
+        for detalle in detalles_material:
+            if isinstance(detalle, dict):  # Vienen del formset
+                if detalle and not detalle.get("DELETE"):
+                    mat = detalle.get("material")
+                    gramos = detalle.get("gramos_usados")
+                    if mat and gramos:
+                        materiales.append((mat.id, Decimal(str(gramos))))
+            else:  # Vienen de la BD
+                if detalle.material and detalle.gramos_usados:
+                    materiales.append((detalle.material.id, Decimal(str(detalle.gramos_usados))))
+        materiales.sort()
+        return materiales
+
+    def tiene_duplicado_en_producto(self):
+        """
+        Verifica si ya existe otra variante en el mismo producto
+        con exactamente los mismos materiales y gramos.
+        Útil antes de crear una nueva variante.
+        """
+        materiales_nuevos = self.obtener_materiales_normalizados(
+            self.detalles_material.all()
+        )
+        
+        if not materiales_nuevos:
+            return False
+        
+        variantes_existentes = self.producto.variantes.prefetch_related(
+            "detalles_material__material"
+        ).exclude(pk=self.pk)  # Excluir la variante actual en caso de edición
+        
+        for variante_ex in variantes_existentes:
+            materiales_existentes = self.obtener_materiales_normalizados(
+                variante_ex.detalles_material.all()
+            )
+            if materiales_nuevos == materiales_existentes:
+                return True
+        
+        return False
 
     class Meta:
         verbose_name = "Variante de Producto"

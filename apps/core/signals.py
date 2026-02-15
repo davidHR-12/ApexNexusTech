@@ -76,13 +76,17 @@ def _inicializar_catalogo_background():
 
         if categorias_a_crear:
             Categoria.objects.bulk_create(categorias_a_crear)
-            logger.info(f"✓ {len(categorias_a_crear)} categorías creadas")
+            logger.info(f"{len(categorias_a_crear)} categorías creadas")
 
         # --- 2. Inicializar Atributos de Impresión ---
-        marcas = ["Creality", "Bambu Lab", "eSun", "Hatchbox", "Polyterra", "Overture"]
-        tipos = ["PLA", "PETG", "ABS", "ASA", "TPU"]
-        
-        # ✅ Colores con sus códigos hex
+        marcas_config = {
+            "Creality": "https://store.creality.com/eu/collections/materials",
+            "Bambu Lab": "https://us.store.bambulab.com/",
+            "eSun": "https://www.esun3d.com/filaments/",
+            "Polyterra": "https://keitron.com/collections/filamento",
+            "Elegoo": "https://gabytronicx.com/product-category/filamentos/"
+        }
+        tipos = ["PLA", "PETG", "ABS", "TPU"]
         colores = {
             "Negro": "#000000",
             "Blanco": "#FFFFFF",
@@ -90,61 +94,57 @@ def _inicializar_catalogo_background():
             "Rojo": "#FF0000",
             "Azul": "#0000FF",
             "Verde": "#00FF00",
-            "Dorado": "#FFD700",
-            "Plateado": "#C0C0C0",
             "Amarillo": "#FFFF00",
         }
 
-        # Creamos los objetos base con get_or_create
-        m_objs = [Marca.objects.get_or_create(nombre=m)[0] for m in marcas]
+        # Creamos las Marcas y guardamos referencia en un dict para acceso rápido
+        m_objs = {nombre: Marca.objects.get_or_create(nombre=nombre)[0] for nombre in marcas_config.keys()}
+        # Creamos los Tipos
         t_objs = [TipoMaterial.objects.get_or_create(nombre=t)[0] for t in tipos]
         
-        # ✅ Crear colores con su codigo_hex
+        # Creamos los Colores
         c_objs = []
         for nombre, hex_code in colores.items():
             color, created = Color.objects.get_or_create(
                 nombre=nombre,
                 defaults={'codigo_hex': hex_code}
             )
-            # Si ya existía pero no tiene hex, actualizarlo
             if not created and (not color.codigo_hex or color.codigo_hex == ''):
                 color.codigo_hex = hex_code
                 color.save()
-                logger.info(f"  ✓ Color actualizado: {nombre} → {hex_code}")
             c_objs.append(color)
 
         logger.info("Marcas, tipos y colores base configurados")
 
-        # --- 3. Crear Combinaciones de Materiales (OPTIMIZADO) ---
-        marcas_principales = ["Creality", "Bambu Lab", "eSun", "Polyterra"]
-
+        # --- 3. Crear Combinaciones de Materiales (CON ENLACE DE COMPRA) ---
         materiales_a_crear = []
-        for m in m_objs:
-            if m.nombre in marcas_principales:
-                for t in t_objs:
-                    for c in c_objs:
-                        # Verificar si ya existe para evitar duplicados
-                        if not Material.objects.filter(
-                            tipo=t, marca=m, color=c
-                        ).exists():
-                            materiales_a_crear.append(
-                                Material(
-                                    tipo=t,
-                                    marca=m,
-                                    color=c,
-                                    costo_por_gramo=Decimal("1.25"),
-                                    stock_actual=Decimal("0.00"),
-                                    stock_minimo=Decimal("250.00"),
-                                )
+        
+        for nombre_marca, m_obj in m_objs.items():
+            enlace = marcas_config[nombre_marca]  # Obtenemos el link del dict
+            
+            for t_obj in t_objs:
+                for c_obj in c_objs:
+                    # Verificar si ya existe
+                    if not Material.objects.filter(tipo=t_obj, marca=m_obj, color=c_obj).exists():
+                        materiales_a_crear.append(
+                            Material(
+                                tipo=t_obj,
+                                marca=m_obj,
+                                color=c_obj,
+                                costo_por_gramo=Decimal("1.25"),
+                                stock_actual=Decimal("0.00"),
+                                stock_minimo=Decimal("250.00"),
+                                enlace_compra=enlace,  # ← Se asigna el link según la marca
+                                activo=True
                             )
+                        )
 
-        # Usar bulk_create para crear todos los materiales de una vez
         if materiales_a_crear:
             Material.objects.bulk_create(materiales_a_crear, batch_size=500)
-            logger.info(f"✓ {len(materiales_a_crear)} materiales creados")
+            logger.info(f"{len(materiales_a_crear)} materiales creados con sus respectivos enlaces")
 
         end = time.time()
-        logger.info(f"⏱ Catálogo inicializado en {end - start:.2f} segundos")
+        logger.info(f"Catálogo inicializado en {end - start:.2f} segundos")
 
     except Exception as e:
         logger.error(f"Error inicializando catálogo: {str(e)}", exc_info=True)
@@ -159,7 +159,7 @@ def inicializar_sistema_primer_usuario(sender, instance, created, **kwargs):
     """
     if created and Usuario.objects.count() == 1:
         logger.info(
-            "👤 Primer usuario detectado. Programando inicialización de catálogo..."
+            "Primer usuario detectado. Programando inicialización de catálogo..."
         )
 
         # Ejecutar en background DESPUÉS de que la transacción se guarde

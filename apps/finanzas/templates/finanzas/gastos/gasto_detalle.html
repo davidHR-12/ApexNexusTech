@@ -1,0 +1,166 @@
+{% extends "core/base_admin.html" %}
+{% load humanize %}
+{% load static %}
+{% block content %}
+  <div class="space-y-6">
+    <div class="flex items-center justify-between">
+      <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest gap-2">
+        <a href="{% url 'finanzas:gastos' %}"
+           class="hover:text-white transition-colors">Gastos</a>
+        <span>/</span>
+        <span class="text-[#10b981]">{{ gasto.descripcion }}</span>
+      </nav>
+      <div class="flex items-center gap-2">
+        {% if gasto.es_automatico %}
+          <span class="text-[9px] text-blue-400 bg-blue-400/10 px-3 py-1.5 rounded-full border border-blue-400/20 font-bold uppercase">
+            🔗 Auto-Inventario
+          </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <div class="lg:col-span-2 space-y-6">
+        <div class="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+          <div class="flex items-start justify-between mb-6">
+            <div>
+              <h1 class="text-3xl font-bold text-white">{{ gasto.descripcion }}</h1>
+              <p class="text-gray-500 text-sm mt-2">Registrado el {{ gasto.fecha_creacion|date:"d \d\e F \d\e Y" }}</p>
+            </div>
+            <button data-id="{{ gasto.id }}"
+               onclick="abrirEditarGasto(this.dataset.id)"
+               class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              Editar
+            </button>
+          </div>
+          <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-6 mb-6">
+            <p class="text-red-400/70 text-sm uppercase font-bold mb-2">Monto Total</p>
+            <p class="text-4xl font-bold text-white">
+              -RD$ <span class="text-red-400">{{ gasto.monto|floatformat:2|intcomma }}</span>
+            </p>
+          </div>
+
+          <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-gray-800/40 p-4 rounded-xl border border-gray-700/50">
+                <p class="text-gray-400 text-xs uppercase font-bold mb-2">Categoría</p>
+                <p class="text-white font-semibold">{{ gasto.get_tipo_display }}</p>
+              </div>
+              <div class="bg-gray-800/40 p-4 rounded-xl border border-gray-700/50">
+                <p class="text-gray-400 text-xs uppercase font-bold mb-2">Fecha</p>
+                <p class="text-white font-semibold">{{ gasto.fecha|date:"d \d\e M\. \d\e Y" }}</p>
+              </div>
+            </div>
+
+            {% if gasto.proveedor %}
+              <div class="bg-gray-800/40 p-4 rounded-xl border border-gray-700/50">
+                <p class="text-gray-400 text-xs uppercase font-bold mb-2">Proveedor</p>
+                <p class="text-white font-semibold">{{ gasto.proveedor }}</p>
+              </div>
+            {% endif %}
+
+            {% if gasto.numero_factura %}
+              <div class="bg-gray-800/40 p-4 rounded-xl border border-gray-700/50">
+                <p class="text-gray-400 text-xs uppercase font-bold mb-2">Número de Factura</p>
+                <p class="text-white font-mono">{{ gasto.numero_factura }}</p>
+              </div>
+            {% endif %}
+
+            <div class="bg-gray-800/40 p-4 rounded-xl border border-gray-700/50">
+              <p class="text-gray-400 text-xs uppercase font-bold mb-2">¿Es Recurrente?</p>
+              <p class="text-white font-semibold">
+                {% if gasto.es_recurrente %}
+                  <span class="text-green-400">✓ Sí (mensual)</span>
+                {% else %}
+                  <span class="text-gray-500">- No</span>
+                {% endif %}
+              </p>
+            </div>
+
+            {% if gasto.notas %}
+              <div class="bg-blue-500/10 p-4 rounded-xl border border-blue-500/20">
+                <p class="text-blue-400 text-xs uppercase font-bold mb-2">Notas</p>
+                <p class="text-gray-200">{{ gasto.notas }}</p>
+              </div>
+            {% endif %}
+
+            <div class="pt-4 border-t border-gray-700">
+              <p class="text-gray-500 text-xs">
+                <span class="font-bold">Creado:</span> {{ gasto.fecha_creacion|date:"d M Y, H:i" }}
+              </p>
+              {% if gasto.fecha_actualizacion %}
+                <p class="text-gray-500 text-xs">
+                  <span class="font-bold">Última actualización:</span> {{ gasto.fecha_actualizacion|date:"d M Y, H:i" }}
+                </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        {% if gasto.entrada_inventario %}
+          <div class="bg-blue-500/10 rounded-2xl border border-blue-500/20 p-6">
+            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Vinculado a Inventario
+            </h2>
+            <p class="text-blue-300 text-sm mb-3">Este gasto se generó automáticamente al registrar una compra de material.</p>
+            <a href="{% url 'materiales:lista_materiales' %}" class="text-blue-400 hover:text-blue-300 text-sm font-semibold">→ Ver entrada de inventario</a>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="lg:col-span-1">
+        <div class="sticky top-6">
+          <div class="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+            <h2 class="text-lg font-bold text-white mb-4">Comprobante</h2>
+            {% if gasto.comprobante %}
+              <div class="space-y-4">
+                {% if ".pdf" in gasto.comprobante.url|lower %}
+                  <div class="bg-gray-800/40 rounded-xl p-4 text-center">
+                    <svg class="w-12 h-12 mx-auto text-red-400 mb-2" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M7 2a2 2 0 012-2h6.586A2 2 0 0116 1.586l4.414 4.414A2 2 0 0120 7.414V20a2 2 0 01-2 2H9a2 2 0 01-2-2V2z" />
+                    </svg>
+                    <p class="text-gray-400 text-sm font-semibold">PDF</p>
+                  </div>
+                {% else %}
+                  <div class="bg-gray-800/40 rounded-xl overflow-hidden">
+                    <img src="{{ gasto.comprobante.url }}" alt="Comprobante" class="w-full h-auto object-cover">
+                  </div>
+                {% endif %}
+                <a href="{{ gasto.comprobante.url }}" download class="w-full px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Descargar
+                </a>
+              </div>
+            {% else %}
+              <div class="bg-gray-800/40 rounded-xl p-6 text-center text-gray-500 italic">
+                Sin comprobante adjunto
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-start">
+      <a href="{% url 'finanzas:gastos' %}" class="px-6 py-3 rounded-xl border border-gray-700 text-gray-400 hover:bg-gray-800 hover:text-white font-bold transition-all flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Volver a Gastos
+      </a>
+    </div>
+  </div>
+  {% include "finanzas/gastos/modals/gasto_form.html" with modal_id="modalEditarGasto" is_edit=True title="Editar Gasto" description="Ajusta los detalles del registro" gasto=None max_width="max-w-4xl" %}
+{% endblock content %}
+{% block extra_js %}
+  <script src="{% static 'finanzas/js/gastos.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "core/modal_base.html" %}
+{% block modal_content %}
+    <form id="formClienteExpress"
+          data-url="{% url 'usuarios:api_crear_cliente_express' %}"
+          class="space-y-4">
+        {% csrf_token %}
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Nombre</label>
+                <input type="text"
+                       placeholder="Nombre"
+                       name="first_name"
+                       required
+                       class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-2 text-white outline-none focus:border-[#10b981]">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Apellido</label>
+                <input type="text"
+                       placeholder="Apellido"
+                       name="last_name"
+                       required
+                       class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-2 text-white outline-none focus:border-[#10b981]">
+            </div>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1">Teléfono (WhatsApp)</label>
+            <input type="tel"
+                   placeholder="Ej: 809-555-1234"
+                   name="telefono"
+                   id="id_telefono_express"
+                   required
+                   class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-2 text-white outline-none focus:border-[#10b981]">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1">Email (Opcional)</label>
+            <input type="email"
+                   placeholder="Email"
+                   name="email"
+                   class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-2 text-white outline-none focus:border-[#10b981]">
+        </div>
+        <div class="flex gap-3 pt-6 mt-6 border-t border-gray-800">
+            <button type="button"
+                    onclick="cerrarUltimoModal()"
+                    class="flex-1 px-4 py-3 rounded-xl border border-gray-700 text-gray-400 hover:bg-gray-800 transition-all font-bold text-sm">
+                Cancelar
+            </button>
+            <button type="submit"
+                    class="flex-1 px-4 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white transition-all font-bold text-sm">
+                Guardar y Seleccionar
+            </button>
+        </div>
+    </form>
+    {% load static %}
+    <script src="{% static 'pedidos/js/pedidos.js' %}"></script>
+{% endblock %}

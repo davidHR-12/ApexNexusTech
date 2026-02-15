@@ -60,6 +60,21 @@ class ProductoForm(TailwindModelForm):
         ]
         widgets = {"descripcion": forms.Textarea(attrs={"rows": 2})}
 
+    def __init__(self, *args, **kwargs):
+        # Extraemos la categoría predefinida si se pasa desde la vista
+        self.categoria_predefinida = kwargs.pop('categoria_predefinida', None)
+        super().__init__(*args, **kwargs)
+        
+        if self.categoria_predefinida:
+            # Seteamos el valor inicial
+            self.fields['categoria'].initial = self.categoria_predefinida
+            # Lo hacemos no requerido para que no falle al estar 'disabled' en el HTML
+            self.fields['categoria'].required = False
+            clases_bloqueo = " pointer-events-none opacity-70 bg-[#111827] border-gray-800 text-gray-500 border-gray-600"
+            self.fields['categoria'].widget.attrs['class'] += clases_bloqueo
+            self.fields['categoria'].widget.attrs['disabled'] = 'disabled'
+            self.fields['categoria'].widget.attrs['tabindex'] = '-1'
+
     def _limpiar_decimal(self, valor):
         if isinstance(valor, str):
             valor = valor.replace(",", "")
@@ -120,7 +135,35 @@ class VarianteProductoForm(TailwindModelForm):
         model = VarianteProducto
         fields = ["stock_disponible",
                   "precio_adicional", "activa", "codigo_sku"]
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Quita el 0 inicial
+        self.fields['stock_disponible'].initial = None
+        self.fields['precio_adicional'].initial = None
+        
+         #Añadir un placeholder para que no se vea vacío
+        self.fields['stock_disponible'].widget.attrs.update({'placeholder': '0'})
+        self.fields['precio_adicional'].widget.attrs.update({'placeholder': '0.00'})
 
+    def validar_materiales_del_formset(self, formset_data):
+        """
+        Valida los materiales extraídos del formset.
+        Retorna: (es_valido: bool, materiales: list, mensaje_error: str)
+        """
+        nuevos_materiales = []
+        for f in formset_data:
+            if f.cleaned_data and not f.cleaned_data.get("DELETE"):
+                mat = f.cleaned_data.get("material")
+                gramos = f.cleaned_data.get("gramos_usados")
+                if mat and gramos:
+                    nuevos_materiales.append((mat.id, Decimal(str(gramos))))
+        
+        nuevos_materiales.sort()
+        
+        if not nuevos_materiales:
+            return False, [], "Debes agregar al menos un material a la variante."
+        
+        return True, nuevos_materiales, None
 
 class VarianteMaterialDetalleForm(TailwindModelForm):
     class Meta:
@@ -131,16 +174,20 @@ class VarianteMaterialDetalleForm(TailwindModelForm):
         super().__init__(*args, **kwargs)
         self.fields["material"].queryset = Material.objects.filter(
             stock_actual__gt=0).select_related("marca", "color", "tipo")
+            
+        self.fields['gramos_usados'].initial = None
+        self.fields['gramos_usados'].widget.attrs.update({'placeholder': '0'})
 
 
 MaterialDetalleFormSet = inlineformset_factory(
     VarianteProducto, 
     VarianteMaterialDetalle,
     form=VarianteMaterialDetalleForm,
-    extra=1,      # Empieza con un espacio para 1 material
+    extra=1,
     can_delete=True,
-    min_num=1,    # Al menos debe tener 1 material
-    validate_min=True
+    min_num=0,
+    max_num=12,
+    validate_min=False
 )
 
 
@@ -148,7 +195,7 @@ class ProduccionInternaForm(TailwindModelForm):
     class Meta:
         model = ProduccionInterna
         fields = ["variante", "cantidad_producida", "observaciones"]
-        widgets = {"observaciones": forms.Textarea(attrs={"rows": 2})}
+        widgets = {"observaciones": forms.Textarea(attrs={"rows": 2,'style': 'min-height: 80px; max-height: 150px; resize: none;'})}
 
     def clean(self):
         cd = super().clean()
@@ -159,6 +206,5 @@ class ProduccionInternaForm(TailwindModelForm):
             for detalle in variante.detalles_material.all():
                 total_necesario = detalle.gramos_usados * cantidad
                 if detalle.material.stock_actual < total_necesario:
-                    raise ValidationError(
-                        f"Stock insuficiente de {detalle.material}. Necesitas {total_necesario}g.")
+                    raise ValidationError(f"Stock insuficiente de {detalle.material}. Necesitas {total_necesario}g.")
         return cd

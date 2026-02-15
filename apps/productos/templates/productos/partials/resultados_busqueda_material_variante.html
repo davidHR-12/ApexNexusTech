@@ -1,0 +1,29 @@
+<div class="absolute top-full left-0 right-0 mt-1 bg-[#1e293b] border border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50 max-h-64 overflow-y-auto custom-scrollbar">
+  {% if materiales %}
+    {% for m in materiales %}
+      <button type="button" 
+              onclick="seleccionarMaterialVariante('{{ field_index }}', '{{ m.id }}', '{{ m.marca.nombre }} - {{ m.tipo.nombre }} - {{ m.color.nombre }}')"
+              class="resultado-item w-full text-left p-3 hover:bg-blue-600/20 border-b border-gray-800 last:border-0 transition-colors group">
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="text-sm font-bold text-white group-hover:text-blue-400">
+              {{ m.marca.nombre }} - {{ m.tipo.nombre }} - {{ m.color.nombre }}
+            </div>
+            <div class="text-[10px] text-gray-500 uppercase">{{ m.tipo.nombre }}</div>
+          </div>
+          <div class="text-xs font-mono text-gray-400 bg-gray-900 px-2 py-1 rounded border border-gray-700">
+            {{ m.stock_actual|floatformat:0 }}g
+          </div>
+        </div>
+      </button>
+    {% endfor %}
+  {% else %}
+    <div class="p-4 text-center text-gray-500 text-sm italic">
+      {% if query %}
+        No se encontraron coincidencias para "{{ query }}"
+      {% else %}
+        Escribe al menos 2 caracteres para buscar
+      {% endif %}
+    </div>
+  {% endif %}
+</div>

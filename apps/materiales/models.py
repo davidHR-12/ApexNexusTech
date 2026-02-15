@@ -152,6 +152,15 @@ class Material(models.Model):
         verbose_name="Activo"
     )
 
+    # Enlace de compra
+    enlace_compra = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Enlace a la tienda para reponer este material (ej: Keitron, Amazon, etc.)",
+        verbose_name="Enlace de compra"
+    )
+
     @property
     def necesita_reposicion(self):
         """Verifica si el stock está por debajo del mínimo"""

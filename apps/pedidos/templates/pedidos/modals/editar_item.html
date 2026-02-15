@@ -1,0 +1,66 @@
+{% extends "core/modal_base.html" %}
+
+{% block modal_content %}
+    <form id="formEditarItem" 
+          method="post" 
+          action="{% url 'pedidos:editar_item' item.id %}" 
+          class="space-y-4">
+        {% csrf_token %}
+        
+        {# Si el item es asociado a variante, mostramos info pero no dejamos editar la variante en sí #}
+        {% if item.variante %}
+            <div class="bg-blue-900/20 border border-blue-500/30 p-4 rounded-xl mb-4">
+                <p class="text-blue-400 text-xs font-bold uppercase">Variante del catálogo</p>
+                <p class="text-white font-medium">{{ item.variante }}</p>
+            </div>
+            {# Campos ocultos para pasar validación si fuera necesaria, o simplemente para no perder data #}
+        {% endif %}
+
+        <div>
+            <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Descripción (Opcional)</label>
+            {{ form.descripcion }}
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Cantidad</label>
+                {{ form.cantidad }}
+            </div>
+            <div>
+                <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Precio Unitario ($)</label>
+                {{ form.precio_unitario }}
+            </div>
+        </div>
+        
+        {% if not item.variante %}
+            <div class="grid grid-cols-2 gap-4">
+                 <div>
+                    <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Material</label>
+                    {{ form.material_personalizado }}
+                 </div>
+                 <div>
+                    <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Gramos/Unidad</label>
+                    {{ form.gramos_por_unidad }}
+                 </div>
+            </div>
+        {% else %}
+             {# Para variantes, mostramos gramos como informativo o readonly si se desea #}
+             <div class="opacity-50 pointer-events-none">
+                <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Gramos/Unidad (Fijo por variante)</label>
+                {{ form.gramos_por_unidad }}
+             </div>
+        {% endif %}
+
+        <div class="flex gap-3 pt-6 border-t border-gray-800 mt-6">
+            <button type="button" 
+                    onclick="cerrarUltimoModal()"
+                    class="flex-1 px-4 py-3 rounded-xl border border-gray-700 text-gray-400 hover:bg-gray-800 transition-all font-bold text-sm">
+                Cancelar
+            </button>
+            <button type="submit" 
+                    class="flex-1 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-500/20">
+                Guardar Cambios
+            </button>
+        </div>
+    </form>
+{% endblock modal_content %}

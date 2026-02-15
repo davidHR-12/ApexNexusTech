@@ -57,11 +57,13 @@ INSTALLED_APPS = [
     'apps.pedidos',
     'apps.finanzas',
     'apps.reportes',
+    "django_htmx",
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    "django_htmx.middleware.HtmxMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -145,7 +147,7 @@ STATICFILES_FINDERS = [
 AUTH_USER_MODEL = 'usuarios.Usuario'
 
 # Configuración de redirección de Login
-LOGIN_URL = "'usuarios:login'"
+LOGIN_URL = "usuarios:login"
 LOGIN_REDIRECT_URL = "clientes:home"
 LOGOUT_REDIRECT_URL = "clientes:index"
 

@@ -1,0 +1,173 @@
+{% extends "core/base_admin.html" %}
+{% load static %}
+{% block content %}
+    <div class="p-6 max-w-7xl mx-auto">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+            <div>
+                <nav class="text-sm text-gray-500 mb-2">
+                    <a href="{% url 'pedidos:pedidos_lista' %}" class="hover:text-blue-400">← Volver a pedidos</a>
+                </nav>
+                <h1 class="text-3xl font-bold text-white">Pedido #{{ pedido.id }}</h1>
+                <p class="text-gray-400">Cliente: {{ pedido.usuario.get_full_name }} | {{ pedido.usuario.email }}</p>
+            </div>
+            <div class="grid grid-cols-1 sm:flex sm:items-center gap-3 w-full sm:w-auto">
+                <form method="post"
+                      action="{% url 'pedidos:cambiar_estado' pedido.id %}"
+                      class="flex items-center gap-2 w-full sm:w-auto">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="cambiar_estado">
+                    <select name="nuevo_estado"
+                            class="flex-1 sm:w-64 bg-gray-800 border border-gray-700 text-white text-sm rounded-xl px-3 h-[42px] focus:ring-blue-500 ">
+                        {% for cod, nombre in estados %}
+                            <option value="{{ cod }}"
+                                    {% if pedido.estado_pedido == cod %}selected{% endif %}>{{ nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit"
+                            class="bg-blue-600 hover:bg-blue-500 text-white px-4 h-[42px] rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 shrink-0">
+                        <svg class="w-4 h-4 shrink-0"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M20 8A8 8 0 005.64 5.64M4 16a8 8 0 0014.36 2.36" />
+                        </svg>
+                        <span class="hidden sm:inline">Actualizar</span>
+                    </button>
+                </form>
+                <button onclick="abrirModal('modalAgregarItem')"
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 h-[42px] rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 w-full sm:w-auto shrink-0">
+                    <svg class="w-4 h-4 shrink-0"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span class="hidden sm:inline">Añadir Prod.</span>
+                </button>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                    <div class="p-4 border-b border-gray-700 bg-gray-700/30">
+                        <h3 class="font-bold text-white">Ítems del Pedido</h3>
+                    </div>
+                    <table class="w-full text-left text-gray-400 text-sm">
+                        <thead>
+                            <tr class="bg-gray-900/50">
+                                <th class="p-4">Producto / Variante</th>
+                                <th class="p-4">Cantidad</th>
+                                <th class="p-4">Producción (Impresora)</th>
+                                <th class="p-4 text-right">Subtotal</th>
+                                <th class="p-4 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-700">
+                            {% for item in items %}
+                                <tr>
+                                    <td class="p-4">
+                                        <span class="text-white font-medium">{{ item }}</span>
+                                        {% if not item.variante %}<span class="block text-xs text-yellow-500">Personalizado</span>{% endif %}
+                                    </td>
+                                    <td class="p-4">{{ item.cantidad }}</td>
+                                    <td class="p-4">
+                                        {% if pedido.estado_pedido == 'Entregado' or pedido.estado_pedido == 'Listo' %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-900/30 text-blue-400 border border-blue-800">
+                                                Producido
+                                            </span>
+                                        {% elif item.variante %}
+                                            <div class="flex flex-col">
+                                                <span class="text-[10px] text-gray-500 uppercase font-bold mb-1">Stock / Catálogo</span>
+                                                <span class="text-xs text-blue-400">No requiere impresión</span>
+                                            </div>
+                                        {% else %}
+                                            <form method="post"
+                                                  action="{% url 'pedidos:asignar_impresora' item.id %}"
+                                                  class="flex items-center gap-2">
+                                                {% csrf_token %}
+                                                <select name="impresora_id"
+                                                        onchange="this.form.submit()"
+                                                        class="bg-gray-900 border border-gray-700 text-xs rounded p-1">
+                                                    <option value="">-- Sin asignar --</option>
+                                                    {% for imp in impresoras %}
+                                                        <option value="{{ imp.id }}"
+                                                                {% if item.impresora_asignada_id == imp.id %}selected{% endif %}>
+                                                            {{ imp.nombre }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                    <td class="p-4 text-right text-white">${{ item.subtotal }}</td>
+                                    <td class="p-4 text-right">
+                                        <div class="flex items-center justify-end gap-2">
+                                            <button onclick="abrirModalEditarItem({{ item.id }})" 
+                                                    class="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                                    title="Editar">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                            </button>
+                                            <button onclick="eliminarItem({{ item.id }})" 
+                                                    class="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                    title="Eliminar">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="space-y-6">
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
+                    <h3 class="font-bold text-white mb-4">Resumen de Costos</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between text-gray-400">
+                            <span>Costo Material Est.:</span>
+                            <span>${{ pedido.costo_material }}</span>
+                        </div>
+                        <div class="flex justify-between text-gray-400">
+                            <span>Otros Costos (Envío/Extras):</span>
+                            <span>${{ pedido.otros_costos }}</span>
+                        </div>
+                        <div class="border-t border-gray-700 pt-2 flex justify-between text-lg font-bold text-white">
+                            <span>Total:</span>
+                            <span class="text-green-400">${{ pedido.precio_total }}</span>
+                        </div>
+                        <div class="mt-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                            <div class="flex justify-between text-blue-400 font-bold">
+                                <span>Ganancia Estimada:</span>
+                                <span>${{ pedido.ganancia }}</span>
+                            </div>
+                            <p class="text-[10px] text-blue-300 mt-1">Margen: {{ pedido.margen_porcentaje }}%</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
+                    <h3 class="font-bold text-white mb-4">Pagos</h3>
+                    <div class="text-center py-4">
+                        <p class="text-2xl font-bold {% if pedido.esta_pagado %}text-green-400{% else %}text-red-400{% endif %}">
+                            ${{ pedido.saldo_pendiente }}
+                        </p>
+                        <p class="text-xs text-gray-500 uppercase">Saldo Pendiente</p>
+                    </div>
+                    <button class="w-full bg-gray-700 hover:bg-gray-600 text-white text-sm py-2 rounded-lg transition-colors">
+                        Registrar Pago
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include "pedidos/modals/agregar_item.html" with modal_id="modalAgregarItem" title="Añadir Producto al Pedido" max_width="max-w-lg" %}
+    <div id="modal-editar-item-wrapper"></div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'pedidos/js/pedidos.js' %}"></script>
+{% endblock %}

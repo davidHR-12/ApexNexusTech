@@ -13,4 +13,7 @@ urlpatterns = [
     # --- 2. FLUJO DE VERIFICACIÓN ---
     path("verificar-email/<str:uidb64>/<str:token>/",views.verificar_email, name="verificar_email"),
     path("reenviar-verificacion/",views.reenviar_verificacion,name="reenviar_verificacion"),
+
+    # --- 3. API CLIENTES EXPRESS ---
+    path('api/crear-cliente-express/', views.api_crear_cliente_express, name='api_crear_cliente_express'),
 ]

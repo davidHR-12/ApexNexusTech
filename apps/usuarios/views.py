@@ -21,7 +21,26 @@ from .utils import email_verification_token
 # importaciones del modelo y formulario
 from .models import Usuario
 from .forms import LoginForm, RegistroForm
+from .forms import RegistroExpressClienteForm
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.http import JsonResponse
 
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def api_crear_cliente_express(request):
+    if request.method == 'POST':
+        form = RegistroExpressClienteForm(request.POST)
+        if form.is_valid():
+            cliente = form.save()
+            return JsonResponse({
+                'success': True,
+                'id': cliente.id,
+                'nombre': cliente.get_full_name_or_user(),
+                'email': cliente.email,
+                'telefono': cliente.telefono,
+            })
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+    return JsonResponse({'success': False}, status=405)
 
 # Vista de registro
 def registro_view(request):

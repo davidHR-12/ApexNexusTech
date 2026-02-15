@@ -8,6 +8,8 @@ from django.db.models import Q
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.views.decorators.http import require_POST
+from django.http import HttpResponse
+from django.contrib.admin.views.decorators import staff_member_required
 
 
 from .models import (
@@ -24,7 +26,7 @@ from .forms import MaterialForm, EntradaInventarioForm, EditarMaterialForm
 
 
 # --- VISTAS PRINCIPALES ---
-@login_required
+@staff_member_required
 def material_list(request):
     """Muestra el listado principal con filtros, búsqueda y cálculos de valor."""
     # 1. Parámetros de entrada
@@ -89,14 +91,14 @@ def material_list(request):
 
 
 # --- VISTAS DE FORMULARIOS ---
-@login_required
+@staff_member_required
 def crear_material(request):
     if request.method == "POST":
         data = request.POST.copy()
 
         # --- CORRECCIÓN AQUÍ ---
         # Usamos los nombres exactos que vienen del HTML (mira tu traceback)
-        campos_a_limpiar = ["marca_nombre", "tipo_nombre", "color_nombre"]
+        campos_a_limpiar = ["marca_nombre", "tipo_nombre", "color_nombre", "enlace_compra"]
 
         for campo in campos_a_limpiar:
             valor = data.get(campo)
@@ -123,7 +125,7 @@ def crear_material(request):
     return redirect("materiales:lista_materiales")
 
 
-@login_required
+@staff_member_required
 def editar_material(request, material_id):
     material = get_object_or_404(Material, id=material_id)
     if request.method == "POST":
@@ -137,7 +139,7 @@ def editar_material(request, material_id):
     return redirect("materiales:lista_materiales")
 
 
-@login_required
+@staff_member_required
 @require_POST
 def eliminar_material(request, material_id):
     material = get_object_or_404(Material, pk=material_id)
@@ -155,7 +157,7 @@ def eliminar_material(request, material_id):
         )
 
 
-@login_required
+@staff_member_required
 def registrar_entrada(request):
     if request.method == "POST":
         form = EntradaInventarioForm(request.POST)
@@ -173,7 +175,7 @@ def registrar_entrada(request):
     return redirect("materiales:lista_materiales")
 
 
-@login_required
+@staff_member_required
 def gestionar_atributo(request, modelo_tipo, objeto_id):
     modelos = {"marca": Marca, "tipo": TipoMaterial, "color": Color}
     model_class = modelos.get(modelo_tipo)
@@ -270,7 +272,7 @@ def gestionar_atributo(request, modelo_tipo, objeto_id):
     return redirect("materiales:lista_materiales")
 
 
-@login_required
+@staff_member_required
 @require_POST
 def eliminar_atributo(request, tipo_atrib, id_atrib):
     modelos = {"marcas": Marca, "tipos": TipoMaterial, "colores": Color}
@@ -306,7 +308,7 @@ def eliminar_atributo(request, tipo_atrib, id_atrib):
 
 
 # --- ENDPOINTS AJAX / JSON ---
-@login_required
+@staff_member_required
 def buscar_atributo_ajax(request):
     query = (
         request.GET.get("q")
@@ -322,8 +324,12 @@ def buscar_atributo_ajax(request):
         modelos = {"marca": Marca, "tipo": TipoMaterial, "color": Color}
         model_class = modelos.get(tipo_busqueda)
         if model_class:
-            resultados = model_class.objects.filter(nombre__icontains=query.strip()).order_by('nombre')[:5]
+            resultados = model_class.objects.filter(nombre__icontains=query.strip()).order_by('nombre')[:4]
 
+    # Si no hay texto, devolvemos un string vacío (nada de HTML)
+    if not query:
+        return HttpResponse("")
+    
     return render(
         request,
         "materiales/partials/resultados_atributos.html",
@@ -331,17 +337,32 @@ def buscar_atributo_ajax(request):
     )
 
 
-@login_required
+@staff_member_required
 def buscar_material_ajax(request):
+
+    if not request.htmx:
+        # Solo permitir acceso a staff
+        if request.user.is_staff:
+            messages.warning(
+                request,
+                "Url no permitida."
+            )
+            return redirect("materiales:lista_materiales")
+    
     query = request.GET.get("q", request.GET.get("material_search", "")).strip()
+
+    if not query:
+        return HttpResponse("")
+
     materiales = []
 
-    if len(query) >= 2:
+    if len(query) >= 1:
         palabras = (
             query.split()
         )  # Separa "Bambu ASA Negro" en ['Bambu', 'ASA', 'Negro']
-        materiales_qs = Material.objects.all()
-
+        materiales_qs = Material.objects.select_related(
+            "marca", "tipo", "color"
+        )
         for palabra in palabras:
             # Filtramos el queryset sucesivamente por cada palabra
             materiales_qs = materiales_qs.filter(
@@ -350,7 +371,8 @@ def buscar_material_ajax(request):
                 | Q(color__nombre__icontains=palabra)
             )
 
-        materiales = materiales_qs.distinct().order_by('marca__nombre', 'tipo__nombre', 'color__nombre')[:5] # Ordenamos por marca y color y limitamos a 5 resultados
+
+        materiales = materiales_qs.distinct().order_by('marca__nombre', 'tipo__nombre', 'color__nombre')[:4] # Ordenamos por marca y color y limitamos a 4 resultados
 
     return render(
         request,
@@ -359,11 +381,11 @@ def buscar_material_ajax(request):
     )
 
 
-@login_required
+@staff_member_required
 def obtener_material_json(request, material_id):
     material = get_object_or_404(Material, id=material_id)
     
-    # ✅ Manejar casos donde color_hex está vacío o None
+    #Manejar casos donde color_hex está vacío o None
     color_hex = '#10b981'  # Color por defecto
     if material.color and material.color.codigo_hex:
         color_hex = material.color.codigo_hex.strip()
@@ -371,9 +393,9 @@ def obtener_material_json(request, material_id):
         if not color_hex or color_hex == '':
             color_hex = '#10b981'
     
-    print(f"🎨 DEBUG - Material: {material}")
-    print(f"🎨 DEBUG - Color original: '{material.color.codigo_hex if material.color else 'None'}'")
-    print(f"🎨 DEBUG - Color hex a enviar: '{color_hex}'")
+    print(f" DEBUG - Material: {material}")
+    print(f" DEBUG - Color original: '{material.color.codigo_hex if material.color else 'None'}'")
+    print(f" DEBUG - Color hex a enviar: '{color_hex}'")
     
     return JsonResponse(
         {
@@ -383,8 +405,17 @@ def obtener_material_json(request, material_id):
             "costo_por_gramo": "{:.2f}".format(material.costo_por_gramo),
             "stock_minimo": float(material.stock_minimo),
             "stock_actual": float(material.stock_actual),
+            "enlace_compra": material.enlace_compra,
             "color_hex": color_hex,
             "color_nombre": material.color.nombre if material.color else "",
         }
     )
 
+@staff_member_required
+def obtener_precio_material(request, material_id):
+    material = get_object_or_404(Material, id=material_id)
+    return JsonResponse({
+        'costo_por_gramo': float(material.costo_por_gramo), # Nombre exacto del modelo
+        'nombre': f"{material.tipo} {material.marca}",
+        'color': str(material.color),
+    })
