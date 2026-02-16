@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from apps.usuarios.decorators import admin_required
 from django.contrib import messages
 from django.db.models import Sum, F, FloatField
 from django.http import JsonResponse
@@ -9,8 +9,6 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse
-from django.contrib.admin.views.decorators import staff_member_required
-
 
 from .models import (
     TipoMaterial,
@@ -26,7 +24,7 @@ from .forms import MaterialForm, EntradaInventarioForm, EditarMaterialForm
 
 
 # --- VISTAS PRINCIPALES ---
-@staff_member_required
+@admin_required
 def material_list(request):
     """Muestra el listado principal con filtros, búsqueda y cálculos de valor."""
     # 1. Parámetros de entrada
@@ -91,7 +89,7 @@ def material_list(request):
 
 
 # --- VISTAS DE FORMULARIOS ---
-@staff_member_required
+@admin_required
 def crear_material(request):
     if request.method == "POST":
         data = request.POST.copy()
@@ -125,7 +123,7 @@ def crear_material(request):
     return redirect("materiales:lista_materiales")
 
 
-@staff_member_required
+@admin_required
 def editar_material(request, material_id):
     material = get_object_or_404(Material, id=material_id)
     if request.method == "POST":
@@ -139,7 +137,7 @@ def editar_material(request, material_id):
     return redirect("materiales:lista_materiales")
 
 
-@staff_member_required
+@admin_required
 @require_POST
 def eliminar_material(request, material_id):
     material = get_object_or_404(Material, pk=material_id)
@@ -157,7 +155,7 @@ def eliminar_material(request, material_id):
         )
 
 
-@staff_member_required
+@admin_required
 def registrar_entrada(request):
     if request.method == "POST":
         form = EntradaInventarioForm(request.POST)
@@ -175,7 +173,7 @@ def registrar_entrada(request):
     return redirect("materiales:lista_materiales")
 
 
-@staff_member_required
+@admin_required
 def gestionar_atributo(request, modelo_tipo, objeto_id):
     modelos = {"marca": Marca, "tipo": TipoMaterial, "color": Color}
     model_class = modelos.get(modelo_tipo)
@@ -272,7 +270,7 @@ def gestionar_atributo(request, modelo_tipo, objeto_id):
     return redirect("materiales:lista_materiales")
 
 
-@staff_member_required
+@admin_required
 @require_POST
 def eliminar_atributo(request, tipo_atrib, id_atrib):
     modelos = {"marcas": Marca, "tipos": TipoMaterial, "colores": Color}
@@ -308,7 +306,7 @@ def eliminar_atributo(request, tipo_atrib, id_atrib):
 
 
 # --- ENDPOINTS AJAX / JSON ---
-@staff_member_required
+@admin_required
 def buscar_atributo_ajax(request):
     query = (
         request.GET.get("q")
@@ -337,7 +335,7 @@ def buscar_atributo_ajax(request):
     )
 
 
-@staff_member_required
+@admin_required
 def buscar_material_ajax(request):
 
     if not request.htmx:
@@ -381,7 +379,7 @@ def buscar_material_ajax(request):
     )
 
 
-@staff_member_required
+@admin_required
 def obtener_material_json(request, material_id):
     material = get_object_or_404(Material, id=material_id)
     
@@ -411,11 +409,13 @@ def obtener_material_json(request, material_id):
         }
     )
 
-@staff_member_required
+@admin_required
 def obtener_precio_material(request, material_id):
     material = get_object_or_404(Material, id=material_id)
+    
     return JsonResponse({
-        'costo_por_gramo': float(material.costo_por_gramo), # Nombre exacto del modelo
+        'costo_por_gramo': float(material.costo_por_gramo),
+        'stock_actual': float(material.stock_actual),
         'nombre': f"{material.tipo} {material.marca}",
         'color': str(material.color),
     })

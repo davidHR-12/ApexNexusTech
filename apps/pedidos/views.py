@@ -1,11 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required, user_passes_test
+from apps.usuarios.decorators import admin_required
 from django.views.decorators.http import require_POST
 from django.db.models import Q
 from django.core.paginator import Paginator
 from django.contrib import messages
-from .forms import PedidoManualForm, ItemPedidoForm
+from .forms import PedidoManualForm, ItemCatalogoForm, ItemPersonalizadoForm
 from .models import Pedido, ItemPedido, Impresora
 
 # --- Helper: Lógica común del Dashboard (para no repetir código) ---
@@ -51,16 +51,14 @@ def _obtener_contexto_dashboard(request):
 #  VISTAS DE LECTURA (GET)
 # ==========================================
 
-@login_required
-@user_passes_test(lambda u: u.is_staff)
+@admin_required
 def pedidos_list(request):
     """Solo muestra la lista y los modales vacíos"""
     context = _obtener_contexto_dashboard(request)
     context['form'] = PedidoManualForm() # Formulario vacío
     return render(request, 'pedidos/pedidos_list.html', context)
 
-@login_required
-@user_passes_test(lambda u: u.is_staff)
+@admin_required
 def pedido_detalle(request, pedido_id):
     """Solo muestra el detalle"""
     pedido = get_object_or_404(Pedido.objects.select_related('usuario', 'solicitud'), pk=pedido_id)
@@ -72,7 +70,8 @@ def pedido_detalle(request, pedido_id):
         'pagos': pedido.pagos.all(),
         'impresoras': Impresora.objects.all(),
         'estados': Pedido.ESTADOS_PEDIDO,
-        'form_item': ItemPedidoForm(), # Form vacío para el modal de items
+        'form_catalogo': ItemCatalogoForm(), # Form vacío para el modal de items
+        'form_personalizado': ItemPersonalizadoForm(), # Form vacío para el modal de items
     }
     return render(request, 'pedidos/pedido_detalle.html', context)
 
@@ -81,7 +80,7 @@ def pedido_detalle(request, pedido_id):
 # ==========================================
 
 @require_POST
-@login_required
+@admin_required
 def crear_pedido_manual(request):
     form = PedidoManualForm(request.POST)
     if form.is_valid():
@@ -101,66 +100,74 @@ def crear_pedido_manual(request):
         context['form'] = form
         return render(request, 'pedidos/pedidos_list.html', context)
 
+@admin_required
 @require_POST
-@login_required
 def agregar_item_pedido(request, pedido_id):
     pedido = get_object_or_404(Pedido, pk=pedido_id)
-    form = ItemPedidoForm(request.POST)
-    
+    tipo = request.POST.get('tipo_item')
+
+    if tipo == 'catalogo':
+        form = ItemCatalogoForm(request.POST)
+    else:
+        form = ItemPersonalizadoForm(request.POST)
+
     if form.is_valid():
         item = form.save(commit=False)
         item.pedido = pedido
         
-        # Validar consistencia antes de guardar
-        if not item.gramos_por_unidad:
-            item.gramos_por_unidad = 0.00
-
-        # --- LÓGICA PARA CATÁLOGO (VARIANTE) ---
-        if item.variante:
-            # Si no hay descripción manual, usamos el nombre de la variante
-            if not item.descripcion:
-                item.descripcion = str(item.variante)
-            if item.gramos_por_unidad == 0:
-                item.gramos_por_unidad = item.variante.producto.peso_gramos
+        if tipo == 'catalogo':
+            # 1. Usar el precio_final de la variante (Producto.precio_venta + Variante.precio_adicional)
+            # Solo lo asignamos si el precio_unitario viene vacío o queremos forzar el del catálogo
+            item.precio_unitario = item.variante.precio_final
             
-            # El precio unitario y gramos ya vienen del form (rellenados por JS),
-            # pero el costo_material_unitario lo tomamos de la "receta" de la variante
+            # 2. Otros datos automáticos
+            item.descripcion = item.variante.producto.nombre
+            item.gramos_por_unidad = item.variante.producto.peso_gramos
             item.costo_material_unitario = item.variante.costo_materiales
-        
-        # Si es personalizado, guardamos el costo del material en ese momento
-        if item.material_personalizado:
+        else:
+            # Logica para piezas unicas
             item.costo_material_unitario = item.material_personalizado.costo_por_gramo
-            # Si no puso descripción, usamos el nombre del material
-            if not item.descripcion:
-                item.descripcion = f"Pieza de {item.material_personalizado.nombre}"
-        
+            
         item.save()
-        messages.success(request, "Ítem añadido correctamente.")
+        messages.success(request, "Item agregado Correctamente.")
     else:
-        messages.error(request, "Error: " + str(form.errors))
+        for field, errors in form.errors.items():
+            for error in errors:
+                # Si el error es del campo material, no mostramos el nombre del campo
+                if field == 'material_personalizado' or field == '__all__':
+                    messages.error(request, f"{error}")
+                else:
+                    # Para otros campos (precio, cantidad) mantenemos una referencia
+                    label = form.fields[field].label if field in form.fields else field
+                    messages.error(request, f"{label}: {error}")
     
-    return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
+    return redirect('pedidos:pedido_detalle', pedido_id=pedido.id)
 
-@login_required
+
+@admin_required
 def editar_item_pedido(request, item_id):
     item = get_object_or_404(ItemPedido, id=item_id)
+    FormClass = ItemCatalogoForm if item.variante else ItemPersonalizadoForm
     
     if request.method == 'POST':
-        form = ItemPedidoForm(request.POST, instance=item)
+        form = FormClass(request.POST, instance=item)
         if form.is_valid():
             item_editado = form.save(commit=False)
             
-            # Recalcular costos unitarios si cambió la variante o material
-            if item_editado.variante:
-                 item_editado.costo_material_unitario = item_editado.variante.costo_materiales
-            elif item_editado.material_personalizado:
-                 item_editado.costo_material_unitario = item_editado.material_personalizado.costo_por_gramo
+            # Si es catálogo, forzamos los gramos y el costo 
+            # desde la variante original, ignorando cualquier intento de cambio.
+            if item.variante:
+                item_editado.gramos_por_unidad = item.variante.producto.peso_gramos
+                item_editado.costo_material_unitario = item.variante.costo_materiales
+            else:
+                # Si es personalizado, recalculamos costo según material elegido
+                item_editado.costo_material_unitario = item_editado.material_personalizado.costo_por_gramo
             
-            item_editado.save() # Dispara actualización de totales del pedido
+            item_editado.save()
             messages.success(request, "Ítem actualizado correctamente.")
             return redirect('pedidos:pedido_detalle', pedido_id=item.pedido.id)
     else:
-        form = ItemPedidoForm(instance=item)
+        form = FormClass(instance=item)
     
     return render(request, 'pedidos/modals/editar_item.html', {
         'form': form,
@@ -169,8 +176,7 @@ def editar_item_pedido(request, item_id):
         'modal_id': 'modalEditarItem'
     })
 
-@require_POST
-@login_required
+@admin_required
 def eliminar_item_pedido(request, item_id):
     item = get_object_or_404(ItemPedido, id=item_id)
     try:
@@ -179,8 +185,7 @@ def eliminar_item_pedido(request, item_id):
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
-@require_POST
-@login_required
+@admin_required
 def cambiar_estado_pedido(request, pedido_id):
     pedido = get_object_or_404(Pedido, pk=pedido_id)
     nuevo_estado = request.POST.get('nuevo_estado')
@@ -193,7 +198,7 @@ def cambiar_estado_pedido(request, pedido_id):
     return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
 
 @require_POST
-@login_required
+@admin_required
 def asignar_impresora_item(request, item_id):
     item = get_object_or_404(ItemPedido, pk=item_id)
     impresora_id = request.POST.get('impresora_id')

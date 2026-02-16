@@ -5,7 +5,8 @@ from decimal import Decimal, InvalidOperation
 from .models import Categoria, Producto, ProduccionInterna, VarianteProducto, ImagenProducto, VarianteMaterialDetalle
 from apps.materiales.models import Material
 from django.forms import inlineformset_factory
-import logging
+from django.forms import BaseInlineFormSet
+from django.core.exceptions import ValidationError
 
 # --- WIDGETS ---
 
@@ -134,7 +135,7 @@ class VarianteProductoForm(TailwindModelForm):
     class Meta:
         model = VarianteProducto
         fields = ["stock_disponible",
-                  "precio_adicional", "activa", "codigo_sku"]
+                  "precio_adicional", "activa"]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Quita el 0 inicial
@@ -179,10 +180,49 @@ class VarianteMaterialDetalleForm(TailwindModelForm):
         self.fields['gramos_usados'].widget.attrs.update({'placeholder': '0'})
 
 
+class BaseMaterialDetalleFormSet(BaseInlineFormSet):
+
+    def clean(self):
+        """Validar que no se repitan materiales en la misma variante"""
+        # Llamar al clean() del padre que valida unique_together
+        try:
+            super().clean()
+        except ValidationError as e:
+            # Si el error es por duplicados, lanzar mensaje personalizado
+            if 'duplicate' in str(e).lower():
+                raise ValidationError(
+                    "No puedes agregar el mismo material más de una vez en la variante."
+                )
+            else:
+                # Si es otro error, re-lanzarlo tal cual
+                raise
+
+        # Si hay errores previos en formularios individuales, no validar más
+        if any(self.errors):
+            return
+
+        materiales_vistos = []
+
+        for form in self.forms:
+            # Ignorar formularios vacíos o marcados para eliminar
+            if not form.cleaned_data or form.cleaned_data.get("DELETE"):
+                continue
+
+            material = form.cleaned_data.get("material")
+
+            if material:
+                if material in materiales_vistos:
+                    raise ValidationError(
+                        "No puedes agregar el mismo material más de una vez en la variante."
+                    )
+                materiales_vistos.append(material)
+
+
 MaterialDetalleFormSet = inlineformset_factory(
     VarianteProducto, 
     VarianteMaterialDetalle,
     form=VarianteMaterialDetalleForm,
+    formset=BaseMaterialDetalleFormSet,
     extra=1,
     can_delete=True,
     min_num=0,

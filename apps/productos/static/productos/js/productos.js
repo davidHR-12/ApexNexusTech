@@ -413,6 +413,7 @@ function abrirEditarProducto(id) {
                 precio: document.getElementById('edit_prod_precio'),
                 peso: document.getElementById('edit_prod_peso'),
                 web: document.getElementById('edit_prod_web'),
+                activo: document.getElementById('edit_prod_activo'),
                 descripcion: document.getElementById('edit_prod_desc'),
                 form: document.getElementById('formEditarProducto'),
                 preview: document.getElementById('previewEdit'),
@@ -441,6 +442,7 @@ function abrirEditarProducto(id) {
             if (elementos.precio) elementos.precio.value = data.precio_venta;
             if (elementos.peso) elementos.peso.value = data.peso_gramos;
             if (elementos.web) elementos.web.checked = data.mostrar_en_web;
+            if (elementos.activo) elementos.activo.checked = data.activo;
             if (elementos.descripcion) elementos.descripcion.value = data.descripcion || '';
             // 4.1 Rellenar campo activo
             const inputActivo = document.getElementById('edit_prod_activo');

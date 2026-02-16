@@ -1,18 +1,16 @@
 # importaciones de django
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login
 from django.contrib import messages
 
 from django.utils import timezone
 
 # importaciones para verificar el correo electrónico
 from django.http import HttpResponse
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_decode
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.urls import reverse
-from django.core.mail import send_mail
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.core.exceptions import PermissionDenied
@@ -22,11 +20,10 @@ from .utils import email_verification_token
 from .models import Usuario
 from .forms import LoginForm, RegistroForm
 from .forms import RegistroExpressClienteForm
-from django.contrib.auth.decorators import login_required, user_passes_test
+from .decorators import admin_required
 from django.http import JsonResponse
 
-@login_required
-@user_passes_test(lambda u: u.is_staff)
+@admin_required
 def api_crear_cliente_express(request):
     if request.method == 'POST':
         form = RegistroExpressClienteForm(request.POST)

@@ -48,16 +48,23 @@
                        class="w-full bg-transparent text-white font-mono text-2xl outline-none"
                        required>
             </div>
-            {# Colocar el campo activo escondido #}
-            <input type="hidden" name="activo" id="edit_prod_activo" value="true">
-            <div class="flex items-center justify-center bg-gray-900/50 border border-gray-800 rounded-2xl p-2 group hover:border-blue-500/30 transition-all">
-                <label class="flex items-center gap-2 cursor-pointer">
+            <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-2 group hover:border-emerald-500/30 transition-all">
+                <div class="grid grid-cols-2 gap-2 h-full">
+                <label class="flex items-center justify-center gap-2 cursor-pointer hover:bg-emerald-500/5 rounded-xl transition-colors border-l border-gray-800">
                     <input type="checkbox"
                            name="mostrar_en_web"
                            id="edit_prod_web"
                            class="w-6 h-6 rounded border-gray-700 text-blue-500 bg-gray-800 focus:ring-0">
                     <span class="text-gray-400 group-hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Visible en Web</span>
                 </label>
+                <label class="flex items-center justify-center gap-2 cursor-pointer hover:bg-emerald-500/5 rounded-xl transition-colors border-l border-gray-800">
+                        <input type="checkbox"
+                               name="activo"
+                               id="edit_prod_activo"
+                               class="w-5 h-5 rounded border-gray-700 text-emerald-500 bg-gray-800 focus:ring-0">
+                        <span class="text-gray-400 group-hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Activo</span>
+                    </label>
+                </div>
             </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -1,36 +1,42 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.db.models import Sum, Count, F
-from django.http import JsonResponse
+from django.db.models import Sum, Count, F, Q
+from django.http import JsonResponse, HttpResponse
 from django.utils.http import url_has_allowed_host_and_scheme
+from apps.usuarios.decorators import admin_required
+from django.db import transaction
+from django.urls import reverse
 from decimal import Decimal
 import json
 import logging
-from django.contrib.admin.views.decorators import staff_member_required
-from django.http import HttpResponse
-from django.db import transaction
+import hashlib
 
 from .models import Categoria, Producto, VarianteProducto, ImagenProducto, ProduccionInterna
 from .forms import CategoriaForm, ProductoForm, ProduccionInternaForm, VarianteProductoForm, MaterialDetalleFormSet
 
 
-# Vista para listar los productos y mostrar estadísticas generales
-@staff_member_required
+def _generar_firma_materiales(materiales):
+    """
+    Genera una firma hash única a partir de una lista ordenada de tuplas (material_id, gramos).
+    Se usa para detectar variantes duplicadas.
+    """
+    base_string = "|".join(f"{mat_id}-{gramos}" for mat_id, gramos in materiales)
+    return hashlib.sha256(base_string.encode()).hexdigest()
+
+
+def _redirect_producto_detalle_htmx(request, producto):
+    """Redirige a la página de detalle del producto usando HTMX"""
+    response = HttpResponse()
+    response["HX-Redirect"] = reverse("productos:producto_detalle", kwargs={"slug": producto.slug})
+    return response
+
+
+@admin_required
 def product_list(request):
-    """
-    Muestra el listado de categorías con sus productos y estadísticas generales del inventario.
-    """
+    """Muestra el listado de categorías con sus productos y estadísticas generales del inventario"""
     categorias = Categoria.objects.annotate(total_productos=Count("productos")).order_by("orden")
-
-    # Contar total de modelos de productos registrados
     total_modelos = Producto.objects.count()
-
-    # Calcular el stock físico total sumando el stock de todas las variantes
-    total_stock_fisico = VarianteProducto.objects.aggregate(
-        total=Sum('stock_disponible')
-    )['total'] or 0
-
-    # Calcular valor del inventario (Precio venta * Stock disponible)
+    total_stock_fisico = VarianteProducto.objects.aggregate(total=Sum('stock_disponible'))['total'] or 0
     valor_inventario = VarianteProducto.objects.aggregate(
         total=Sum(F('producto__precio_venta') * F('stock_disponible'))
     )['total'] or 0
@@ -47,35 +53,23 @@ def product_list(request):
     )
 
 
-# Vista para crear un nuevo producto base
-@staff_member_required
-def crear_producto_base(request, categoria_id=None): # El ID es opcional por si usas la vista general
-    """
-    Crea un producto base asegurando que la categoría no sea manipulada.
-    """
+@admin_required
+def crear_producto_base(request, categoria_id=None):
+    """Crea un producto base asegurando que la categoría no sea manipulada por el usuario"""
     if request.method == "POST":
-        # Hacemos una copia mutable del POST para forzar la categoría
         datos_post = request.POST.copy()
         
-        # SEGURIDAD: Si la URL trae una categoría, la forzamos. 
-        # Esto ignora cualquier cambio hecho por el usuario en el HTML.
+        # Fuerza la categoría desde la URL, ignorando cualquier manipulación del formulario
         if categoria_id:
             datos_post['categoria'] = categoria_id
         
-        # Pasamos categoria_predefinida para que el form aplique los estilos grises
-        form = ProductoForm(
-            datos_post, 
-            request.FILES, 
-            categoria_predefinida=categoria_id
-        )
+        form = ProductoForm(datos_post, request.FILES, categoria_predefinida=categoria_id)
         
         if form.is_valid():
-            # Guardamos el producto
             producto = form.save()
-            
             messages.success(request, f"Producto '{producto.nombre}' creado exitosamente.")
             
-            # --- Lógica de redirección segura ---
+            # Redirección segura
             next_url = request.POST.get("next")
             is_safe = url_has_allowed_host_and_scheme(
                 url=next_url,
@@ -86,43 +80,27 @@ def crear_producto_base(request, categoria_id=None): # El ID es opcional por si 
             if next_url and is_safe:
                 return redirect(next_url)
             return redirect("productos:producto_detalle", slug=producto.slug)
-        
         else:
-            # Si el formulario no es válido, reportamos errores
             for field, errors in form.errors.items():
                 for error in errors:
-                    # Traducimos el nombre del campo para el usuario si es necesario
                     nombre_campo = field.replace('_', ' ').capitalize()
                     messages.error(request, f"{nombre_campo}: {error}")
-            
-            # Volvemos a la página anterior para que el modal se pueda reabrir con los errores
             return redirect(request.META.get("HTTP_REFERER", "productos:productos_index"))
 
-    # Si no es POST, simplemente regresamos al índice
     return redirect("productos:productos_index")
 
 
-# Vista para ver el detalle de un producto específico
-@staff_member_required
+@admin_required
 def producto_detalle(request, slug):
-    """
-    Muestra el detalle completo de un producto, incluyendo sus variantes y galería.
-    """
+    """Muestra el detalle completo de un producto, incluyendo sus variantes y galería"""
     producto = get_object_or_404(Producto.objects.prefetch_related('variantes'), slug=slug)
-
-    context = {
-        "producto": producto,
-    }
+    context = {"producto": producto}
     return render(request, "productos/producto_detalle.html", context)
 
 
-# Vista para editar un producto existente
-@staff_member_required
+@admin_required
 def editar_producto_base(request, producto_id):
-    """
-    Permite editar la información básica de un producto.
-    Maneja la eliminación de la imagen de portada si se solicita.
-    """
+    """Permite editar la información básica de un producto"""
     producto = get_object_or_404(Producto, id=producto_id)
 
     if request.method == "POST":
@@ -148,47 +126,40 @@ def editar_producto_base(request, producto_id):
     return redirect("productos:productos_index")
 
 
-# Vista para eliminar (o desactivar) un producto
-@staff_member_required
+@admin_required
 def eliminar_producto_base(request, producto_id):
     """
-    Elimina un producto o lo desactiva si tiene historial asociado (stock, producción, ventas).
+    Elimina un producto o lo desactiva si tiene historial asociado.
     Retorna una respuesta JSON.
     """
     if request.method == "POST":
         producto = get_object_or_404(Producto, id=producto_id)
         
-        # Verificar dependencias antes de eliminar
         tiene_stock = producto.variantes.filter(stock_disponible__gt=0).exists()
         tiene_historial_produccion = ProduccionInterna.objects.filter(variante__producto=producto).exists()
-        tiene_ventas = False 
+        tiene_ventas = False
 
         if tiene_stock or tiene_historial_produccion or tiene_ventas:
-            # Borrado lógico si hay historial
             producto.activo = False
             producto.mostrar_en_web = False
             producto.save()
             return JsonResponse({
-                "success": True, 
+                "success": True,
                 "message": "El producto tiene historial de producción o stock. Se ha desactivado para no afectar los registros históricos."
             })
         else:
-            # Borrado físico si no hay historial
             producto.delete()
             return JsonResponse({
-                "success": True, 
+                "success": True,
                 "message": "Producto eliminado permanentemente ya que no contenía registros vinculados."
             })
             
     return JsonResponse({"success": False, "message": "Método no permitido"}, status=405)
 
 
-# Vista para eliminar múltiples imágenes de un producto
-@staff_member_required
+@admin_required
 def eliminar_imagenes_producto_bulk(request):
-    """
-    Elimina múltiples imágenes de la galería de productos recibiendo una lista de IDs.
-    """
+    """Elimina múltiples imágenes de la galería de productos recibiendo una lista de IDs"""
     if request.method == "POST":
         try:
             data = json.loads(request.body)
@@ -233,14 +204,10 @@ def eliminar_imagenes_producto_bulk(request):
     return JsonResponse({"status": "error", "message": "Método no permitido"}, status=405)
 
 
-# Vista para obtener datos de un producto en formato JSON
-@staff_member_required
+@admin_required
 def obtener_producto_json(request, pk):
-    """
-    Retorna los datos de un producto en formato JSON para su edición rápida.
-    """
+    """Retorna los datos de un producto en formato JSON para su edición"""
     producto = get_object_or_404(Producto, pk=pk)
-
     imagenes_galeria_data = [
         {"id": img.id, "url": img.imagen.url} for img in producto.imagenes.all()
     ]
@@ -252,28 +219,23 @@ def obtener_producto_json(request, pk):
         "peso_gramos": str(producto.peso_gramos),
         "mostrar_en_web": producto.mostrar_en_web,
         "descripcion": producto.descripcion,
+        "activo": producto.activo,
         "imagen_url": producto.imagen.url if producto.imagen else None,
         "imagenes_galeria": imagenes_galeria_data,
     }
     return JsonResponse(data)
 
 
-# Vista para obtener productos archivados de una categoría
-@staff_member_required
+@admin_required
 def obtener_productos_archivados(request, categoria_id):
-    """
-    Renderiza una lista parcial con los productos desactivados (archivados) de una categoría.
-    """
+    """Renderiza una lista parcial con los productos desactivados de una categoría"""
     productos = Producto.objects.filter(activo=False, categoria_id=categoria_id)
     return render(request, "productos/partials/lista_prod_archivados.html", {"productos": productos})
 
 
-# Vista para reactivar un producto archivado
-@staff_member_required
+@admin_required
 def reactivar_producto(request, producto_id):
-    """
-    Reactiva un producto desactivado, volviéndolo visible y activo.
-    """
+    """Reactiva un producto desactivado"""
     if request.method == "POST":
         producto = get_object_or_404(Producto, id=producto_id)
         producto.mostrar_en_web = True
@@ -283,12 +245,9 @@ def reactivar_producto(request, producto_id):
     return JsonResponse({"success": False}, status=400)
 
 
-# Vista para reactivar múltiples productos a la vez
-@staff_member_required
+@admin_required
 def reactivar_multiples_productos(request):
-    """
-    Reactiva un lote de productos seleccionados por sus IDs.
-    """
+    """Reactiva un lote de productos seleccionados por sus IDs"""
     if request.method == "POST":
         try:
             data = json.loads(request.body)
@@ -298,19 +257,15 @@ def reactivar_multiples_productos(request):
                 return JsonResponse({"success": False, "message": "No se seleccionaron productos"}, status=400)
             
             Producto.objects.filter(id__in=ids).update(activo=True, mostrar_en_web=True)
-            
             return JsonResponse({"success": True, "message": f"{len(ids)} productos restaurados"})
         except Exception as e:
             return JsonResponse({"success": False, "message": str(e)}, status=500)
     return JsonResponse({"success": False}, status=405)
 
 
-# Vista para obtener las variantes de un producto en JSON
-@staff_member_required
+@admin_required
 def obtener_variantes_producto(request, producto_id):
-    """
-    Devuelve las variantes disponibles de un producto en formato JSON.
-    """
+    """Devuelve las variantes disponibles de un producto en formato JSON"""
     producto = get_object_or_404(Producto, id=producto_id)
     variantes = producto.variantes.all()
     data = []
@@ -327,9 +282,6 @@ def obtener_variantes_producto(request, producto_id):
     return JsonResponse({"variantes": data})
 
 
-
-# --- FUNCIONES AUXILIARES PRIVADAS ---
-
 def _extraer_materiales_del_formset(formset):
     """
     Extrae materiales válidos del formset validado.
@@ -345,7 +297,7 @@ def _extraer_materiales_del_formset(formset):
     nuevos_materiales.sort()
     return nuevos_materiales
 
-# Verificar duplicados
+
 def _verificar_duplicado(producto, materiales_nuevos):
     """
     Verifica si ya existe una variante con la misma combinación de materiales.
@@ -354,9 +306,7 @@ def _verificar_duplicado(producto, materiales_nuevos):
     if not materiales_nuevos:
         return False, None
     
-    variantes_existentes = producto.variantes.prefetch_related(
-        "detalles_material__material"
-    )
+    variantes_existentes = producto.variantes.prefetch_related("detalles_material__material")
     
     for variante_ex in variantes_existentes:
         materiales_existentes = [
@@ -370,48 +320,49 @@ def _verificar_duplicado(producto, materiales_nuevos):
     
     return False, None
 
-# Guardar variante con materiales
+
 def _guardar_variante_con_materiales(variante, producto, formset):
-    """
-    Guarda la variante y sus materiales de forma transaccional.
-    Lanza excepción si hay error.
-    """
+    """Guarda la variante y sus materiales de forma transaccional"""
     with transaction.atomic():
         variante.producto = producto
         variante.save()
         formset.instance = variante
         formset.save()
 
-# Procesar errores de formulario
+
 def _procesar_errores_formulario(form, formset):
-    """
-    Extrae y retorna una lista de mensajes de error del formulario y formset.
-    """
+    """Extrae y retorna una lista de mensajes de error del formulario y formset"""
     errores = []
     
-    # Errores del formulario principal
     if not form.is_valid():
         for field, field_errors in form.errors.items():
             for error in field_errors:
-                errores.append(f"{field}: {error}")
+                nombre_campo = field.replace('_', ' ').capitalize()
+                errores.append(f"{nombre_campo}: {error}")
     
-    # Errores del formset
     if not formset.is_valid():
         for error in formset.non_form_errors():
-            errores.append(str(error))
+            error_texto = str(error).replace('<ul class="errorlist nonform"><li>', '').replace('</li></ul>', '')
+            errores.append(error_texto)
+        
         for i, form_errors in enumerate(formset.errors):
             if form_errors:
                 for field, field_errors in form_errors.items():
-                    for error in field_errors:
-                        errores.append(f"Material {i+1} - {field}: {error}")
+                    if field != '__all__':
+                        for error in field_errors:
+                            errores.append(f"Material {i+1} - {field}: {error}")
+                    else:
+                        for error in field_errors:
+                            error_str = str(error)
+                            # Filtra errores de duplicados en inglés
+                            if 'duplicate' not in error_str.lower():
+                                errores.append(f"Material {i+1}: {error_str}")
     
     return errores
 
-# Renderizar formulario
+
 def _renderizar_formulario(request, producto, form, formset):
-    """
-    Renderiza el template con los formularios.
-    """
+    """Renderiza el template con los formularios de variante"""
     return render(
         request,
         "productos/modals/agregar_variante_producto.html",
@@ -423,88 +374,91 @@ def _renderizar_formulario(request, producto, form, formset):
     )
 
 
-# --- VISTA PRINCIPAL ---
-
-# Crear variante
-@staff_member_required
+@admin_required
 def crear_variante(request, producto_id):
-    """
-    Maneja la creación de una variante de producto, incluyendo la validación
-    de materiales y la prevención de duplicados.
-    """
+    """Maneja la creación de una variante de producto, validando materiales y previniendo duplicados"""
     producto = get_object_or_404(Producto, id=producto_id)
     
     if request.method == "POST":
         form = VarianteProductoForm(request.POST)
         formset = MaterialDetalleFormSet(request.POST)
         
-        if form.is_valid() and formset.is_valid():
-            return _procesar_post_valido(
-                request, producto, form, formset
-            )
+        form_valido = form.is_valid()
+        formset_valido = formset.is_valid()
+        
+        print(f"DEBUG - Form válido: {form_valido}")
+        print(f"DEBUG - Formset válido: {formset_valido}")
+        print(f"DEBUG - Errores formset: {formset.errors}")
+        print(f"DEBUG - Non-form errors: {formset.non_form_errors()}")
+        
+        if form_valido and formset_valido:
+            return _procesar_post_valido(request, producto, form, formset)
         else:
-            return _procesar_post_invalido(
-                request, producto, form, formset
-            )
+            return _procesar_post_invalido(request, producto, form, formset)
     
-    # GET: mostrar formulario vacío
     form = VarianteProductoForm()
     formset = MaterialDetalleFormSet()
     return _renderizar_formulario(request, producto, form, formset)
 
-# Procesar POST válido
+
 def _procesar_post_valido(request, producto, form, formset):
-    """
-    Lógica para POST válido: valida duplicados y guarda.
-    """
-    # Extraer y validar materiales
+    """Procesa el POST válido al crear una variante"""
     materiales_nuevos = _extraer_materiales_del_formset(formset)
-    
+
     if not materiales_nuevos:
+        messages.error(request, "Debes agregar al menos un material a la variante.")
+        if request.htmx:
+            return _redirect_producto_detalle_htmx(request, producto)
+        return redirect("productos:producto_detalle", slug=producto.slug)
+
+    firma = _generar_firma_materiales(materiales_nuevos)
+
+    if producto.variantes.filter(firma_materiales=firma).exists():
         messages.error(
             request,
-            "Debes agregar al menos un material a la variante."
+            "Ya existe una variante con exactamente la misma combinación de materiales y gramos."
         )
+        if request.htmx:
+            return _redirect_producto_detalle_htmx(request, producto)
         return redirect("productos:producto_detalle", slug=producto.slug)
-    
-    # Verificar duplicados
-    es_duplicado, _ = _verificar_duplicado(producto, materiales_nuevos)
-    if es_duplicado:
-        messages.error(
-            request,
-            "Ya existe una variante con exactamente la misma combinación "
-            "de materiales y gramos."
-        )
-        return redirect("productos:producto_detalle", slug=producto.slug)
-    
-    # Guardar
+
     try:
         variante = form.save(commit=False)
+        variante.firma_materiales = firma
         _guardar_variante_con_materiales(variante, producto, formset)
+
         messages.success(request, "Variante creada correctamente.")
+        if request.htmx:
+            return _redirect_producto_detalle_htmx(request, producto)
         return redirect("productos:producto_detalle", slug=producto.slug)
+
     except Exception as e:
         messages.error(request, f"Error al guardar: {e}")
+        if request.htmx:
+            return _redirect_producto_detalle_htmx(request, producto)
         return redirect("productos:producto_detalle", slug=producto.slug)
 
-# Procesar POST inválido
+
 def _procesar_post_invalido(request, producto, form, formset):
-    """
-    Lógica para POST inválido: muestra errores.
-    """
+    """Procesa el POST inválido al crear una variante y muestra los errores"""
     errores = _procesar_errores_formulario(form, formset)
-    for error in errores:
-        messages.error(request, error)
     
-    return _renderizar_formulario(request, producto, form, formset)
+    print(f"DEBUG - Errores capturados: {errores}")
+    
+    if errores:
+        for error in errores:
+            messages.error(request, error)
+    else:
+        messages.error(request, "Hay errores en el formulario. Verifica los datos ingresados.")
+
+    if request.htmx:
+        return _redirect_producto_detalle_htmx(request, producto)
+    return redirect("productos:producto_detalle", slug=producto.slug)
 
 
-# Vista para registrar producción de una variante
-@staff_member_required
+@admin_required
 def registrar_produccion(request, variante_id):
-    """
-    Registra el aumento de stock de una variante mediante una producción interna.
-    """
+    """Registra el aumento de stock de una variante mediante una producción interna"""
     variante = get_object_or_404(VarianteProducto, id=variante_id)
     
     if request.method == "POST":
@@ -522,12 +476,10 @@ def registrar_produccion(request, variante_id):
                 messages.success(request, f"Producción de {data['cantidad_producida']} unidades registrada.")
             except ValueError as e:
                 messages.error(request, str(e))
-            
             return redirect("productos:producto_detalle", slug=variante.producto.slug)
         else:
             for error in form.non_field_errors():
                 messages.error(request, error)
-
             for field in form:
                 for error in field.errors:
                     messages.error(request, f"{field.label}: {error}")
@@ -536,19 +488,16 @@ def registrar_produccion(request, variante_id):
     return render(request, "productos/modals/registrar_produccion.html", {"variante": variante})
 
 
-# Vista para eliminar una variante vía JSON
-@staff_member_required
+@admin_required
 def eliminar_variante_json(request, variante_id):
-    """
-    Elimina una variante específica y retorna confirmación en JSON.
-    """
+    """Elimina una variante específica y retorna confirmación en JSON"""
     if request.method == "POST":
         variante = get_object_or_404(VarianteProducto, id=variante_id)
         try:
             nombre_variante = str(variante)
             variante.delete()
             return JsonResponse({
-                "success": True, 
+                "success": True,
                 "message": f"Variante '{nombre_variante}' eliminada."
             })
         except Exception as e:
@@ -556,19 +505,14 @@ def eliminar_variante_json(request, variante_id):
     return JsonResponse({"success": False, "message": "Método no permitido"}, status=405)
 
 
-# Vista para crear una nueva categoría
-@staff_member_required
+@admin_required
 def crear_categoria(request):
-    """
-    Procesa el formulario para crear una nueva categoría de productos.
-    """
+    """Procesa el formulario para crear una nueva categoría de productos"""
     if request.method == "POST":
         form = CategoriaForm(request.POST, request.FILES)
         if form.is_valid():
             nueva_cat = form.save()
-            messages.success(
-                request, f'Categoría "{nueva_cat.nombre}" creada con éxito.'
-            )
+            messages.success(request, f'Categoría "{nueva_cat.nombre}" creada con éxito.')
         else:
             for error in form.errors.values():
                 messages.error(request, error)
@@ -576,12 +520,9 @@ def crear_categoria(request):
     return redirect("productos:productos_index")
 
 
-# Vista para editar una categoría existente
-@staff_member_required
+@admin_required
 def editar_categoria(request, categoria_id):
-    """
-    Permite modificar los datos de una categoría existente.
-    """
+    """Permite modificar los datos de una categoría existente"""
     categoria = get_object_or_404(Categoria, pk=categoria_id)
     if request.method == "POST":
         form = CategoriaForm(request.POST, request.FILES, instance=categoria)
@@ -597,12 +538,9 @@ def editar_categoria(request, categoria_id):
     return redirect("productos:productos_index")
 
 
-# Vista para eliminar una categoría
-@staff_member_required
+@admin_required
 def eliminar_categoria(request, categoria_id):
-    """
-    Elimina una categoría si no es la categoría por defecto 'Sin Categorizar'.
-    """
+    """Elimina una categoría si no es la categoría por defecto 'Sin Categorizar'"""
     if request.method == "POST":
         categoria = get_object_or_404(Categoria, id=categoria_id)
 
@@ -614,7 +552,6 @@ def eliminar_categoria(request, categoria_id):
 
         nombre_eliminado = categoria.nombre
         categoria.delete()
-
         messages.success(request, f'Categoría "{nombre_eliminado}" eliminada correctamente.')
 
         return JsonResponse({
@@ -625,14 +562,10 @@ def eliminar_categoria(request, categoria_id):
     return JsonResponse({"success": False, "message": "Método no permitido."}, status=405)
 
 
-# Vista para ver el detalle de una categoría
-@staff_member_required
+@admin_required
 def categoria_detalle(request, slug):
-    """
-    Muestra el detalle de una categoría, incluyendo los productos asociados y estadísticas.
-    """
+    """Muestra el detalle de una categoría, incluyendo los productos asociados y estadísticas"""
     categoria = get_object_or_404(Categoria, slug=slug)
-
     productos = categoria.productos.filter(activo=True)
     todas_las_categorias = Categoria.objects.all()
 
@@ -652,12 +585,9 @@ def categoria_detalle(request, slug):
     )
 
 
-# Vista para obtener datos de categoría en JSON
-@staff_member_required
+@admin_required
 def obtener_categoria_json(request, categoria_id):
-    """
-    Retorna los datos de una categoría en formato JSON para edición.
-    """
+    """Retorna los datos de una categoría en formato JSON para edición"""
     categoria = get_object_or_404(Categoria, pk=categoria_id)
     data = {
         "id": categoria.id,
@@ -669,32 +599,27 @@ def obtener_categoria_json(request, categoria_id):
     return JsonResponse(data)
 
 
-# Vista para obtener el precio de una variante
-@staff_member_required
+@admin_required
 def obtener_precio_variante(request, variante_id):
-    """
-    Retorna el precio unitario y peso de una variante específica en JSON.
-    """
-    variante = get_object_or_404(VarianteProducto, id=variante_id)
-    gramos = variante.producto.peso_gramos
-    precio = variante.precio_final 
-    
-    return JsonResponse({
-        'precio_unitario': float(precio),
-        'gramos_por_unidad': float(gramos),
-        'nombre': str(variante)
-    })
+    """Retorna el precio unitario desglosado y peso de una variante específica"""
+    try:
+        variante = get_object_or_404(VarianteProducto.objects.select_related('producto'), id=variante_id)
+        
+        return JsonResponse({
+            'precio_base': float(variante.producto.precio_venta),
+            'precio_extra': float(variante.precio_adicional),
+            'precio_unitario': float(variante.precio_final),
+            'gramos_por_unidad': float(variante.producto.peso_gramos),
+            'nombre': str(variante)
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 
-# Vista para buscar materiales para una variante
-@staff_member_required
+@admin_required
 def buscar_material_variante(request):
-    """
-    Realiza una búsqueda de materiales basada en un término de consulta (query).
-    Retorna un renderizado parcial compatible con HTMX.
-    """
+    """Realiza una búsqueda de materiales y retorna un renderizado parcial compatible con HTMX"""
     from apps.materiales.models import Material
-    from django.db.models import Q
     
     if not request.htmx:
         return HttpResponse(status=403)
@@ -706,7 +631,6 @@ def buscar_material_variante(request):
     field_index = request.GET.get("field_index", "0")
     logger = logging.getLogger(__name__)
     
-    # Log de la búsqueda
     logger.info(f"Búsqueda material: query='{query}', field_index={field_index}")
     logger.info(f"Parámetros GET completos: {dict(request.GET)}")
 
@@ -717,11 +641,7 @@ def buscar_material_variante(request):
     
     if len(query) >= 1:
         palabras = query.split()
-        materiales_qs = Material.objects.filter(
-            stock_actual__gt=0
-        ).select_related(
-            "marca", "tipo", "color"
-        )
+        materiales_qs = Material.objects.filter(stock_actual__gt=0).select_related("marca", "tipo", "color")
         
         for palabra in palabras:
             materiales_qs = materiales_qs.filter(
@@ -730,7 +650,6 @@ def buscar_material_variante(request):
                 Q(color__nombre__icontains=palabra)
             )
 
-        # Ordenar por marca, tipo y color
         materiales = materiales_qs.select_related(
             "marca", "tipo", "color"
         ).distinct().order_by('marca__nombre', 'tipo__nombre', 'color__nombre')[:8]

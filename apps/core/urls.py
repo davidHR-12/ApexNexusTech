@@ -10,4 +10,5 @@ urlpatterns = [
     path("dashboard/", views.dashboard_admin, name="dashboard-admin"),
     path("calculadora/", views.calculadora, name="calculadora"),
     path("configuracion/", views.configuracion, name="configuracion"),
+    path("configuracion/media/", views.gestionar_media_huerfana, name="config_media"),
 ]

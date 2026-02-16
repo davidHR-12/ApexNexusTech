@@ -31,7 +31,10 @@
       .sidebar-is-mini #sidebar {
           width: 5rem !important; /* w-20 */
       }
-
+      tr[data-url] {
+        user-select: none; /* Evita que se seleccione texto al hacer muchos clics */
+        -webkit-user-drag: none;
+      }
       @media (min-width: 768px) {
           .sidebar-is-mini #mainContent {
               margin-left: 5rem !important; /* ml-20 */

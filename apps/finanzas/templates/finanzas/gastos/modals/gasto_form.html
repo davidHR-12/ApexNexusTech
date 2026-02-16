@@ -1,10 +1,10 @@
 {% extends "core/modal_base.html" %}
-
 {% block modal_content %}
   {% if is_edit %}
     {# Envolvemos todo el bloque de edición en un solo 'with' con lógica ternaria #}
     {% with es_automatico=gasto.entrada_inventario|yesno:"True,False" %}
-      <div id="edit_info_box" class="mb-6 p-4 bg-gray-900/80 rounded-2xl border border-gray-800 flex items-center gap-4">
+      <div id="edit_info_box"
+           class="mb-6 p-4 bg-gray-900/80 rounded-2xl border border-gray-800 flex items-center gap-4">
         <div class="p-2 {% if gasto.entrada_inventario %}bg-blue-500/10{% else %}bg-orange-500/10{% endif %} rounded-lg">
           <svg class="w-6 h-6 {% if gasto.entrada_inventario %}text-blue-400{% else %}text-orange-400{% endif %}"
                fill="none"
@@ -16,11 +16,10 @@
         <div class="flex-1">
           <div class="flex items-center gap-3">
             <p id="edit_display_info"
-               class="text-white font-semibold text-sm leading-tight">
-            </p>
+               class="text-white font-semibold text-sm leading-tight"></p>
           </div>
           <p id="edit_display_type" class="text-gray-500 text-xs font-medium">
-              <span class="text-blue-400"></span>
+            <span class="text-blue-400"></span>
           </p>
         </div>
         {% if gasto.entrada_inventario %}
@@ -41,148 +40,174 @@
          class="text-[10px] text-blue-300 leading-relaxed italic"></p>
     </div>
   {% endif %}
-
-  <form id="{% if is_edit %}formEditarGasto{% else %}formGasto{% endif %}"
-        action="{% if not is_edit %}{% url 'finanzas:crear_gasto' %}{% else %}#{% endif %}"
-        method="POST"
-        enctype="multipart/form-data"
-        class="space-y-5">
-    {% csrf_token %}
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-      
-      <div class="flex flex-col gap-5">
-        <div>
-          <label class="text-gray-400 text-[10px] uppercase mb-2 block font-bold tracking-widest">Descripción</label>
-          <input type="text"
-                 name="descripcion"
-                 id="{% if is_edit %}edit_descripcion{% endif %}"
-                 placeholder="Ej: Pago de luz por el mes de enero"
-                 value="{% if is_edit and gasto %}{{ gasto.descripcion }}{% endif %}"
-                 class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-white focus:border-red-500 outline-none transition-all"
-                 required>
-        </div>
-
-        <div>
-          <label class="text-gray-400 text-[10px] uppercase mb-2 block font-bold tracking-widest">Categoría</label>
-          <div class="relative">
-            <select name="tipo"
-                    id="{% if is_edit %}edit_selectTipoGasto{% else %}selectTipoGasto{% endif %}"
-                    class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-white focus:border-red-500 outline-none appearance-none cursor-pointer disabled:opacity-50 transition-all"
-                    required>
-              <option value="Mantenimiento" {% if is_edit and gasto.tipo == 'Mantenimiento' %}selected{% endif %}>Mantenimiento</option>
-              <option value="Herramientas" {% if is_edit and gasto.tipo == 'Herramientas' %}selected{% endif %}>Herramientas y accesorios</option>
-              <option value="Energia" {% if is_edit and gasto.tipo == 'Energia' %}selected{% endif %}>Energía</option>
-              <option value="Compra_Material" {% if is_edit and gasto.tipo == 'Compra_Material' %}selected{% endif %}>Compra de Material</option>
-              <option value="Servicios" {% if is_edit and gasto.tipo == 'Servicios' %}selected{% endif %}>Servicios (internet, teléfono, etc.)</option>
-              <option value="Otro" {% if is_edit and gasto.tipo == 'Otro' %}selected{% endif %}>Otro</option>
-            </select>
-            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
+  <!-- Contenedor flex para el efecto "libro" plegable -->
+  <div id="modal_container_gasto"
+       class="flex flex-row transition-all duration-500 ease-in-out gap-0">
+    <!-- COLUMNA IZQUIERDA: Formulario con campos principales -->
+    <div class="flex-1 flex flex-col">
+      <form id="{% if is_edit %}formEditarGasto{% else %}formGasto{% endif %}"
+            action="{% if not is_edit %}{% url 'finanzas:crear_gasto' %}{% else %}#{% endif %}"
+            method="POST"
+            enctype="multipart/form-data"
+            class="flex-1 space-y-5">
+        {% csrf_token %}
+        <div class="flex flex-col gap-5">
+          <div>
+            <label class="text-gray-400 text-[10px] uppercase mb-2 block font-bold tracking-widest">Descripción</label>
+            <input type="text"
+                   name="descripcion"
+                   id="{% if is_edit %}edit_descripcion{% else %}descripcion{% endif %}"
+                   placeholder="Ej: Pago de luz por el mes de enero"
+                   value="{% if is_edit and gasto %}{{ gasto.descripcion }}{% endif %}"
+                   class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-white focus:border-red-500 outline-none transition-all"
+                   required>
+          </div>
+          <div>
+            <label class="text-gray-400 text-[10px] uppercase mb-2 block font-bold tracking-widest">Categoría</label>
+            <div class="relative">
+              <select name="tipo"
+                      id="{% if is_edit %}edit_selectTipoGasto{% else %}selectTipoGasto{% endif %}"
+                      class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-white focus:border-red-500 outline-none appearance-none cursor-pointer disabled:opacity-50 transition-all"
+                      required>
+                <option value="Mantenimiento"
+                        {% if is_edit and gasto.tipo == 'Mantenimiento' %}selected{% endif %}>Mantenimiento</option>
+                <option value="Herramientas"
+                        {% if is_edit and gasto.tipo == 'Herramientas' %}selected{% endif %}>
+                  Herramientas y accesorios
+                </option>
+                <option value="Energia"
+                        {% if is_edit and gasto.tipo == 'Energia' %}selected{% endif %}>Energía</option>
+                <option value="Compra_Material"
+                        {% if is_edit and gasto.tipo == 'Compra_Material' %}selected{% endif %}>
+                  Compra de Material
+                </option>
+                <option value="Servicios"
+                        {% if is_edit and gasto.tipo == 'Servicios' %}selected{% endif %}>
+                  Servicios (internet, teléfono, etc.)
+                </option>
+                <option value="Otro"
+                        {% if is_edit and gasto.tipo == 'Otro' %}selected{% endif %}>Otro</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div class="{% if is_edit %}bg-gray-800/40 p-3 rounded-2xl border border-gray-700/50{% else %}bg-red-500/5 p-3 rounded-2xl border border-red-500/20{% endif %}">
-            <label class="{% if is_edit %}text-gray-400{% else %}text-red-400/70{% endif %} text-[10px] uppercase mb-1 block font-bold">
-              Monto (RD$)
-            </label>
-            <input type="number"
-                   step="1"
-                   placeholder="0"
-                   name="monto"
-                   id="{% if is_edit %}edit_monto{% endif %}"
-                   value="{% if is_edit and gasto %}{{ gasto.monto }}{% endif %}"
-                   class="w-full bg-transparent text-white font-mono {% if is_edit %}text-lg{% else %}text-xl{% endif %} outline-none"
-                   {% if is_edit %}readonly{% endif %}
-                   required>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="{% if is_edit %}bg-gray-800/40 p-3 rounded-2xl border border-gray-700/50{% else %}bg-red-500/5 p-3 rounded-2xl border border-red-500/20{% endif %}">
+              <label class="{% if is_edit %}text-gray-400{% else %}text-red-400/70{% endif %} text-[10px] uppercase mb-1 block font-bold">
+                Monto (RD$)
+              </label>
+              <input type="number"
+                     step="1"
+                     placeholder="0"
+                     name="monto"
+                     id="{% if is_edit %}edit_monto{% else %}monto{% endif %}"
+                     value="{% if is_edit and gasto %}{{ gasto.monto }}{% endif %}"
+                     class="w-full bg-transparent text-white font-mono {% if is_edit %}text-lg{% else %}text-xl{% endif %} outline-none"
+                     {% if is_edit %}readonly{% endif %}
+                     required>
+            </div>
+            <div class="bg-gray-800/40 p-3 rounded-2xl border border-gray-700/50">
+              <label class="text-gray-400 text-[10px] uppercase mb-1 block font-bold">Fecha</label>
+              <input type="date"
+                     name="fecha"
+                     id="{% if is_edit %}edit_fecha{% else %}fecha{% endif %}"
+                     value="{% if is_edit and gasto %}{{ gasto.fecha|date:'Y-m-d' }}{% endif %}"
+                     class="w-full bg-transparent text-white text-sm outline-none"
+                     {% if is_edit %}readonly{% endif %}
+                     required>
+            </div>
           </div>
-          <div class="bg-gray-800/40 p-3 rounded-2xl border border-gray-700/50">
-            <label class="text-gray-400 text-[10px] uppercase mb-1 block font-bold">Fecha</label>
-            <input type="date"
-                   name="fecha"
-                   id="{% if is_edit %}edit_fecha{% endif %}"
-                   value="{% if is_edit and gasto %}{{ gasto.fecha|date:'Y-m-d' }}{% endif %}"
-                   class="w-full bg-transparent text-white text-sm outline-none"
-                   {% if is_edit %}readonly{% endif %}
-                   required>
+          <div class="flex-1 flex flex-col min-h-[150px]">
+            <label class="text-gray-400 text-[10px] uppercase mb-2 block font-bold tracking-widest">Notas</label>
+            <textarea name="notas"
+                      id="{% if is_edit %}edit_notas{% else %}notas{% endif %}"
+                      placeholder="Escribe comentarios u observaciones..."
+                      rows="6"
+                      class="w-full flex-1 resize-none bg-gray-900 border border-gray-700 rounded-xl p-3 text-white focus:border-red-500 outline-none text-sm">{% if is_edit and gasto %}{{ gasto.notas }}{% endif %}</textarea>
           </div>
+          <!-- BOTÓN PARA EXPANDIR -->
+          <button type="button"
+                  onclick="toggleExtraInfoGasto()"
+                  class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-800/50 hover:bg-gray-800 border border-gray-700 text-gray-300 hover:text-white transition-all">
+            <svg id="toggle_icon_gasto"
+                 class="w-5 h-5 transition-transform duration-500"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <span class="text-xs font-bold uppercase tracking-wider">Información Adicional</span>
+          </button>
         </div>
-
-        <div class="flex-1 flex flex-col min-h-[150px]">
-          <label class="text-gray-400 text-[10px] uppercase mb-2 block font-bold tracking-widest">Notas</label>
-          <textarea name="notas"
-                    id="{% if is_edit %}edit_notas{% endif %}"
-                    placeholder="Escribe comentarios u observaciones..."
-                    rows="6"
-                    class="w-full flex-1 resize-none bg-gray-900 border border-gray-700 rounded-xl p-3 text-white focus:border-red-500 outline-none text-sm">{% if is_edit and gasto %}{{ gasto.notas }}{% endif %}</textarea>
-        </div>
-      </div>
-
-      <div class="bg-gray-800/20 p-5 rounded-2xl border border-gray-800/50 space-y-5">
+      </form>
+    </div>
+    <!-- COLUMNA DERECHA: Información adicional (plegable) -->
+    <div id="extra_info_panel_gasto"
+         class="w-0 opacity-0 overflow-hidden transition-all duration-500 ease-in-out border-l border-gray-800/0">
+      <div class="pl-6 pr-2 space-y-5 min-w-[400px]">
         <div class="flex items-center gap-2 mb-2">
-          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-blue-400"
+               fill="none"
+               stroke="currentColor"
+               viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span class="text-[10px] text-gray-300 uppercase font-bold tracking-widest">Información Adicional (Opcional)</span>
         </div>
-
         <div>
           <label class="text-gray-400 text-[10px] uppercase mb-2 block font-bold tracking-widest">Proveedor</label>
           <input type="text"
+                 form="{% if is_edit %}formEditarGasto{% else %}formGasto{% endif %}"
                  name="proveedor"
-                 id="{% if is_edit %}edit_proveedor{% endif %}"
+                 id="{% if is_edit %}edit_proveedor{% else %}proveedor{% endif %}"
                  value="{% if is_edit and gasto %}{{ gasto.proveedor }}{% endif %}"
                  class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm">
         </div>
-
         <div>
           <label class="text-gray-400 text-[10px] uppercase mb-2 block font-bold tracking-widest">Número de Factura</label>
           <input type="text"
+                 form="{% if is_edit %}formEditarGasto{% else %}formGasto{% endif %}"
                  name="numero_factura"
-                 id="{% if is_edit %}edit_numero_factura{% endif %}"
+                 id="{% if is_edit %}edit_numero_factura{% else %}numero_factura{% endif %}"
                  value="{% if is_edit and gasto %}{{ gasto.numero_factura }}{% endif %}"
                  class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-white focus:border-blue-500 outline-none text-sm">
         </div>
-
         <div>
           <label class="text-gray-400 text-[10px] uppercase mb-2 block font-bold tracking-widest">Comprobante</label>
-          {% if is_edit and gasto.comprobante %}
-            <div class="mb-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-              <a href="{{ gasto.comprobante.url }}"
-                 target="_blank"
-                 class="text-blue-400 hover:text-blue-300 text-xs underline flex items-center gap-2">
-                Ver archivo actual
-              </a>
-            </div>
-          {% endif %}
           
-          <!-- Contenedor de Preview para Edición -->
-          <div id="preview-comprobante-editar" class="hidden mb-3"></div>
+          {# ✅ PREVIEW DEL COMPROBANTE EXISTENTE #}
+          <div id="{% if is_edit %}preview-comprobante-editar{% else %}preview-comprobante-crear{% endif %}" 
+               class="hidden mb-3"></div>
+          
+          {# ✅ INPUT OCULTO PARA MARCAR ELIMINACIÓN (igual que productos) #}
+          <input type="hidden" 
+                 form="{% if is_edit %}formEditarGasto{% else %}formGasto{% endif %}"
+                 name="eliminar_comprobante" 
+                 id="{% if is_edit %}edit_eliminar_comprobante{% else %}eliminar_comprobante{% endif %}"
+                 value="false">
+          
           <input type="file"
+                 form="{% if is_edit %}formEditarGasto{% else %}formGasto{% endif %}"
                  name="comprobante"
-                 id="{% if is_edit %}edit_comprobante{% endif %}"
-                 accept="image/*"
+                 id="{% if is_edit %}edit_comprobante{% else %}comprobante{% endif %}"
+                 accept="image/*,application/pdf"
                  onchange="previsualizarComprobante(this, '{% if is_edit %}preview-comprobante-editar{% else %}preview-comprobante-crear{% endif %}')"
                  class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-gray-400 text-xs file:bg-blue-600 file:border-0 file:rounded file:px-3 file:py-1 file:text-white file:mr-3 file:cursor-pointer">
-          
-          {% if not is_edit %}
-             <!-- Contenedor de Preview para Creación -->
-             <div id="preview-comprobante-crear" class="hidden mb-3"></div>
-          {% endif %}
+          <p class="text-[9px] text-gray-500 mt-2 italic">Formatos permitidos: Imágenes(.jpg, .png, .webp).</p>
         </div>
-
         <div class="flex items-center gap-3 pt-4 border-t border-gray-800">
           <div class="relative flex items-center">
             <input type="checkbox"
+                   form="{% if is_edit %}formEditarGasto{% else %}formGasto{% endif %}"
                    name="es_recurrente"
                    id="{% if is_edit %}edit_es_recurrente{% else %}es_recurrente{% endif %}"
                    class="peer h-5 w-5 cursor-pointer appearance-none rounded border border-gray-700 bg-gray-900 checked:bg-blue-600 checked:border-blue-600 focus:ring-2 focus:ring-blue-600/30 transition-all"
                    {% if is_edit and gasto.es_recurrente %}checked{% endif %}
-                   onchange="toggleRecurrente()">
+                   onchange="toggleRecurrente(this)">
             <svg class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
                  fill="none"
                  viewBox="0 0 24 24"
@@ -197,23 +222,47 @@
           </label>
         </div>
       </div>
-    </div> <div class="flex gap-3 pt-6 border-t border-gray-800">
-      <button type="button"
-              onclick="cerrarUltimoModal()"
-              class="flex-1 px-4 py-3 rounded-xl border border-gray-700 text-gray-400 font-bold text-[10px] uppercase tracking-widest hover:bg-gray-800 transition-colors">
-        Cancelar
-      </button>
-      <button type="submit"
-              id="{% if is_edit %}btnSubmitEditarGasto{% else %}btnSubmitGasto{% endif %}"
-              class="flex-1 px-4 py-3 rounded-xl {% if is_edit %}bg-blue-600 hover:bg-blue-500{% else %}bg-red-600 hover:bg-red-500{% endif %} text-white font-bold text-[10px] uppercase tracking-widest transition-colors">
-        {% if is_edit %}
-          Guardar Cambios
-        {% else %}
-          Confirmar
-        {% endif %}
-      </button>
     </div>
-  </form>
-
-
+  </div>
+        <!-- BOTONES FUERA DEL FORMULARIO para que ocupen ambas columnas -->
+      <div class="flex gap-3 pt-6 border-t border-gray-800 mt-6">
+        <button type="button"
+                onclick="cerrarUltimoModal()"
+                class="flex-1 px-4 py-3 rounded-xl border border-gray-700 text-gray-400 font-bold text-[10px] uppercase tracking-widest hover:bg-gray-800 transition-colors">
+          Cancelar
+        </button>
+        <button type="submit"
+                form="{% if is_edit %}formEditarGasto{% else %}formGasto{% endif %}"
+                id="{% if is_edit %}btnSubmitEditarGasto{% else %}btnSubmitGasto{% endif %}"
+                class="flex-1 px-4 py-3 rounded-xl {% if is_edit %}bg-blue-600 hover:bg-blue-500{% else %}bg-red-600 hover:bg-red-500{% endif %} text-white font-bold text-[10px] uppercase tracking-widest transition-colors">
+          {% if is_edit %}
+            Guardar Cambios
+          {% else %}
+            Confirmar
+          {% endif %}
+        </button>
+      </div>
+  <!-- SCRIPT PARA TOGGLE -->
+  <script>
+function toggleExtraInfoGasto() {
+    const btn = event.currentTarget;
+    const modalBody = btn.closest('.flex-row');
+    const panel = modalBody.querySelector('[id^="extra_info_panel_"]');
+    const icon = modalBody.querySelector('[id^="toggle_icon_"]');
+    const modalWrapper = btn.closest('[class*="max-w-"]');
+    const isExpanded = panel.classList.contains('w-[400px]');
+    
+    if (isExpanded) {
+        panel.classList.remove('w-[400px]', 'opacity-100', 'border-gray-800');
+        panel.classList.add('w-0', 'opacity-0', 'border-gray-800/0');
+        if (modalWrapper) modalWrapper.classList.replace('max-w-4xl', 'max-w-md');
+        icon.style.transform = 'rotate(0deg)';
+    } else {
+        panel.classList.remove('w-0', 'opacity-0', 'border-gray-800/0');
+        panel.classList.add('w-[400px]', 'opacity-100', 'border-gray-800');
+        if (modalWrapper) modalWrapper.classList.replace('max-w-md', 'max-w-4xl');
+        icon.style.transform = 'rotate(45deg)';
+    }
+}
+  </script>
 {% endblock %}

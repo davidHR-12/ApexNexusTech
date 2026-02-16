@@ -96,7 +96,14 @@ class GastoFormExtendido(TailwindModelForm):
     """
     Formulario extendido con todos los campos del modelo Gasto.
     Se usa para gastos que requieren más información (comprobantes, facturas, etc.)
+    Incluye campo para eliminar comprobante (igual que ProductoForm)
     """
+    
+    # Campo extra para marcar eliminación de comprobante
+    eliminar_comprobante = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
     
     class Meta:
         model = Gasto
@@ -144,16 +151,41 @@ class GastoFormExtendido(TailwindModelForm):
         return fecha
     
     def clean_comprobante(self):
-        """Valida el archivo de comprobante"""
         comprobante = self.cleaned_data.get('comprobante')
-        if comprobante:
-            # Validar tamaño (máx 5MB)
-            if comprobante.size > 5 * 1024 * 1024:
-                raise ValidationError("El archivo no debe exceder 5MB.")
-            
-            # Validar tipo de archivo
-            allowed_types = ['image/jpeg', 'image/png', 'image/webp']
-            if comprobante.content_type not in allowed_types:
-                raise ValidationError("Solo se aceptan imágenes (JPEG, PNG, WebP).")
         
+        # Si no hay archivo, retornar lo que sea que haya (None o el actual)
+        if not comprobante:
+            return comprobante
+
+        # VALIDACIÓN CRÍTICA: 
+        # Solo validamos el content_type si es un archivo que se está subiendo ahora.
+        # Los archivos que ya están en el servidor (al editar) no tienen 'content_type'.
+        if hasattr(comprobante, 'content_type'):
+            allowed_types = ['image/jpeg', 'image/png','image/webp']
+            if comprobante.content_type not in allowed_types:
+                raise forms.ValidationError("Solo se permiten archivos JPG, PNG o WEBP.")
+            
+            # Opcional: Validar tamaño (ej. 5MB)
+            if comprobante.size > 5 * 1024 * 1024:
+                raise forms.ValidationError("El archivo no debe exceder los 5MB.")
+
         return comprobante
+    
+    def save(self, commit=True):
+        """
+        Guarda el gasto manejando la eliminación del comprobante
+        (Similar a ProductoForm.save())
+        """
+        gasto = super().save(commit=False)
+        
+        # Si se marcó eliminar comprobante, eliminarlo antes de guardar
+        if self.cleaned_data.get('eliminar_comprobante') == 'true':
+            if gasto.comprobante:
+                gasto.comprobante.delete(save=False)
+                gasto.comprobante = None
+                print("Comprobante eliminado del gasto")
+        
+        if commit:
+            gasto.save()
+        
+        return gasto

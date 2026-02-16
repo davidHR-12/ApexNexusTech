@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
+from apps.usuarios.decorators import admin_required
 from django.contrib import messages
 from decimal import Decimal
 from .forms import GastoForm, GastoFormExtendido
@@ -52,7 +52,7 @@ def gastos_list(request):
     return render(request, "finanzas/gastos/gastos_list.html", context)
 
 
-@login_required
+@admin_required
 def dashboard_finanzas(request):
     """
     Renderiza el dashboard de finanzas.
@@ -65,8 +65,7 @@ def dashboard_finanzas(request):
 def gasto_detalle(request, gasto_id):
     """
     Vista detallada de un gasto que permite su edición.
-    Maneja la actualización de datos y carga de comprobantes.
-    Separa lógica de validación para gastos automáticos vs manuales.
+    Maneja eliminación de comprobantes usando el flag del formulario
     """
     gasto = get_object_or_404(Gasto, id=gasto_id)
     
@@ -90,15 +89,20 @@ def gasto_detalle(request, gasto_id):
                 return redirect("finanzas:gasto_detalle", gasto_id=gasto_id)
         
         # Determinar si usar el formulario extendido (si hay comprobante o campos extra)
-        usar_extendido = bool(files.get("comprobante")) or bool(data.get("proveedor"))
-        FormClass = GastoFormExtendido if usar_extendido else GastoForm
+        usar_extendido = (
+            bool(files.get("comprobante")) or 
+            bool(data.get("proveedor")) or
+            data.get("eliminar_comprobante") == "true"  # También considerar eliminación
+        )
         
+        FormClass = GastoFormExtendido if usar_extendido else GastoForm
         form = FormClass(data, files, instance=gasto) if usar_extendido else FormClass(data, instance=gasto)
         
         if form.is_valid():
             try:
+                # El form.save() ahora maneja la eliminación internamente
                 form.save()
-                messages.success(request, "✅ Gasto actualizado correctamente.")
+                messages.success(request, "Gasto actualizado correctamente.")
             except Exception as e:
                 messages.error(request, f"Error al guardar: {str(e)}")
         else:
@@ -146,7 +150,7 @@ def crear_gasto(request):
     if form.is_valid():
         try:
             gasto = form.save()
-            messages.success(request, "✅ Gasto registrado exitosamente.")
+            messages.success(request, "Gasto registrado exitosamente.")
             
             # Redirección: Intentar volver a la URL previa si es segura, sino ir al detalle
             next_url = request.POST.get("next")
@@ -173,8 +177,7 @@ def crear_gasto(request):
 def editar_gasto(request, gasto_id):
     """
     Edita un gasto existente manejando restricciones de campos.
-    Los gastos automáticos (vinculados a inventario) tienen restricciones en
-    monto, fecha y tipo para preservar integridad de datos.
+    Maneja eliminación de comprobantes usando el flag del formulario
     """
     gasto = get_object_or_404(Gasto, id=gasto_id)
     next_url = request.META.get('HTTP_REFERER', reverse('finanzas:gastos'))
@@ -202,7 +205,8 @@ def editar_gasto(request, gasto_id):
             bool(files.get("comprobante")) or 
             bool(data.get("proveedor")) or 
             bool(data.get("numero_factura")) or
-            bool(data.get("es_recurrente"))
+            bool(data.get("es_recurrente")) or
+            data.get("eliminar_comprobante") == "true"
         )
         
         FormClass = GastoFormExtendido if usar_extendido else GastoForm
@@ -210,6 +214,7 @@ def editar_gasto(request, gasto_id):
         
         if form.is_valid():
             try:
+                # El form.save() ahora maneja la eliminación internamente
                 form.save()
                 messages.success(request, "Gasto actualizado correctamente.")
             except Exception as e:

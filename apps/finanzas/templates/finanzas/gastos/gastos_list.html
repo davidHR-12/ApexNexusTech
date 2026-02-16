@@ -71,7 +71,8 @@
           <tbody class="divide-y divide-gray-800">
             {% for g in gastos %}
               <tr class="hover:bg-gray-800/40 transition-colors group cursor-pointer hover:text-blue-400"
-                  onclick="window.location='{% url 'finanzas:gasto_detalle' g.id %}';">
+                  data-url="{% url 'finanzas:gasto_detalle' g.id %}"
+                  onclick="smartRedirect(event, this)">
                 <!-- FECHA -->
                 <td class="p-4 text-sm text-gray-400 font-mono">{{ g.fecha|date:"d M, Y" }}</td>
                 <!-- DESCRIPCIÓN (CLICKEABLE) -->
@@ -112,7 +113,7 @@
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    Ver
+                    Ver detalles
                   </a>
                   <button onclick="abrirEditarGasto({{ g.id }})"
                           class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 text-blue-400 hover:bg-blue-600 hover:text-white transition-all font-bold text-sm"
@@ -150,8 +151,8 @@
     </div>
   </div>
 </div>
-{% include "finanzas/gastos/modals/gasto_form.html" with modal_id="modalNuevoGasto" is_edit=False title="Registrar Nuevo Gasto" description="Egreso de Caja" gasto=None max_width="max-w-4xl" %}
-{% include "finanzas/gastos/modals/gasto_form.html" with modal_id="modalEditarGasto" is_edit=True title="Editar Gasto" description="Ajusta los detalles del registro" gasto=None max_width="max-w-4xl" %}
+{% include "finanzas/gastos/modals/gasto_form.html" with modal_id="modalNuevoGasto" is_edit=False title="Registrar Nuevo Gasto" description="Egreso de Caja" gasto=None max_width="max-w-md" %}
+{% include "finanzas/gastos/modals/gasto_form.html" with modal_id="modalEditarGasto" is_edit=True title="Editar Gasto" description="Ajusta los detalles del registro" gasto=None max_width="max-w-md" %}
 {% endblock content %}
 {% block extra_js %}
   <script src="{% static 'finanzas/js/gastos.js' %}"></script>

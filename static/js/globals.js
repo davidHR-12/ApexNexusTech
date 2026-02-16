@@ -1,3 +1,16 @@
+function smartRedirect(event, element) {
+    const url = element.getAttribute('data-url');
+    
+    // 1. Detectar si se presiona Ctrl/Cmd/Shift
+    if (event.ctrlKey || event.metaKey || event.shiftKey) {
+        // Abrir en pestaña nueva
+        window.open(url, '_blank');
+    } else {
+        // Clic normal: Redirigir en la misma pestaña
+        window.location.href = url;
+    }
+}
+
 // LÓGICA DEL SIDEBAR COLAPSABLE OPTIMIZADA
 const btnToggle = document.getElementById('toggleSidebar');
 const sidebar = document.getElementById('sidebar');

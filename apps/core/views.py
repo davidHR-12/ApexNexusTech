@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.db.models import Sum
 from django.utils import timezone
 from decimal import Decimal
@@ -6,9 +6,78 @@ from apps.pedidos.models import Pago
 from apps.finanzas.models import Gasto
 from apps.materiales.models import Material
 from apps.pedidos.models import Pedido
-from django.contrib.auth.decorators import login_required
+from apps.usuarios.decorators import admin_required
+from django.contrib import messages
+import os
+from django.conf import settings
+from apps.productos.models import Categoria, Producto
+from apps.finanzas.models import Gasto
 
-@login_required
+@admin_required
+def gestionar_media_huerfana(request):
+    # Mapeo de carpetas -> (Modelo, campo_en_el_modelo)
+    # Si tienes un modelo para la galería o gastos, añádelos aquí.
+    mapeo_config = {
+        'categorias': (Categoria, 'imagen'),
+        'productos': (Producto, 'imagen'),
+        'finanzas/comprobantes': (Gasto, 'comprobante'),
+    }
+    
+    archivos_huerfanos = []
+    
+    # Archivos protegidos que NUNCA deben borrarse (Logo, .gitkeep, etc.)
+    protegidos = ['.gitkeep', 'Logo.png', 'Log.png', 'Logo-figura.ico']
+
+    for subcarpeta, (Modelo, campo_imagen) in mapeo_config.items():
+        ruta_absoluta_carpeta = os.path.join(settings.MEDIA_ROOT, subcarpeta)
+        
+        if os.path.exists(ruta_absoluta_carpeta):
+            # Obtener archivos en BD (solo el nombre del archivo)
+            archivos_en_bd = Modelo.objects.exclude(**{f"{campo_imagen}": ""}).values_list(campo_imagen, flat=True)
+            nombres_en_bd = [os.path.basename(str(path)) for path in archivos_en_bd]
+
+            # Listar contenido de la carpeta
+            for nombre_item in os.listdir(ruta_absoluta_carpeta):
+                ruta_completa_item = os.path.join(ruta_absoluta_carpeta, nombre_item)
+                
+                # REGLA DE ORO: Solo procesar si es ARCHIVO
+                if os.path.isfile(ruta_completa_item):
+                    if nombre_item not in protegidos and nombre_item not in nombres_en_bd:
+                        ruta_relativa = os.path.join(subcarpeta, nombre_item)
+                        archivos_huerfanos.append({
+                            'nombre': nombre_item,
+                            'ruta_relativa': ruta_relativa,
+                            'url': f"{settings.MEDIA_URL}{ruta_relativa}".replace('\\', '/'),
+                            'tipo': subcarpeta.split('/')[0] # 'productos' o 'categorias'
+                        })
+    
+    # Manejo del borrado (POST)
+    if request.method == "POST":
+        archivos_a_borrar = request.POST.getlist('archivos')
+        count = 0
+        for ruta_rel in archivos_a_borrar:
+            # Evitar que alguien intente borrar archivos fuera de media por seguridad
+            if '..' in ruta_rel or protegidos[0] in ruta_rel:
+                continue
+                
+            ruta_final = os.path.join(settings.MEDIA_ROOT, ruta_rel)
+            
+            if os.path.exists(ruta_final) and os.path.isfile(ruta_final):
+                try:
+                    os.remove(ruta_final)
+                    count += 1
+                except Exception as e:
+                    print(f"Error borrando {ruta_final}: {e}")
+        
+        messages.success(request, f"¡Limpieza completada! Se eliminaron {count} archivos.")
+        return redirect('core:config_media')
+
+    return render(request, 'core/config_media.html', {
+        'archivos': archivos_huerfanos
+    })
+
+
+@admin_required
 def dashboard_admin(request):
     """
     Vista principal del dashboard administrativo.
@@ -43,10 +112,10 @@ def dashboard_admin(request):
     }
     return render(request, "core/dashboard_admin.html", context)
 
-@login_required
+@admin_required
 def calculadora(request):
     return render(request, "core/calculadora.html")
 
-@login_required
+@admin_required
 def configuracion(request):
     return render(request, "core/configuracion.html")

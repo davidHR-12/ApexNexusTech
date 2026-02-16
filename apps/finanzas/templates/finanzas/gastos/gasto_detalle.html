@@ -159,7 +159,7 @@
       </a>
     </div>
   </div>
-  {% include "finanzas/gastos/modals/gasto_form.html" with modal_id="modalEditarGasto" is_edit=True title="Editar Gasto" description="Ajusta los detalles del registro" gasto=None max_width="max-w-4xl" %}
+  {% include "finanzas/gastos/modals/gasto_form.html" with modal_id="modalEditarGasto" is_edit=True title="Editar Gasto" description="Ajusta los detalles del registro" gasto=None max_width="max-w-md" %}
 {% endblock content %}
 {% block extra_js %}
   <script src="{% static 'finanzas/js/gastos.js' %}"></script>

@@ -79,7 +79,7 @@
                                name="mostrar_en_web"
                                checked
                                class="w-5 h-5 rounded border-gray-700 text-emerald-500 bg-gray-800 focus:ring-0">
-                        <span class="text-gray-400 group-hover:text-white text-[10px] font-bold uppercase tracking-tight">Visible</span>
+                        <span class="text-gray-400 group-hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Visible en Web</span>
                     </label>
                     <label class="flex items-center justify-center gap-2 cursor-pointer hover:bg-emerald-500/5 rounded-xl transition-colors border-l border-gray-800">
                         <input type="checkbox"
@@ -125,7 +125,6 @@
                            name="imagen"
                            id="inputPortadaNuevo"
                            accept="image/*"
-                           required
                            onchange="handleImagePreview(this, 'previewNuevo', 'contentNuevo', 'zoneNuevo'); document.getElementById('btnDeletePortadaNuevo').classList.remove('hidden');"
                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20">
                 </div>

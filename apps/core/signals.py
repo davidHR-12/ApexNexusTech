@@ -6,9 +6,47 @@ from django.utils.text import slugify
 import threading
 import logging
 from apps.materiales.models import Marca, TipoMaterial, Color, Material
-from apps.productos.models import Categoria
+from apps.productos.models import Categoria, Producto
 from decimal import Decimal
 import time
+import os
+from django.db.models.signals import post_delete, pre_save
+from apps.finanzas.models import Gasto 
+
+# Lista de modelos para no repetir código
+MODELOS_CON_IMAGEN = [Categoria, Producto, Gasto]
+
+@receiver(post_delete)
+def borrar_archivo_al_eliminar_registro(sender, instance, **kwargs):
+    if sender in MODELOS_CON_IMAGEN:
+        # Buscamos campos de tipo imagen/archivo en la instancia
+        for field in instance._meta.fields:
+            if field.get_internal_type() in ['FileField', 'ImageField']:
+                archivo = getattr(instance, field.name)
+                if archivo and os.path.isfile(archivo.path):
+                    os.remove(archivo.path)
+
+@receiver(pre_save)
+def borrar_archivo_viejo_al_actualizar(sender, instance, **kwargs):
+    if sender in MODELOS_CON_IMAGEN:
+        if not instance.pk:
+            return False
+
+        try:
+            old_instance = sender.objects.get(pk=instance.pk)
+        except sender.DoesNotExist:
+            return False
+
+        for field in instance._meta.fields:
+            if field.get_internal_type() in ['FileField', 'ImageField']:
+                old_file = getattr(old_instance, field.name)
+                new_file = getattr(instance, field.name)
+                
+                # Si el archivo cambió, borramos el viejo
+                if old_file and old_file != new_file:
+                    if os.path.isfile(old_file.path):
+                        os.remove(old_file.path)
+
 
 Usuario = get_user_model()
 logger = logging.getLogger(__name__)
@@ -64,7 +102,7 @@ def _inicializar_catalogo_background():
         categorias_a_crear = []
         for cat_data in categorias_iniciales:
             if not Categoria.objects.filter(nombre=cat_data["nombre"]).exists():
-                # 🔑 IMPORTANTE: Generar slug antes de bulk_create
+                # IMPORTANTE: Generar slug antes de bulk_create
                 slug = slugify(cat_data["nombre"])
                 categorias_a_crear.append(
                     Categoria(

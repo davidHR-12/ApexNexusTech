@@ -213,6 +213,9 @@ class VarianteProducto(models.Model):
     codigo_sku = models.CharField(max_length=50, blank=True, unique=True, null=True, verbose_name="SKU")
     activa = models.BooleanField(default=True, verbose_name="Activa")
 
+    # Campo para evitar duplicados de variantes
+    firma_materiales = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    
     @property
     def precio_final(self):
         return self.producto.precio_venta + self.precio_adicional
@@ -298,6 +301,12 @@ class VarianteProducto(models.Model):
         verbose_name = "Variante de Producto"
         verbose_name_plural = "Variantes de Productos"
         ordering = ["producto__nombre"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["producto", "firma_materiales"],
+                name="unique_variante_por_producto"
+            )
+        ]
 
 
 class VarianteMaterialDetalle(models.Model):

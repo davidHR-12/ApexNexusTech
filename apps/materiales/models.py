@@ -2,7 +2,6 @@
 Modelos para la gestión de inventario de materiales de impresión 3D
 """
 from django.db import models
-from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.db.models.functions import Lower
 

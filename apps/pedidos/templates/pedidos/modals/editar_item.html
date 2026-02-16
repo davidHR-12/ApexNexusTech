@@ -7,47 +7,58 @@
           class="space-y-4">
         {% csrf_token %}
         
-        {# Si el item es asociado a variante, mostramos info pero no dejamos editar la variante en sí #}
         {% if item.variante %}
-            <div class="bg-blue-900/20 border border-blue-500/30 p-4 rounded-xl mb-4">
-                <p class="text-blue-400 text-xs font-bold uppercase">Variante del catálogo</p>
-                <p class="text-white font-medium">{{ item.variante }}</p>
+            <div class="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl mb-4">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-emerald-400 text-[10px] font-bold uppercase tracking-wider">Producto de Catálogo</p>
+                        <p class="text-white font-bold text-lg">{{ item.variante.producto.nombre }}</p>
+                        <p class="text-gray-400 text-xs">{{ item.variante.nombre_variante }}</p>
+                    </div>
+                    <span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-1 rounded-md font-bold">LOCKED</span>
+                </div>
             </div>
-            {# Campos ocultos para pasar validación si fuera necesaria, o simplemente para no perder data #}
+            <div class="opacity-60 pointer-events-none">
+                <label class="block text-gray-500 text-[10px] font-bold uppercase mb-1">Nombre del Ítem</label>
+                {{ form.descripcion }}
+            </div>
+        {% else %}
+            <div>
+                <label class="block text-blue-400 text-[10px] font-bold uppercase mb-1">Descripción de la Pieza</label>
+                {{ form.descripcion }}
+            </div>
         {% endif %}
-
-        <div>
-            <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Descripción (Opcional)</label>
-            {{ form.descripcion }}
-        </div>
 
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Cantidad</label>
+                <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Cantidad</label>
                 {{ form.cantidad }}
             </div>
             <div>
-                <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Precio Unitario ($)</label>
+                <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Precio Unitario ($)</label>
                 {{ form.precio_unitario }}
             </div>
         </div>
         
         {% if not item.variante %}
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-4 p-3 bg-gray-900/30 rounded-xl border border-gray-800">
                  <div>
-                    <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Material</label>
+                    <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Material</label>
                     {{ form.material_personalizado }}
                  </div>
                  <div>
-                    <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Gramos/Unidad</label>
+                    <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Gramos/Unidad</label>
                     {{ form.gramos_por_unidad }}
                  </div>
             </div>
         {% else %}
-             {# Para variantes, mostramos gramos como informativo o readonly si se desea #}
-             <div class="opacity-50 pointer-events-none">
-                <label class="block text-gray-400 text-xs font-bold uppercase mb-2">Gramos/Unidad (Fijo por variante)</label>
+             <div class="hidden">
                 {{ form.gramos_por_unidad }}
+                {{ form.variante }}
+             </div>
+             <div class="p-3 bg-gray-800/50 rounded-xl border border-gray-700/50 flex justify-between items-center">
+                <span class="text-gray-400 text-xs font-bold uppercase tracking-tight">Peso registrado:</span>
+                <span class="text-white font-mono text-sm">{{ item.gramos_por_unidad }}g</span>
              </div>
         {% endif %}
 
@@ -59,7 +70,7 @@
             </button>
             <button type="submit" 
                     class="flex-1 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-500/20">
-                Guardar Cambios
+                Actualizar Ítem
             </button>
         </div>
     </form>

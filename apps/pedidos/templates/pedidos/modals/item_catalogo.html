@@ -1,0 +1,32 @@
+{% extends "core/modal_base.html" %}
+{% block modal_content %}
+    <form method="post"
+          action="{% url 'pedidos:agregar_item' pedido.id %}"
+          class="space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="tipo_item" value="catalogo">
+        {{ form_catalogo.gramos_por_unidad }}
+        <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1">Seleccionar Producto/Variante</label>
+            {{ form_catalogo.variante }}
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Cantidad</label>
+                {{ form_catalogo.cantidad }}
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Precio Unitario (RD$)</label>
+                {{ form_catalogo.precio_unitario }}
+                <p id="detalle-precio-catalogo" class="text-[10px] text-gray-500 mt-1 italic">
+                    Selecciona un producto para ver el desglose
+                </p>
+            </div>
+        </div>
+        <input type="hidden" name="gramos_por_unidad" value="0">
+        <button type="submit"
+                class="w-full py-3 mt-2 rounded-xl bg-emerald-500 text-white font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20">
+            Agregar al Pedido
+        </button>
+    </form>
+{% endblock %}
