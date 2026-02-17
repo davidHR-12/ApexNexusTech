@@ -14,4 +14,7 @@ urlpatterns = [
     path("productos/", views.productos, name="productos"),
     path("materiales/", views.guia_materiales, name="materiales"),
     path("productos/<int:pk>/", views.detalle_producto, name="detalle_producto"),
+    path("perfil/", views.mi_perfil, name="perfil"),
+    path("crear-pedido/<int:variante_id>/", views.crear_pedido_catalogo, name="crear_pedido_catalogo"),
+    path("solicitar/", views.solicitar_cotizacion, name="solicitar_cotizacion"),
 ]

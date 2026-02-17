@@ -233,3 +233,29 @@ document.addEventListener('change', (e) => {
             });
     }
 });
+
+
+function abrirModalEditarDescripcion(pedidoId, url) {
+    console.log("ID:", pedidoId); // Verifica que no sea undefined
+    console.log("URL recibida:", url); // Verifica que la URL sea correcta
+    
+    if (!url || url.includes('undefined')) {
+        console.error("La URL es inválida:", url);
+        return;
+    }
+
+    const wrapper = document.getElementById('modal-editar-item-wrapper');
+    
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error('Error en la red');
+            return response.text();
+        })
+        .then(html => {
+            wrapper.innerHTML = html;
+            abrirModal('modalEditarDescripcion');
+        })
+        .catch(error => {
+            console.error('Error al cargar el modal:', error);
+        });
+}

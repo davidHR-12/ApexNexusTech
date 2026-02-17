@@ -70,7 +70,7 @@
           </thead>
           <tbody class="divide-y divide-gray-800">
             {% for g in gastos %}
-              <tr class="hover:bg-gray-800/40 transition-colors group cursor-pointer hover:text-blue-400"
+              <tr class="hover:bg-gray-800/30 transition-colors group cursor-pointer text-white hover:text-blue-400"
                   data-url="{% url 'finanzas:gasto_detalle' g.id %}"
                   onclick="smartRedirect(event, this)">
                 <!-- FECHA -->

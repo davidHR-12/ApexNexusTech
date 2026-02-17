@@ -1,582 +1,149 @@
-{% load humanize %}
+{% extends 'base_dashboard.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Panel Administrativo - 3D PRINT</title>
-    <script>
-  (function () {
-    try {
-      const isMini = localStorage.getItem('sidebarMini') === 'true';
-      const isMobile = window.innerWidth < 768;
-      if (isMini && !isMobile) {
-        // Añadimos una clase al HTML para que el CSS sepa que empezamos en mini
-        document.documentElement.classList.add('sidebar-is-mini');
-      }
-    } catch (e) {}
-  })();
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon"
-          type="image/x-icon"
-          href="{% static 'img/Logo-figura.ico' %}">
-    <link rel="stylesheet" href="{% static 'sweetalert2/dark.css' %}">
-    <style>
-      /* ============================================
-         ESTADO INICIAL DEL SIDEBAR (Sin flash)
-         ============================================ */
-      /* Estado inicial cuando cargamos en MINI para evitar saltos visuales */
-      .sidebar-is-mini #sidebar {
-          width: 5rem !important; /* w-20 */
-      }
-      tr[data-url] {
-        user-select: none; /* Evita que se seleccione texto al hacer muchos clics */
-        -webkit-user-drag: none;
-      }
-      @media (min-width: 768px) {
-          .sidebar-is-mini #mainContent {
-              margin-left: 5rem !important; /* ml-20 */
-          }
-      }
-
-      /* Forzar ocultar elementos en mini al cargar */
-      .sidebar-is-mini #sidebar .nav-text,
-      .sidebar-is-mini #sidebar .section-title,
-      .sidebar-is-mini #sidebar .logo-text {
-          opacity: 0;
-          width: 0;
-          overflow: hidden;
-          display: none;
-      }
-      
-      /* ============================================
-         TRANSICIONES DEL SIDEBAR
-         ============================================ */
-      /* Cuando el sidebar está abierto en móvil, escondemos el header superior */
-      body.sidebar-open .md\:hidden.bg-\[\#1e293b\] {
-          display: none !important;
-      }
-
-      /* Ajuste de altura para que el sidebar ocupe TODO el alto cuando el header no está */
-      body.sidebar-open #sidebar {
-          top: 0;
-          height: 100vh;
-      }
-
-      /* Evitar que el fondo se mueva cuando el menú está abierto */
-      body.sidebar-open {
-          overflow: hidden;
-      }
-      
-      main {
-        transition: margin-left 0.3s ease-in-out;
-      }
-      
-      /* ============================================
-         LOGO - Contenedor y transiciones
-         ============================================ */
-      .logo-container {
-        overflow: hidden;
-        min-height: 48px;
-        position: relative;
-      }
-      
-      /* Contenedor de la imagen logo-figura con tamaño fijo */
-      .logo-full > div:first-child,
-      .logo-mini > div {
-        width: 3rem !important; /* 48px */
-        height: 3rem !important; /* 48px */
-        flex-shrink: 0;
-      }
-      
-      /* Forzar que solo la imagen logo-figura mantenga tamaño fijo */
-      .logo-full > div:first-child img,
-      .logo-mini > div img {
-        width: 2rem !important; /* 32px - tamaño fijo */
-        height: 2rem !important; /* 32px - tamaño fijo */
-        flex-shrink: 0;
-        object-fit: contain;
-      }
-      
-      /* Logo texto mantiene su tamaño original para que sea legible */
-      .logo-text img {
-        height: auto;
-        max-width: 100%;
-        object-fit: contain;
-      }
-      
-      /* Transición del logo-texto al minimizar */
-      #sidebar.mini .logo-text {
-        opacity: 0;
-        width: 0;
-        margin: 0;
-        overflow: hidden;
-        transition: opacity 0.15s ease-in-out, width 0.15s ease-in-out;
-      }
-      
-      #sidebar:not(.mini) .logo-text {
-        opacity: 1;
-        transition: opacity 0.3s ease-in-out 0.1s;
-      }
-      
-      /* Ocultar logo-full completamente en mini */
-      #sidebar.mini .logo-full {
-        opacity: 0;
-        width: 0;
-        overflow: hidden;
-        transition: opacity 0.2s ease-in-out, width 0.2s ease-in-out;
-      }
-      
-      /* Mostrar logo-mini con transición suave */
-      #sidebar.mini .logo-mini {
-        display: flex;
-        opacity: 1;
-        transition: opacity 0.3s ease-in-out 0.15s;
-      }
-      
-      #sidebar:not(.mini) .logo-mini {
-        opacity: 0;
-      }
-      
-      .logo-mini {
-        display: none;
-        opacity: 0;
-      }
-      
-      /* ============================================
-         ICONO HAMBURGUESA - Rotación
-         ============================================ */
-      #hamburgerIcon {
-        transform: rotate(0deg);
-        transition: transform 0.3s ease-in-out;
-      }
-      
-      #sidebar.mini + * #hamburgerIcon,
-      #sidebar.mini #hamburgerIcon {
-        transform: rotate(90deg);
-      }
-      
-      /* ============================================
-         NAVEGACIÓN - Modo mini
-         ============================================ */
-      /* Ocultar textos cuando está minimizado */
-      #sidebar.mini .nav-text,
-      #sidebar.mini .section-title {
-        opacity: 0;
-        width: 0;
-        overflow: hidden;
-        transition: opacity 0.2s ease-in-out;
-      }
-      
-      #sidebar.mini .nav-link {
-        gap: 0;
-        justify-content: center;
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-      }
-      
-      /* Ajustes para el header en modo mini */
-      #sidebar.mini .sidebar-header {
-        justify-content: center;
-        padding-left: 1rem;
-        padding-right: 1rem;
-      }
-      
-      /* Ajustar padding del nav en modo mini */
-      #sidebar.mini nav {
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
-      }
-      
-      #sidebar.mini .sidebar-footer {
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
-      }
-      
-      /* ============================================
-         SEPARADORES EN MODO MINI
-         ============================================ */
-      .mini-separator {
-        display: none;
-      }
-      
-      #sidebar.mini .mini-separator {
-        display: block;
-        height: 1px;
-        background: linear-gradient(to right, transparent, #334155, transparent);
-        margin: 0.75rem 0.5rem;
-      }
-      
-      /* ============================================
-         TOOLTIPS EN MODO MINI
-         ============================================ */
-      .tooltip {
-        position: relative;
-      }
-      
-      #sidebar.mini .tooltip:hover::after {
-        content: attr(data-tooltip);
-        position: fixed;
-        left: 5.5rem; /* 88px = 80px sidebar + 8px margin */
-        transform: translateY(-50%);
-        padding: 0.5rem 0.75rem;
-        background-color: #1e293b;
-        color: #ffffff;
-        border-radius: 0.5rem;
-        white-space: nowrap;
-        z-index: 9999;
-        font-size: 0.875rem;
-        border: 1px solid #334155;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-        pointer-events: none;
-      }
-      
-      /* ============================================
-         BÚSQUEDA
-         ============================================ */
-      .busqueda-item {
-        transition: all 0.15s ease;
-      }
-      
-      .resultado-item.item-active {
-        background-color: rgba(37, 99, 235, 0.4) !important; /* blue-600/40 */
-        border-left: 4px solid #3b82f6 !important; /* blue-500 */
-        outline: none;
-      }
-      
-      /* ============================================
-         INPUT DATE - Picker en dark mode
-         ============================================ */
-      input[type="date"]::-webkit-calendar-picker-indicator {
-        filter: invert(1);
-        opacity: 0.7;
-        cursor: pointer;
-      }
-      
-      /* ============================================
-         SCROLLBAR PERSONALIZADO
-         ============================================ */
-      ::-webkit-scrollbar {
-        width: 12px;
-        height: 12px;
-      }
-      
-      ::-webkit-scrollbar-track {
-        background: #020617;
-      }
-      
-      ::-webkit-scrollbar-thumb {
-        background: #10b981;
-        border-radius: 10px;
-        border: 3px solid #020617;
-      }
-      
-      ::-webkit-scrollbar-thumb:hover {
-        background: #10b981;
-      }
-      
-      ::-webkit-scrollbar-button:single-button {
-        background-color: #020617;
-        display: block;
-        height: 12px;
-        width: 12px;
-        background-size: 10px;
-        background-repeat: no-repeat;
-      }
-      
-      ::-webkit-scrollbar-button:single-button:vertical:decrement {
-        background-position: center bottom;
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%2310b981'><polygon points='50,20 10,80 90,80' /></svg>");
-      }
-      
-      ::-webkit-scrollbar-button:single-button:vertical:increment {
-        background-position: center top;
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%2310b981'><polygon points='50,80 10,20 90,20' /></svg>");
-      }
-      
-      ::-webkit-scrollbar-button:single-button:horizontal:decrement {
-        background-position: left center;
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%2310b981'><polygon points='20,50 80,10 80,90' /></svg>");
-      }
-      
-      ::-webkit-scrollbar-button:single-button:horizontal:increment {
-        background-position: right center;
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%2310b981'><polygon points='80,50 20,10 20,90' /></svg>");
-      }
-      
-      /* ============================================
-         AUTOFILL FIX PARA DARK MODE
-         ============================================ */
-      input,
-      textarea,
-      select {
-        color: #ffffff;
-        caret-color: white;
-      }
-      
-      input:-webkit-autofill,
-      input:-webkit-autofill:hover,
-      input:-webkit-autofill:focus,
-      input:-webkit-autofill:active,
-      input:-webkit-autofill:focus-visible {
-        -webkit-box-shadow: 0 0 0 1000px #334155 inset !important;
-        box-shadow: 0 0 0 1000px #334155 inset !important;
-        -webkit-text-fill-color: #ffffff !important;
-        color: #ffffff !important;
-        filter: none !important;
-        transition: background-color 9999s ease-in-out 0s;
-        font-size: 1rem !important;
-      }
-      
-      input:-webkit-autofill::first-line {
-        color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
-        font-size: 1rem !important;
-      }
-      
-      input:-webkit-autofill {
-        font-family: inherit !important;
-        font-size: 1rem !important;
-      }
-      /* Contenedor de notificaciones para que se apilen */
-      .swal2-container.swal2-top-end.swal2-backdrop-show {
-          background: transparent !important; /* Quita el oscurecimiento del fondo */
-          pointer-events: none; /* Permite hacer clic en lo que hay detrás */
-      }
-
-      .swal2-popup.swal2-toast {
-          margin-top: 0.5rem !important;
-          pointer-events: auto; /* Reactiva clics solo en la notificación */
-      }
-    </style>
-  </head>
-  <body class="bg-[#0f172a] text-gray-100 font-sans">
-    <div class="md:hidden bg-[#1e293b] border-b border-gray-800 p-4 flex items-center justify-between sticky top-0 z-50 h-16">
-      <div class="flex items-center gap-2">
-        <img src="{% static 'img/Logo-figura.ico' %}"
-             class="w-8 h-8 object-contain"
-             alt="Logo">
-        <span class="font-bold text-sm tracking-tight text-[#FFFFFF]">A.N.T</span>
-      </div>
-      <button id="mobileMenuBtn"
-              class="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+{% block title %}
+  Panel Administrativo - A.N.T
+{% endblock title %}
+{# ── URL de inicio al hacer clic en el logo ── #}
+{% block sidebar_home_url %}
+  {% url 'core:dashboard_admin' %}
+{% endblock %}
+{# ── Navegación del administrador ── #}
+{# ── Navegación del administrador ── #}
+{% block sidebar_nav %}
+  <a href="{% url 'core:dashboard_admin' %}"
+     data-tooltip="Dashboard"
+     class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'dashboard_admin' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+    <svg class="w-5 h-5 flex-shrink-0"
+         fill="none"
+         stroke="currentColor"
+         viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z M14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z M4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z M14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+    </svg>
+    <span class="nav-text whitespace-nowrap">Dashboard</span>
+  </a>
+  <div class="section-title pt-3 pb-2 px-3 text-xs font-bold text-gray-500 uppercase tracking-widest">
+    Ventas y Clientes
+  </div>
+  <div class="mini-separator"></div>
+  <nav class="space-y-1">
+    <a href="{% url 'pedidos:solicitudes_list' %}"
+       data-tooltip="Solicitudes"
+       class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if segment == 'solicitud' %}bg-[#334155] text-[#10b981]{% else %}text-gray-300 hover:bg-[#334155] hover:text-[#10b981]{% endif %}">
+      <div class="relative">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0l-8 5-8-5" />
         </svg>
-      </button>
-    </div>
-    <div class="flex min-h-screen">
-      <div id="sidebarOverlay"
-           class="fixed inset-0 bg-black/60 z-40 hidden md:hidden backdrop-blur-sm"></div>
-      <aside id="sidebar"
-             class="w-64 bg-[#1e293b] border-r border-gray-800 flex flex-col fixed h-full z-[60] shadow-2xl md:shadow-none transition-transform duration-300 -translate-x-full md:translate-x-0 overflow-hidden">
-        <a href="{% url 'core:dashboard_admin' %}">
-          <div class="sidebar-header hidden md:flex p-6 flex-col gap-4 flex-shrink-0">
-            <div class="logo-container flex items-center justify-between">
-              <div class="logo-full flex items-center gap-2">
-                <div class="p-2 rounded-lg flex items-center justify-center w-12 h-12 flex-shrink-0">
-                  <img src="{% static 'img/Logo-figura.ico' %}"
-                       loading="lazy"
-                       alt="Logo Figura"
-                       class="w-8 h-8 object-contain" />
-                </div>
-                <div class="logo-text whitespace-nowrap">
-                  <div class="flex flex-col">
-                    <div class="flex items-end gap-0.5">
-                      <div class="flex items-end">
-                        <span class="text-2xl font-black text-white tracking-tighter leading-none">A</span>
-                        <span class="text-xl font-black text-white leading-none mb-0.5">.</span>
-                      </div>
-                      <div class="flex items-end">
-                        <span class="text-2xl font-black text-white tracking-tighter leading-none">N</span>
-                        <span class="text-xl font-black text-white leading-none mb-0.5">.</span>
-                      </div>
-                      <span class="text-2xl font-black text-white tracking-tighter leading-none">T</span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                      <span class="text-[8px] font-bold text-[#10b981] tracking-[0.1em] leading-none uppercase">APEX</span>
-                      <span class="text-[8px] font-bold text-[#10b981] tracking-[0.1em] leading-none uppercase">NEXUS</span>
-                      <span class="text-[8px] font-bold text-[#10b981] tracking-[0.1em] leading-none uppercase">TECHNOLOGY</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="logo-mini flex-col items-center gap-1">
-                <div class="p-2 rounded-lg flex items-center justify-center w-12 h-12 flex-shrink-0">
-                  <img src="{% static 'img/Logo-figura.ico' %}"
-                       loading="lazy"
-                       alt="Logo Figura"
-                       class="w-8 h-8 object-contain" />
-                </div>
-              </div>
-            </div>
-          </a>
-          <button id="toggleSidebar"
-                  class="flex items-center justify-center p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
-            <svg id="hamburgerIcon"
-                 class="w-5 h-5"
-                 fill="none"
-                 stroke="currentColor"
-                 viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        </div>
-        <div class="mini-separator"></div>
-        <nav class="flex-1 px-4 space-y-1 overflow-y-auto mt-4 md:mt-0 custom-scrollbar">
-          <a href="{% url 'core:dashboard_admin' %}"
-             data-tooltip="Dashboard"
-             class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'dashboard_admin' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
-            <svg class="w-5 h-5 flex-shrink-0"
-                 fill="none"
-                 stroke="currentColor"
-                 viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-            </svg>
-            <span class="nav-text whitespace-nowrap">Dashboard</span>
-          </a>
-          <div class="mini-separator"></div>
-          <a href="{% url 'pedidos:pedidos_lista' %}"
-             data-tooltip="Pedidos/Ventas"
-             class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'pedidos' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
-            <svg class="w-5 h-5 flex-shrink-0"
-                 fill="none"
-                 stroke="currentColor"
-                 viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
-            <span class="nav-text whitespace-nowrap">Pedidos/Ventas</span>
-          </a>
-          <div class="mini-separator"></div>
-          <a href="{% url 'finanzas:gastos' %}"
-             data-tooltip="Gastos"
-             class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'finanzas' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
-            <svg class="w-5 h-5 flex-shrink-0"
-                 fill="none"
-                 stroke="currentColor"
-                 viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span class="nav-text whitespace-nowrap">Gastos</span>
-          </a>
-          <div class="section-title pt-3 pb-2 px-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Inventario</div>
-          <div class="mini-separator"></div>
-          <a href="{% url 'productos:productos_index' %}"
-             data-tooltip="Productos/Piezas"
-             class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'productos' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
-            <svg class="w-5 h-5 flex-shrink-0"
-                 fill="none"
-                 stroke="currentColor"
-                 viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-            <span class="nav-text whitespace-nowrap">Productos/Piezas</span>
-          </a>
-          <a href="{% url 'materiales:lista_materiales' %}"
-             data-tooltip="Materiales"
-             class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'materiales' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
-            <svg class="w-5 h-5 flex-shrink-0"
-                 fill="none"
-                 stroke="currentColor"
-                 viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-            </svg>
-            <span class="nav-text whitespace-nowrap">Materiales</span>
-          </a>
-          <div class="section-title pt-3 pb-2 px-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Sistema</div>
-          <div class="mini-separator"></div>
-          <a href="{% url 'core:calculadora' %}"
-             data-tooltip="Calculadora"
-             class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'calculadora' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
-            <svg class="w-5 h-5 flex-shrink-0"
-                 fill="none"
-                 stroke="currentColor"
-                 viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-            <span class="nav-text whitespace-nowrap">Calculadora</span>
-          </a>
-        </nav>
-        <div class="sidebar-footer flex-shrink-0 p-4 border-t border-gray-800 space-y-1">
-          <div class="mini-separator"></div>
-          <a href="{% url 'core:configuracion' %}"
-             class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl {% if segment == 'configuracion' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %} transition">
-            <svg class="w-5 h-5"
-                 fill="none"
-                 stroke="currentColor"
-                 viewBox="0 0 24 24"
-                 xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
-              </path>
-              <circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></circle>
-            </svg>
-            <span class="nav-text whitespace-nowrap">Configuración</span>
-          </a>
-          <div class="mini-separator"></div>
-          <a href="{% url 'clientes:index' %}"
-             data-tooltip="Ver Sitio Público"
-             class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl text-gray-300 hover:bg-[#334155] hover:text-[#10b981] transition">
-            <svg class="w-5 h-5 flex-shrink-0"
-                 fill="none"
-                 stroke="currentColor"
-                 viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9">
-              </path>
-            </svg>
-            <span class="nav-text whitespace-nowrap">Ver Sitio Público</span>
-          </a>
-          <div class="mini-separator"></div>
-          <form action="{% url 'usuarios:logout' %}" method="post" class="w-full">
-            {% csrf_token %}
-            <button type="submit"
-                    data-tooltip="Cerrar Sesión"
-                    class="nav-link tooltip w-full flex items-center gap-3 p-3 rounded-xl text-red-400 hover:bg-red-400/10 transition">
-              <svg class="w-5 h-5 flex-shrink-0"
-                   fill="none"
-                   stroke="currentColor"
-                   viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
-                </path>
-              </svg>
-              <span class="nav-text whitespace-nowrap">Cerrar Sesión</span>
-            </button>
-          </form>
-        </div>
-      </aside>
-      <main id="mainContent"
-            class="flex-1 w-full min-w-0 transition-all duration-300 md:ml-64 p-4 md:p-8 overflow-x-hidden ml-0">
-        {% block content %}
-        {% endblock content %}
-      </main>
-    </div>
-    <script src="{% static 'sweetalert2/sweetalert2.all.min.js' %}"></script>
-    <script src="{% static 'js/globals.js' %}"></script>
-    <script src="{% static 'js/htmx.min.js' %}"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        {% if messages %}
-            let delay = 0; // Inicializamos un retraso
-            {% for message in messages %}
-                setTimeout(function() {
-                    (function() {
-                        let tag = "{{ message.tags }}";
-                        let type = 'info';
-                        if (tag.includes('success')) type = 'success';
-                        if (tag.includes('error')) type = 'error';
-                        if (tag.includes('warning')) type = 'warning';
-
-                        mostrarToast(type, "{{ message }}");
-                    })();
-                }, delay);
-                
-                delay += 800;
-            {% endfor %}
+        {% if kpis.solicitudes_nuevas > 0 %}
+          <span class="absolute -top-1 -right-1 flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+          </span>
         {% endif %}
-    });
-</script>
-    {% block extra_js %}
-    {% endblock extra_js %}
-  </body>
-</html>
+      </div>
+      <span class="nav-text whitespace-nowrap">Solicitudes</span>
+    </a>
+    <a href="{% url 'pedidos:pedidos_lista' %}"
+       data-tooltip="Pedidos"
+       class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if segment == 'pedidos' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+      <svg class="w-5 h-5 flex-shrink-0"
+           fill="none"
+           stroke="currentColor"
+           viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+      </svg>
+      <span class="nav-text whitespace-nowrap">Pedidos / Ventas</span>
+    </a>
+  </nav>
+  <div class="section-title pt-5 pb-2 px-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Producción</div>
+  <div class="mini-separator"></div>
+  <nav class="space-y-1">
+    <a href="{% url 'productos:productos_index' %}"
+       class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'productos' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+      <svg class="w-5 h-5 flex-shrink-0"
+           fill="none"
+           stroke="currentColor"
+           viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+      </svg>
+      <span class="nav-text whitespace-nowrap">Catálogo Piezas</span>
+    </a>
+    <a href="{% url 'materiales:lista_materiales' %}"
+       class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'materiales' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+      <svg class="w-5 h-5 flex-shrink-0"
+         fill="none"
+         stroke="currentColor"
+         viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158 a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547 M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5 c1.26 1.26.367 3.414-1.415 3.414H4.828 c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+    </svg>
+      <span class="nav-text whitespace-nowrap">Stock Materiales</span>
+    </a>
+  </nav>
+  <div class="section-title pt-5 pb-2 px-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Contabilidad</div>
+  <div class="mini-separator"></div>
+  <nav class="space-y-1">
+    <a href="{% url 'finanzas:gastos' %}"
+       class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'finanzas' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+      <svg class="w-5 h-5 flex-shrink-0"
+           fill="none"
+           stroke="currentColor"
+           viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2 m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1 m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span class="nav-text whitespace-nowrap">Gastos Operativos</span>
+    </a>
+  </nav>
+  <div class="section-title pt-5 pb-2 px-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Herramientas</div>
+  <div class="mini-separator"></div>
+  <a href="{% url 'core:calculadora' %}"
+     class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'calculadora' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+    <svg class="w-5 h-5 flex-shrink-0"
+         fill="none"
+         stroke="currentColor"
+         viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01 M15 11h.01M12 11h.01M9 11h.01 M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+    </svg>
+    <span class="nav-text whitespace-nowrap">Calculadora 3D</span>
+  </a>
+{% endblock sidebar_nav %}
+{# ── Footer del sidebar del administrador ── #}
+{% block sidebar_footer %}
+  <div class="mini-separator"></div>
+  <a href="{% url 'core:configuracion' %}"
+     class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition {% if segment == 'configuracion' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066 c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572 c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573 c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065 c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066 c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572 c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573 c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+      <circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+    </svg>
+    <span class="nav-text whitespace-nowrap">Configuración</span>
+  </a>
+  <div class="mini-separator"></div>
+  <a href="{% url 'clientes:index' %}"
+     data-tooltip="Ver Sitio Público"
+     class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl text-gray-300 hover:bg-[#334155] hover:text-[#10b981] transition">
+    <svg class="w-5 h-5 flex-shrink-0"
+         fill="none"
+         stroke="currentColor"
+         viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3 m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9 m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+    </svg>
+    <span class="nav-text whitespace-nowrap">Ver Sitio Público</span>
+  </a>
+  <div class="mini-separator"></div>
+  <form action="{% url 'usuarios:logout' %}" method="post" class="w-full">
+    {% csrf_token %}
+    <button type="submit"
+            data-tooltip="Cerrar Sesión"
+            class="nav-link tooltip w-full flex items-center gap-3 p-3 rounded-xl text-red-400 hover:bg-red-400/10 transition">
+      <svg class="w-5 h-5 flex-shrink-0"
+           fill="none"
+           stroke="currentColor"
+           viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+      </svg>
+      <span class="nav-text whitespace-nowrap">Cerrar Sesión</span>
+    </button>
+  </form>
+{% endblock sidebar_footer %}
+{# ── Bloque de contenido (cada vista admin lo sobreescribe) ── #}
+{% block content %}
+{% endblock content %}

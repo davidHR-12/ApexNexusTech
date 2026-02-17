@@ -5,29 +5,18 @@
           method="post" 
           action="{% url 'pedidos:editar_item' item.id %}" 
           class="space-y-4">
+        
         {% csrf_token %}
         
-        {% if item.variante %}
-            <div class="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl mb-4">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-emerald-400 text-[10px] font-bold uppercase tracking-wider">Producto de Catálogo</p>
-                        <p class="text-white font-bold text-lg">{{ item.variante.producto.nombre }}</p>
-                        <p class="text-gray-400 text-xs">{{ item.variante.nombre_variante }}</p>
-                    </div>
-                    <span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-1 rounded-md font-bold">LOCKED</span>
-                </div>
-            </div>
-            <div class="opacity-60 pointer-events-none">
-                <label class="block text-gray-500 text-[10px] font-bold uppercase mb-1">Nombre del Ítem</label>
-                {{ form.descripcion }}
-            </div>
-        {% else %}
-            <div>
-                <label class="block text-blue-400 text-[10px] font-bold uppercase mb-1">Descripción de la Pieza</label>
-                {{ form.descripcion }}
-            </div>
-        {% endif %}
+        <div class="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl mb-4">
+            <p class="text-blue-400 text-[10px] font-bold uppercase tracking-wider">Editando Ítem Personalizado</p>
+            <p class="text-white text-xs mt-1 italic">Estás modificando los parámetros técnicos de una pieza a medida.</p>
+        </div>
+
+        <div>
+            <label class="block text-blue-400 text-[10px] font-bold uppercase mb-1">Nombre / Descripción de la Pieza</label>
+            {{ form.descripcion }}
+        </div>
 
         <div class="grid grid-cols-2 gap-4">
             <div>
@@ -40,27 +29,16 @@
             </div>
         </div>
         
-        {% if not item.variante %}
-            <div class="grid grid-cols-2 gap-4 p-3 bg-gray-900/30 rounded-xl border border-gray-800">
-                 <div>
-                    <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Material</label>
-                    {{ form.material_personalizado }}
-                 </div>
-                 <div>
-                    <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Gramos/Unidad</label>
-                    {{ form.gramos_por_unidad }}
-                 </div>
-            </div>
-        {% else %}
-             <div class="hidden">
+        <div class="grid grid-cols-2 gap-4 p-3 bg-gray-900/30 rounded-xl border border-gray-800">
+             <div>
+                <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Material</label>
+                {{ form.material_personalizado }}
+             </div>
+             <div>
+                <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Gramos/Unidad</label>
                 {{ form.gramos_por_unidad }}
-                {{ form.variante }}
              </div>
-             <div class="p-3 bg-gray-800/50 rounded-xl border border-gray-700/50 flex justify-between items-center">
-                <span class="text-gray-400 text-xs font-bold uppercase tracking-tight">Peso registrado:</span>
-                <span class="text-white font-mono text-sm">{{ item.gramos_por_unidad }}g</span>
-             </div>
-        {% endif %}
+        </div>
 
         <div class="flex gap-3 pt-6 border-t border-gray-800 mt-6">
             <button type="button" 
@@ -70,7 +48,7 @@
             </button>
             <button type="submit" 
                     class="flex-1 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-500/20">
-                Actualizar Ítem
+                Guardar Cambios
             </button>
         </div>
     </form>

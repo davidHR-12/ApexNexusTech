@@ -96,7 +96,7 @@
         </thead>
         <tbody class="divide-y divide-gray-800">
           {% for pedido in pedidos %}
-            <tr class="hover:bg-gray-800/40 transition-colors group cursor-pointer text-white hover:text-blue-400"
+            <tr class="hover:bg-gray-800/30 transition-colors group cursor-pointer text-white hover:text-blue-400"
                 data-url="{% url 'pedidos:pedido_detalle' pedido.id %}"
                 onclick="smartRedirect(event, this)">
             <td class="px-6 py-4">

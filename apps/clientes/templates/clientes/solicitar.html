@@ -1,0 +1,96 @@
+{% extends 'clientes/base_cliente.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    
+    <div class="max-w-4xl mx-auto mb-8">
+        <h1 class="text-3xl font-bold text-white flex items-center gap-3">
+            <span class="p-3 bg-[#10b981]/10 rounded-2xl border border-[#10b981]/20">
+                <svg class="w-8 h-8 text-[#10b981]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+            </span>
+            Nueva Cotización Personalizada
+        </h1>
+        <p class="text-gray-400 mt-4 text-lg">
+            ¿Tienes un archivo STL o una idea específica? Cuéntanos los detalles y te enviaremos un presupuesto en menos de 24 horas.
+        </p>
+    </div>
+
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-[#1e293b] rounded-3xl border border-gray-700 shadow-2xl overflow-hidden">
+            <div class="p-8">
+                <form method="post" enctype="multipart/form-data" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Descripción del Proyecto</label>
+                                {{ form.descripcion }}
+                                <p class="text-xs text-gray-500 mt-2">Ej: "Necesito un soporte para auriculares con relleno al 20%"</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Dimensiones Aproximadas</label>
+                                {{ form.dimensiones_aprox }}
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div class="p-6 bg-[#0f172a] border border-dashed border-gray-600 rounded-2xl">
+                                <label class="block text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                                    <i class="fas fa-image text-[#10b981]"></i> Imagen de Referencia
+                                </label>
+                                {{ form.imagen_referencia }}
+                                <p class="text-xs text-gray-500 mt-2">Sube un render o captura de pantalla (.jpg, .png)</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+                                    <i class="fas fa-link text-[#10b981]"></i> Enlace Externo
+                                </label>
+                                {{ form.enlace_referencia }}
+                                <p class="text-xs text-gray-500 mt-2">Link de Thingiverse, Printables, etc.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if form.errors %}
+                    <div class="p-4 bg-red-400/10 border border-red-400/20 rounded-xl">
+                        <p class="text-red-400 text-sm font-medium">Por favor corrige los errores resaltados.</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="flex flex-col md:flex-row gap-4 pt-6 border-t border-gray-700">
+                        <button type="submit" class="flex-1 bg-[#10b981] hover:bg-[#059669] text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-[#10b981]/20 flex items-center justify-center gap-2">
+                            <i class="fas fa-paper-plane"></i>
+                            Enviar Solicitud
+                        </button>
+                        <a href="{% url 'clientes:home' %}" class="px-8 py-4 bg-gray-800 text-gray-400 hover:text-white rounded-2xl transition-all text-center">
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="flex gap-4 items-start">
+                <span class="text-[#10b981] mt-1"><i class="fas fa-check-circle"></i></span>
+                <p class="text-sm text-gray-400"><strong class="text-gray-200">Revisión Técnica:</strong> Analizaremos la viabilidad de impresión de tu diseño.</p>
+            </div>
+            <div class="flex gap-4 items-start">
+                <span class="text-[#10b981] mt-1"><i class="fas fa-clock"></i></span>
+                <p class="text-sm text-gray-400"><strong class="text-gray-200">Tiempo de Respuesta:</strong> Recibirás tu presupuesto en tu panel de inicio.</p>
+            </div>
+            <div class="flex gap-4 items-start">
+                <span class="text-[#10b981] mt-1"><i class="fas fa-coins"></i></span>
+                <p class="text-sm text-gray-400"><strong class="text-gray-200">Sin Compromiso:</strong> La solicitud es gratuita. Solo pagas si aceptas el presupuesto.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

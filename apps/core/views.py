@@ -77,7 +77,7 @@ def gestionar_media_huerfana(request):
         messages.success(request, f"¡Limpieza completada! Se eliminaron {count} archivos.")
         return redirect('core:config_media')
 
-    return render(request, 'core/config/config_media.html', {
+    return render(request, 'core/configuraciones/config_media.html', {
         'segment': 'configuracion',
         'archivos': archivos_huerfanos
     })
@@ -127,7 +127,7 @@ def configuracion(request):
     """
     Vista principal de configuración.
     """
-    return render(request, "core/config/configuracion.html", {
+    return render(request, "core/configuraciones/configuracion.html", {
         'segment': 'configuracion'
     })
 
@@ -144,7 +144,7 @@ def lista_impresoras(request):
     )
     
     form = ImpresoraForm()
-    return render(request, "core/config/config_impresoras.html", {
+    return render(request, "core/configuraciones/config_impresoras.html", {
         'impresoras': impresoras,
         'segment': 'configuracion',
         'form': form,
@@ -166,7 +166,7 @@ def gestionar_impresora(request, accion, id_impresora=None):
                     for error in errors:
                         messages.error(request, error)
                 
-                return render(request, "core/config/config_impresoras.html", {
+                return render(request, "core/configuraciones/config_impresoras.html", {
                     'segment': 'configuracion',
                     'impresoras': impresoras,
                     'form': form

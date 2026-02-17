@@ -38,6 +38,7 @@ function checkSidebarState() {
 }
 
 function applyMiniState() {
+    document.documentElement.classList.add('sidebar-is-mini');
     sidebar.classList.add('mini');
     sidebar.classList.remove('w-64');
     sidebar.classList.add('w-20');

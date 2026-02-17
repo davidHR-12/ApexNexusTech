@@ -2,33 +2,9 @@ from django import forms
 from .models import Pedido, ItemPedido
 from apps.materiales.models import Material
 from django.contrib.auth import get_user_model
+from apps.core.utils import TailwindModelForm
 
 Usuario = get_user_model()
-
-
-class TailwindModelForm(forms.ModelForm):
-    """Clase base que aplica estilos de Tailwind CSS a todos los campos del formulario"""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        for field_name, field in self.fields.items():
-            if field.disabled:
-                field.widget.attrs["class"] += " opacity-50 cursor-not-allowed bg-gray-800"
-
-            if isinstance(field.widget, forms.CheckboxInput):
-                field.widget.attrs["class"] = (
-                    "rounded border-gray-700 text-[#10b981] focus:ring-[#10b981] bg-gray-900"
-                )
-            elif isinstance(field.widget, (forms.FileInput, forms.ClearableFileInput)):
-                field.widget.attrs["class"] = (
-                    "w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-800 file:text-emerald-400 hover:file:bg-gray-700"
-                )
-            else:
-                field.widget.attrs["class"] = (
-                    "w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white outline-none focus:border-[#10b981]"
-                )
-
 
 class PedidoManualForm(TailwindModelForm):
     """Formulario simplificado: El estado siempre empieza en 'En_Espera'"""
@@ -112,7 +88,7 @@ class ItemPersonalizadoForm(TailwindModelForm):
     """Formulario para crear items personalizados con materiales específicos"""
 
     material_personalizado = forms.ModelChoiceField(
-        queryset=Material.objects.filter(activo=True, stock_actual__gt=0),
+        queryset=Material.objects.filter(activo=True),
         required=True,
         label="Material",
         empty_label="Seleccione el material a usar",
@@ -133,7 +109,7 @@ class ItemPersonalizadoForm(TailwindModelForm):
 
         # Filtra solo materiales activos con stock y optimiza la consulta
         self.fields["material_personalizado"].queryset = Material.objects.filter(
-            activo=True, stock_actual__gt=0
+            activo=True
         ).select_related("tipo", "marca", "color")
 
         # Muestra el stock disponible en el select de materiales
@@ -154,20 +130,6 @@ class ItemPersonalizadoForm(TailwindModelForm):
     def clean(self):
         """Valida que haya suficiente material en stock y que el precio sea válido"""
         cleaned_data = super().clean()
-        material = cleaned_data.get("material_personalizado")
-        gramos = cleaned_data.get("gramos_por_unidad")
-        cantidad = cleaned_data.get("cantidad")
-
-        if material and gramos and cantidad:
-            total_necesario = gramos * cantidad
-            if material.stock_actual < total_necesario:
-                disponible = int(material.stock_actual)
-                requerido = int(total_necesario)
-                self.add_error(
-                    "material_personalizado",
-                    f"No hay suficiente stock. Tienes {disponible}g de este material y el pedido requiere {requerido}g.",
-                )
-
         precio = cleaned_data.get("precio_unitario")
         if precio is not None and precio <= 0:
             self.add_error("precio_unitario", "El precio debe ser mayor a 0.")

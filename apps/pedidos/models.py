@@ -284,8 +284,6 @@ class Pedido(models.Model):
         self.costo_material = total_costo_prod
         self.precio_total = total_venta
         self.peso_estimado_g = total_peso
-        self.save(update_fields=['costo_material', 'precio_total', 'peso_estimado_g'])
-
         # Guardamos los cambios
         super(Pedido, self).save(
             update_fields=["costo_material", "precio_total", "peso_estimado_g"]

@@ -82,7 +82,7 @@
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse min-w-[600px]">
               <thead>
-                <tr class="bg-gray-900/50 border-b border-gray-800">
+                <tr class="bg-[#1e293b]/60 text-gray-400 text-[10px] uppercase tracking-widest">
                   <th class="p-4 text-gray-400 text-[10px] uppercase font-bold">Material / Color</th>
                   <th class="p-4 text-gray-400 text-[10px] uppercase font-bold text-center">Stock</th>
                   <th class="p-4 text-gray-400 text-[10px] uppercase font-bold text-center">Precio Adicional</th>
@@ -91,7 +91,7 @@
               </thead>
               <tbody class="divide-y divide-gray-700/50">
                 {% for v in producto.variantes.all %}
-                  <tr class="hover:bg-gray-800/30 transition-colors">
+                  <tr class="hover:bg-gray-800/30 transition-colors group">
                     <td class="p-4">
                       <div class="flex flex-col gap-2">
                         {% for detalle in v.detalles_material.all %}
