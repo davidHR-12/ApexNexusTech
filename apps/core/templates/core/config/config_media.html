@@ -1,0 +1,125 @@
+{% extends "core/base_admin.html" %}
+{% load static %}
+
+{% block content %}
+<div class="space-y-6 max-w-7xl mx-auto">
+    <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest gap-2">
+        <a href="{% url 'core:configuracion' %}" class="hover:text-white transition-colors">Configuración</a>
+        <span>/</span>
+        <span class="text-[#10b981]">Administrador de Archivos</span>
+    </nav>
+
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-16 h-16 rounded-2xl bg-gray-900 border border-gray-800 overflow-hidden shrink-0 flex items-center justify-center text-[#10b981]">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold text-white">Limpieza de Servidor</h1>
+                <p class="text-gray-400 text-sm">Gestión de imágenes huérfanas sin asociación.</p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap gap-3 w-full md:w-auto">
+            <div class="flex items-center gap-3 bg-[#1e293b] p-1 pr-4 rounded-xl border border-gray-800">
+                <span class="bg-[#10b981] text-white px-3 py-1 rounded-lg text-xs font-bold">
+                    {{ archivos|length }}
+                </span>
+                <span class="text-gray-400 text-xs font-bold uppercase tracking-wider">Archivos detectados</span>
+            </div>
+        </div>
+    </div>
+
+    {% if archivos %}
+    <form method="post" id="deleteForm">
+        {% csrf_token %}
+        <div class="bg-gray-800/50 rounded-3xl border border-gray-700 overflow-hidden backdrop-blur-sm">
+            <div class="p-4 border-b border-gray-700 bg-gray-900/50 flex justify-between items-center">
+                <label class="group flex items-center gap-3 cursor-pointer select-none ml-2">
+                    <div class="relative flex items-center">
+                        <input type="checkbox" id="selectAll" class="peer appearance-none w-5 h-5 rounded border-2 border-gray-600 bg-gray-900 checked:bg-[#10b981] checked:border-[#10b981] transition-all duration-200">
+                        <svg class="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 left-[3px] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
+                    </div>
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-widest group-hover:text-white transition-colors">Seleccionar todos</span>
+                </label>
+
+                <button type="submit" class="bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white border border-red-500/20 px-4 py-2 rounded-xl transition-all font-bold text-xs flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    ELIMINAR SELECCIONADOS
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-6 overflow-y-auto max-h-[60vh] custom-scrollbar">
+                {% for archivo in archivos %}
+                <div class="group relative bg-gray-900 border border-gray-800 rounded-2xl p-2 hover:border-[#10b981]/50 transition-all duration-300">
+                    <div class="aspect-square rounded-xl overflow-hidden mb-2 bg-black relative">
+                        <img src="{{ archivo.url }}" class="object-cover w-full h-full opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" alt="{{ archivo.nombre }}">
+                        
+                        <div class="absolute top-2 left-2">
+                            <input type="checkbox" name="archivos" value="{{ archivo.ruta_relativa }}" class="archivo-checkbox appearance-none w-5 h-5 rounded-lg border-2 border-white/20 bg-black/40 backdrop-blur-md checked:bg-[#10b981] checked:border-[#10b981] transition-all cursor-pointer">
+                        </div>
+                    </div>
+
+                    <div class="px-1 py-1">
+                        <p class="text-[10px] text-white font-bold truncate mb-1" title="{{ archivo.nombre }}">
+                            {{ archivo.nombre|upper }}
+                        </p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[8px] text-[#10b981] font-black bg-[#10b981]/10 px-1 py-0.5 rounded uppercase">
+                                {{ archivo.tipo }}
+                            </span>
+                            <span class="text-[9px] text-gray-500 font-mono">{{ archivo.peso }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </form>
+    {% else %}
+    <div class="text-center py-24 bg-gray-800/20 rounded-3xl border-2 border-dashed border-gray-800">
+        <div class="w-20 h-20 rounded-2xl bg-gray-900 flex items-center justify-center border border-emerald-500/20 mx-auto mb-4">
+            <svg class="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-1">Servidor Limpio</h3>
+        <p class="text-gray-500 text-sm">No se han detectado archivos huérfanos.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.archivo-checkbox');
+
+    if(selectAll) {
+        selectAll.addEventListener('change', (e) => {
+            checkboxes.forEach(cb => {
+                cb.checked = e.target.checked;
+                // Efecto visual de selección
+                if(e.target.checked) {
+                    cb.closest('.group.relative').classList.add('border-[#10b981]');
+                } else {
+                    cb.closest('.group.relative').classList.remove('border-[#10b981]');
+                }
+            });
+        });
+    }
+
+    // Resaltar individualmente al hacer click
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            if(cb.checked) {
+                cb.closest('.group.relative').classList.add('border-[#10b981]');
+            } else {
+                cb.closest('.group.relative').classList.remove('border-[#10b981]');
+            }
+        });
+    });
+</script>
+{% endblock %}

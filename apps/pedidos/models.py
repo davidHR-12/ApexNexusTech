@@ -7,6 +7,7 @@ from django.conf import settings
 from decimal import Decimal
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
+from apps.core.models import Impresora
 
 
 # =============================
@@ -135,6 +136,7 @@ class Pedido(models.Model):
         ("Listo", "Listo para entrega"),
         ("Entregado", "Entregado"),
         ("Cancelado", "Cancelado"),
+        ('Fallido', 'Error de Impresión / Desperdicio'),
     )
 
     # Relación con cliente
@@ -158,7 +160,9 @@ class Pedido(models.Model):
     descripcion = models.TextField(
         help_text="Descripción del pedido", verbose_name="Descripción"
     )
-
+    stock_descontado = models.BooleanField(
+        default=False, verbose_name="Stock descontado"
+    )
     # Datos técnicos
     peso_estimado_g = models.DecimalField(
         max_digits=12, decimal_places=2, verbose_name="Peso estimado (gramos)"
@@ -297,26 +301,6 @@ class Pedido(models.Model):
 
 
 # =============================
-# IMPRESORAS
-# =============================
-class Impresora(models.Model):
-    nombre = models.CharField(max_length=100, verbose_name="Nombre de la Impresora")
-    modelo = models.CharField(max_length=100, help_text="Ej: Ender 3, Artillery X2")
-    estado = models.CharField(
-        max_length=20,
-        choices=(
-            ("Disponible", "Disponible"),
-            ("Imprimiendo", "Imprimiendo"),
-            ("Mantenimiento", "En Mantenimiento"),
-        ),
-        default="Disponible",
-    )
-
-    def __str__(self):
-        return self.nombre
-
-
-# =============================
 # ITEMS DE PEDIDO
 # =============================
 
@@ -366,14 +350,13 @@ class ItemPedido(models.Model):
         max_digits=12, decimal_places=4, default=0.00
     )
     impresora_asignada = models.ForeignKey(
-        Impresora,
+        'core.Impresora', 
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="items_asignados",
         verbose_name="Impresora",
     )
-
     @property
     def subtotal(self):
         """Subtotal del ítem"""

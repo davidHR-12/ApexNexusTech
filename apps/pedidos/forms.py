@@ -1,5 +1,5 @@
 from django import forms
-from .models import Pedido, ItemPedido, Impresora
+from .models import Pedido, ItemPedido
 from apps.materiales.models import Material
 from django.contrib.auth import get_user_model
 
@@ -31,8 +31,7 @@ class TailwindModelForm(forms.ModelForm):
 
 
 class PedidoManualForm(TailwindModelForm):
-    """Formulario para crear pedidos manualmente desde el panel de administración"""
-
+    """Formulario simplificado: El estado siempre empieza en 'En_Espera'"""
     usuario = forms.ModelChoiceField(
         queryset=Usuario.objects.all(),
         empty_label="Seleccione un cliente",
@@ -41,7 +40,7 @@ class PedidoManualForm(TailwindModelForm):
 
     class Meta:
         model = Pedido
-        fields = ["usuario", "descripcion", "estado_pedido"]
+        fields = ["usuario", "descripcion"]
         widgets = {
             "descripcion": forms.Textarea(
                 attrs={
@@ -53,12 +52,9 @@ class PedidoManualForm(TailwindModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
-        # Personaliza cómo se muestra cada usuario en el select (nombre + teléfono)
         self.fields["usuario"].label_from_instance = (
             lambda obj: f"{obj.get_full_name_or_user()} - {obj.telefono if obj.telefono else 'Sin Tel.'}"
         )
-        self.fields["estado_pedido"].initial = "En_Espera"
 
 
 class ItemCatalogoForm(TailwindModelForm):

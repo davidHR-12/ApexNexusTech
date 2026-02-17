@@ -35,30 +35,36 @@
                     </button>
                 </form>
                 <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
-                    <button onclick="abrirModal('modalItemCatalogo')"
-                            class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 min-w-0">
-                        <div class="flex shrink-0 items-center gap-1">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                            </svg>
+                    {% if pedido.estado_pedido == 'En_Espera' %}
+                        <button onclick="abrirModal('modalItemCatalogo')"
+                                class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 min-w-0">
+                            <div class="flex shrink-0 items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                            </div>
+                            <span class="hidden lg:inline truncate">Catálogo</span>
+                        </button>
+                        <button onclick="abrirModal('modalItemPersonalizado')"
+                                class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-500 text-white px-3 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 min-w-0">
+                            <div class="flex shrink-0 items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                </svg>
+                            </div>
+                            <span class="hidden lg:inline truncate">Personalizado</span>
+                        </button>
+                    {% else %}
+                        <div class="px-4 py-2 bg-gray-700/50 rounded-xl border border-gray-600 text-gray-400 text-xs font-bold uppercase">
+                            Pedido en {{ pedido.get_estado_pedido_display }} (Bloqueado)
                         </div>
-                        <span class="hidden lg:inline truncate">Catálogo</span>
-                    </button>
-                    <button onclick="abrirModal('modalItemPersonalizado')"
-                            class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-500 text-white px-3 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 min-w-0">
-                        <div class="flex shrink-0 items-center gap-1">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                            </svg>
-                        </div>
-                        <span class="hidden lg:inline truncate">Personalizado</span>
-                    </button>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -154,24 +160,28 @@
                                         </td>
                                         <td class="p-4 text-right text-white font-bold">RD$ {{ item.subtotal }}</td>
                                         <td class="p-4 text-center">
-                                            <div class="flex items-center {% if item.variante %}justify-center{% else %}justify-end{% endif %} gap-1">
-                                                {% if not item.variante %}
-                                                    <button onclick="abrirModalEditarItem({{ item.id }})"
-                                                            class="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors">
+                                            {% if pedido.estado_pedido == 'En_Espera' %}
+                                                <div class="flex items-center {% if item.variante %}justify-center{% else %}justify-end{% endif %} gap-1">
+                                                    {% if not item.variante %}
+                                                        <button onclick="abrirModalEditarItem({{ item.id }}, '{% url 'pedidos:editar_item' item.id %}')"
+                                                                class="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                                                </path>
+                                                            </svg>
+                                                        </button>
+                                                    {% endif %}
+                                                    <button onclick="eliminarItem({{ item.id }})"
+                                                            class="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
                                                             </path>
                                                         </svg>
                                                     </button>
-                                                {% endif %}
-                                                <button onclick="eliminarItem({{ item.id }})"
-                                                        class="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                                        </path>
-                                                    </svg>
-                                                </button>
-                                            </div>
+                                                </div>
+                                            {% else %}
+                                                <span class="text-gray-600 italic text-xs">Sin acciones</span>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                 {% endfor %}

@@ -12,6 +12,11 @@ import os
 from django.conf import settings
 from apps.productos.models import Categoria, Producto
 from apps.finanzas.models import Gasto
+from django.shortcuts import get_object_or_404
+from apps.core.forms import ImpresoraForm
+from .models import Impresora
+from django.db.models import Q, Count
+
 
 @admin_required
 def gestionar_media_huerfana(request):
@@ -72,7 +77,8 @@ def gestionar_media_huerfana(request):
         messages.success(request, f"¡Limpieza completada! Se eliminaron {count} archivos.")
         return redirect('core:config_media')
 
-    return render(request, 'core/config_media.html', {
+    return render(request, 'core/config/config_media.html', {
+        'segment': 'configuracion',
         'archivos': archivos_huerfanos
     })
 
@@ -118,4 +124,81 @@ def calculadora(request):
 
 @admin_required
 def configuracion(request):
-    return render(request, "core/configuracion.html")
+    """
+    Vista principal de configuración.
+    """
+    return render(request, "core/config/configuracion.html", {
+        'segment': 'configuracion'
+    })
+
+@admin_required
+def lista_impresoras(request):
+    impresoras = Impresora.objects.all().order_by('estado', 'nombre')
+    
+    stats = Impresora.objects.aggregate(
+        total=Count('id'),
+        disponibles=Count('id', filter=Q(estado='Disponible')),
+        imprimiendo=Count('id', filter=Q(estado='Imprimiendo')),
+        offline=Count('id', filter=Q(estado='Offline')),
+        mantenimiento=Count('id', filter=Q(estado='Mantenimiento'))
+    )
+    
+    form = ImpresoraForm()
+    return render(request, "core/config/config_impresoras.html", {
+        'impresoras': impresoras,
+        'segment': 'configuracion',
+        'form': form,
+        'stats': stats
+    })
+
+@admin_required
+def gestionar_impresora(request, accion, id_impresora=None):
+    if request.method == 'POST':
+        if accion == 'crear':
+            form = ImpresoraForm(request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Impresora agregada con éxito.")
+                return redirect('core:lista_impresoras') 
+            else:
+                impresoras = Impresora.objects.all().order_by('estado', 'nombre')
+                for errors in form.errors.values():
+                    for error in errors:
+                        messages.error(request, error)
+                
+                return render(request, "core/config/config_impresoras.html", {
+                    'segment': 'configuracion',
+                    'impresoras': impresoras,
+                    'form': form
+                })
+        
+        elif accion == 'eliminar' and id_impresora:
+            impresora = get_object_or_404(Impresora, id=id_impresora)
+            impresora.delete()
+            messages.success(request, "Máquina eliminada del sistema.")
+            
+        elif accion == 'toggle' and id_impresora:
+            impresora = get_object_or_404(Impresora, id=id_impresora)
+            # Si está Offline la ponemos Disponible, y viceversa
+            # Nota: Si estaba en mantenimiento, esto también la saca de mantenimiento
+            if impresora.estado == "Offline":
+                impresora.estado = "Disponible"
+            else:
+                impresora.estado = "Offline"
+            impresora.save()
+            messages.success(request, f"Estado de {impresora.nombre} actualizado.")
+
+        # --- NUEVA ACCIÓN DE MANTENIMIENTO ---
+        elif accion == 'mantenimiento' and id_impresora:
+            impresora = get_object_or_404(Impresora, id=id_impresora)
+            
+            if impresora.estado == "Mantenimiento":
+                impresora.estado = "Disponible"
+                messages.success(request, f"{impresora.nombre} ya está operativa y disponible.")
+            else:
+                impresora.estado = "Mantenimiento"
+                messages.info(request, f"{impresora.nombre} se ha marcado en mantenimiento.")
+            
+            impresora.save()
+
+    return redirect('core:lista_impresoras')

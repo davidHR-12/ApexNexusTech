@@ -340,6 +340,16 @@
         font-family: inherit !important;
         font-size: 1rem !important;
       }
+      /* Contenedor de notificaciones para que se apilen */
+      .swal2-container.swal2-top-end.swal2-backdrop-show {
+          background: transparent !important; /* Quita el oscurecimiento del fondo */
+          pointer-events: none; /* Permite hacer clic en lo que hay detrás */
+      }
+
+      .swal2-popup.swal2-toast {
+          margin-top: 0.5rem !important;
+          pointer-events: auto; /* Reactiva clics solo en la notificación */
+      }
     </style>
   </head>
   <body class="bg-[#0f172a] text-gray-100 font-sans">
@@ -362,31 +372,47 @@
            class="fixed inset-0 bg-black/60 z-40 hidden md:hidden backdrop-blur-sm"></div>
       <aside id="sidebar"
              class="w-64 bg-[#1e293b] border-r border-gray-800 flex flex-col fixed h-full z-[60] shadow-2xl md:shadow-none transition-transform duration-300 -translate-x-full md:translate-x-0 overflow-hidden">
-        <div class="sidebar-header hidden md:flex p-6 flex-col gap-4 flex-shrink-0">
-          <div class="logo-container flex items-center justify-between">
-            <div class="logo-full flex items-center gap-2">
-              <div class="p-2 rounded-lg shadow-[0_0_10px_rgba(16,185,129,0.3)] flex items-center justify-center w-12 h-12 flex-shrink-0">
-                <img src="{% static 'img/Logo-figura.ico' %}"
-                     loading="lazy"
-                     alt="Logo Figura"
-                     class="w-8 h-8 object-contain" />
+        <a href="{% url 'core:dashboard_admin' %}">
+          <div class="sidebar-header hidden md:flex p-6 flex-col gap-4 flex-shrink-0">
+            <div class="logo-container flex items-center justify-between">
+              <div class="logo-full flex items-center gap-2">
+                <div class="p-2 rounded-lg flex items-center justify-center w-12 h-12 flex-shrink-0">
+                  <img src="{% static 'img/Logo-figura.ico' %}"
+                       loading="lazy"
+                       alt="Logo Figura"
+                       class="w-8 h-8 object-contain" />
+                </div>
+                <div class="logo-text whitespace-nowrap">
+                  <div class="flex flex-col">
+                    <div class="flex items-end gap-0.5">
+                      <div class="flex items-end">
+                        <span class="text-2xl font-black text-white tracking-tighter leading-none">A</span>
+                        <span class="text-xl font-black text-white leading-none mb-0.5">.</span>
+                      </div>
+                      <div class="flex items-end">
+                        <span class="text-2xl font-black text-white tracking-tighter leading-none">N</span>
+                        <span class="text-xl font-black text-white leading-none mb-0.5">.</span>
+                      </div>
+                      <span class="text-2xl font-black text-white tracking-tighter leading-none">T</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <span class="text-[8px] font-bold text-[#10b981] tracking-[0.1em] leading-none uppercase">APEX</span>
+                      <span class="text-[8px] font-bold text-[#10b981] tracking-[0.1em] leading-none uppercase">NEXUS</span>
+                      <span class="text-[8px] font-bold text-[#10b981] tracking-[0.1em] leading-none uppercase">TECHNOLOGY</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="logo-text">
-                <img src="{% static 'img/Logo-texto.png' %}"
-                     loading="lazy"
-                     alt="Logo Texto"
-                     class="h-auto max-w-full">
+              <div class="logo-mini flex-col items-center gap-1">
+                <div class="p-2 rounded-lg flex items-center justify-center w-12 h-12 flex-shrink-0">
+                  <img src="{% static 'img/Logo-figura.ico' %}"
+                       loading="lazy"
+                       alt="Logo Figura"
+                       class="w-8 h-8 object-contain" />
+                </div>
               </div>
             </div>
-            <div class="logo-mini flex-col items-center gap-1">
-              <div class="p-2 rounded-lg shadow-[0_0_10px_rgba(16,185,129,0.3)] flex items-center justify-center w-12 h-12 flex-shrink-0">
-                <img src="{% static 'img/Logo-figura.ico' %}"
-                     loading="lazy"
-                     alt="Logo Figura"
-                     class="w-8 h-8 object-contain" />
-              </div>
-            </div>
-          </div>
+          </a>
           <button id="toggleSidebar"
                   class="flex items-center justify-center p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
             <svg id="hamburgerIcon"
@@ -400,9 +426,9 @@
         </div>
         <div class="mini-separator"></div>
         <nav class="flex-1 px-4 space-y-1 overflow-y-auto mt-4 md:mt-0 custom-scrollbar">
-          <a href="{% url 'core:dashboard-admin' %}"
+          <a href="{% url 'core:dashboard_admin' %}"
              data-tooltip="Dashboard"
-             class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'dashboard-admin' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+             class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'dashboard_admin' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
             <svg class="w-5 h-5 flex-shrink-0"
                  fill="none"
                  stroke="currentColor"
@@ -476,8 +502,7 @@
         <div class="sidebar-footer flex-shrink-0 p-4 border-t border-gray-800 space-y-1">
           <div class="mini-separator"></div>
           <a href="{% url 'core:configuracion' %}"
-             data-tooltip="Configuración"
-             class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl {% if request.resolver_match.url_name == 'configuracion' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %} transition">
+             class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl {% if segment == 'configuracion' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %} transition">
             <svg class="w-5 h-5"
                  fill="none"
                  stroke="currentColor"
@@ -529,22 +554,28 @@
     <script src="{% static 'sweetalert2/sweetalert2.all.min.js' %}"></script>
     <script src="{% static 'js/globals.js' %}"></script>
     <script src="{% static 'js/htmx.min.js' %}"></script>
-    <script>
-        // Notificaciones Django (SweetAlert2)
-        document.addEventListener('DOMContentLoaded', function() {
-            {% if messages %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if messages %}
+            let delay = 0; // Inicializamos un retraso
             {% for message in messages %}
-            let tag = "{{ message.tags }}";
-            let type = 'info';
-            if (tag.includes('success')) type = 'success';
-            if (tag.includes('error')) type = 'error';
-            if (tag.includes('warning')) type = 'warning';
+                setTimeout(function() {
+                    (function() {
+                        let tag = "{{ message.tags }}";
+                        let type = 'info';
+                        if (tag.includes('success')) type = 'success';
+                        if (tag.includes('error')) type = 'error';
+                        if (tag.includes('warning')) type = 'warning';
 
-            mostrarToast(type, "{{ message }}");
+                        mostrarToast(type, "{{ message }}");
+                    })();
+                }, delay);
+                
+                delay += 800;
             {% endfor %}
-            {% endif %}
-        });
-    </script>
+        {% endif %}
+    });
+</script>
     {% block extra_js %}
     {% endblock extra_js %}
   </body>

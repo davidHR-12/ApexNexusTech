@@ -249,7 +249,7 @@ def login_view(request):
                 if user_auth is not None:
                     login(request, user_auth)
                     if user_auth.is_superuser or user_auth.is_staff:
-                        return redirect("core:dashboard-admin")
+                        return redirect("core:dashboard_admin")
                     return redirect("clientes:home")
                 else:
                     # SI ES NONE, verificamos manualmente si el usuario existe y su clave es correcta
