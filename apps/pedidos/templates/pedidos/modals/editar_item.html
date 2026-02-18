@@ -1,52 +1,75 @@
 {% extends "core/modal_base.html" %}
-
 {% block modal_content %}
-    <form id="formEditarItem" 
-          method="post" 
-          action="{% url 'pedidos:editar_item' item.id %}" 
+    <form id="formEditarItem"
+          method="post"
+          action="{% url 'pedidos:editar_item' item.id %}"
           class="space-y-4">
-        
         {% csrf_token %}
-        
         <div class="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl mb-4">
             <p class="text-blue-400 text-[10px] font-bold uppercase tracking-wider">Editando Ítem Personalizado</p>
             <p class="text-white text-xs mt-1 italic">Estás modificando los parámetros técnicos de una pieza a medida.</p>
         </div>
-
         <div>
             <label class="block text-blue-400 text-[10px] font-bold uppercase mb-1">Nombre / Descripción de la Pieza</label>
             {{ form.descripcion }}
         </div>
-
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Cantidad</label>
                 {{ form.cantidad }}
             </div>
             <div>
-                <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Precio Unitario ($)</label>
-                {{ form.precio_unitario }}
-            </div>
+    <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Precio Unitario ($)</label>
+    {{ form.precio_unitario }}
+    {# Pequeña ayuda visual #}
+    <p class="text-[10px] text-emerald-400 mt-1">Haz clic en el precio sugerido ↓ para aplicarlo</p>
+</div>
         </div>
-        
-        <div class="grid grid-cols-2 gap-4 p-3 bg-gray-900/30 rounded-xl border border-gray-800">
-             <div>
+        <div class="grid grid-cols-3 gap-4 p-3 bg-gray-900/30 rounded-xl border border-gray-800">
+            <div class="col-span-2 relative">
                 <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Material</label>
+                <input type="text"
+                       name="q"
+                       id="material-search-input"
+                       placeholder="Buscar material..."
+                       class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 pl-10 text-white focus:border-blue-500 outline-none transition-all"
+                       hx-get="{% url 'materiales:buscar_material_ajax' %}"
+                       hx-trigger="keyup[key!='ArrowDown'&&key!='ArrowUp'&&key!='Enter'] delay:300ms"
+                       hx-target="#search-results-editar"
+                       autocomplete="off"
+                       value="{{ item.material_personalizado.marca }} - {{ item.material_personalizado.tipo }} - {{ item.material_personalizado.color }}">
+                {# El hidden que guarda el ID real #}
                 {{ form.material_personalizado }}
-             </div>
-             <div>
+                <div id="search-results-editar" class="absolute z-50 w-full mt-1"></div>
+            </div>
+            <div>
                 <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Gramos/Unidad</label>
                 {{ form.gramos_por_unidad }}
-             </div>
+            </div>
         </div>
-
+        {# Panel de costos #}
+        <div id="panel-costos-pers"
+             class="bg-gray-900/50 border border-gray-700 rounded-xl p-3 space-y-1">
+            <div class="flex justify-between text-[11px]">
+                <span class="text-gray-400">Costo material (g):</span>
+                <span id="pers-costo-g" class="text-gray-200 font-mono">RD$ 0.00</span>
+            </div>
+            <div class="flex justify-between text-[11px]">
+                <span class="text-gray-400">Inversión total mat:</span>
+                <span id="pers-inversion-total" class="text-amber-500 font-bold">RD$ 0.00</span>
+            </div>
+            <div class="flex justify-between text-xs border-t border-gray-800 pt-1 mt-1">
+                <span class="text-emerald-400 font-bold">Precio Sugerido (x1.5):</span>
+                <span id="pers-sugerido" class="text-emerald-400 font-bold cursor-pointer underline">RD$ 0.00</span>
+            </div>
+        </div>
         <div class="flex gap-3 pt-6 border-t border-gray-800 mt-6">
-            <button type="button" 
+            <button type="button"
                     onclick="cerrarUltimoModal()"
                     class="flex-1 px-4 py-3 rounded-xl border border-gray-700 text-gray-400 hover:bg-gray-800 transition-all font-bold text-sm">
                 Cancelar
             </button>
-            <button type="submit" 
+            <button type="submit"
                     class="flex-1 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-500/20">
                 Guardar Cambios
             </button>

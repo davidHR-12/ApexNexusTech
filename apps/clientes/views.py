@@ -65,6 +65,33 @@ def detalle_producto(request, pk):
 # ==========================================
 
 @login_required
+def mis_pedidos(request):
+    # Filtramos pedidos por el usuario actual, ordenando por fecha más reciente
+    pedidos = Pedido.objects.filter(usuario=request.user).order_by('-fecha_creacion')
+    
+    return render(request, 'clientes/mis_pedidos.html', {
+        'pedidos': pedidos
+    })
+    
+@login_required
+def detalle_pedido_cliente(request, pedido_id):
+    # Obtenemos el pedido asegurando que pertenezca al cliente logueado
+    pedido = get_object_or_404(Pedido, id=pedido_id, usuario=request.user)
+    
+    # Obtenemos solo las notas marcadas como públicas
+    # Usamos el related_name 'anotaciones' que definimos en el modelo NotaPedido
+    notas_publicas = pedido.anotaciones.filter(visible_para_cliente=True).order_by('-fecha_creacion')
+    
+    # Obtenemos los ítems
+    items = pedido.items.all() 
+    
+    return render(request, 'clientes/detalle_pedido.html', {
+        'pedido': pedido,
+        'items': items,
+        'notas': notas_publicas  # Enviamos las notas filtradas
+    })
+
+@login_required
 def home(request):
     """
     Dashboard del cliente. Muestra sus pedidos y cotizaciones.

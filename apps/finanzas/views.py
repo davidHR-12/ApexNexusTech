@@ -286,34 +286,26 @@ def gastos_por_mes(request):
     API endpoint para estadísticas de gastos.
     Retorna datos agrupados por mes y por tipo para visualización en gráficos.
     """
-    tipo_filtro = request.GET.get("tipo", "")
-    
     gastos = Gasto.objects.all()
-    if tipo_filtro:
-        gastos = gastos.filter(tipo=tipo_filtro)
     
-    # Agrupación por mes para totales generales
-    gastos_por_mes = {}
-    for gasto in gastos:
-        mes = gasto.fecha.strftime("%Y-%m")
-        if mes not in gastos_por_mes:
-            gastos_por_mes[mes] = Decimal("0.00")
-        gastos_por_mes[mes] += gasto.monto
+    # 1. Obtener todos los meses donde hubo CUALQUIER gasto (ordenados)
+    meses_con_datos = sorted(list(set(g.fecha.strftime("%Y-%m") for g in gastos)))
     
-    # Agrupación por tipo y mes
-    gastos_por_tipo = {}
-    for tipo, _ in Gasto.TIPOS:
-        gastos_tipo = Gasto.objects.filter(tipo=tipo)
-        por_mes = {}
-        for gasto in gastos_tipo:
-            mes = gasto.fecha.strftime("%Y-%m")
-            if mes not in por_mes:
-                por_mes[mes] = Decimal("0.00")
-            por_mes[mes] += gasto.monto
-        gastos_por_tipo[tipo] = por_mes
+    # 2. Inicializar estructuras
+    gastos_por_mes = {m: Decimal("0.00") for m in meses_con_datos}
+    gastos_por_tipo = {tipo[0]: {m: 0.0 for m in meses_con_datos} for tipo in Gasto.TIPOS}
+    
+    # 3. Llenar en una sola pasada (Más eficiente)
+    for g in gastos:
+        mes = g.fecha.strftime("%Y-%m")
+        monto_float = float(g.monto)
+        
+        gastos_por_mes[mes] += g.monto
+        if g.tipo in gastos_por_tipo:
+            gastos_por_tipo[g.tipo][mes] += monto_float
     
     return JsonResponse({
-        "meses": sorted(gastos_por_mes.keys()),
-        "totales": [float(gastos_por_mes[m]) for m in sorted(gastos_por_mes.keys())],
-        "por_tipo": {tipo: gastos_por_tipo[tipo] for tipo in gastos_por_tipo}
+        "meses": meses_con_datos,
+        "totales": [float(gastos_por_mes[m]) for m in meses_con_datos],
+        "por_tipo": gastos_por_tipo
     })

@@ -73,9 +73,7 @@ function abrirModalEditarItem(itemId, url) {
     const wrapper = document.getElementById('modal-editar-item-wrapper');
     if (!wrapper) return;
 
-    // Limpiar wrapper por si acaso
     wrapper.innerHTML = '';
-    console.log(url);
     fetch(url)
         .then(response => {
             if (!response.ok) throw new Error("Error al cargar el formulario");
@@ -83,12 +81,16 @@ function abrirModalEditarItem(itemId, url) {
         })
         .then(html => {
             wrapper.innerHTML = html;
+
+            // Reinicializar HTMX en el contenido nuevo
+            if (typeof htmx !== 'undefined') {
+                htmx.process(wrapper);
+            }
+
             const modal = wrapper.querySelector('.modal-overlay');
             if (modal) {
                 modal.classList.remove('hidden');
-                // Push to stack for compatibility with globals.js cerrarUltimoModal
                 if (typeof modalStack !== 'undefined') {
-                    // Ensure ID exists (modal_base usa {{ modal_id }} que pasamos desde la vista)
                     if (!modal.id) modal.id = 'modalEditarItem';
                     if (!modalStack.includes(modal.id)) {
                         modalStack.push(modal.id);
@@ -145,10 +147,10 @@ function eliminarItem(itemId) {
 }
 const selectVariante = document.querySelector('#modalItemCatalogo [name="variante"]');
 if (selectVariante) {
-    selectVariante.addEventListener('change', function() {
+    selectVariante.addEventListener('change', function () {
         const id = this.value;
         const infoPrecio = document.getElementById('detalle-precio-catalogo');
-        
+
         if (!id) {
             infoPrecio.textContent = "Seleccione un producto para ver el desglose";
             return;
@@ -158,16 +160,16 @@ if (selectVariante) {
             .then(r => r.json())
             .then(data => {
                 const modal = document.getElementById('modalItemCatalogo');
-                
+
                 // 1. Asignar valores a los inputs
                 modal.querySelector('[name="precio_unitario"]').value = data.precio_unitario;
                 modal.querySelector('[name="gramos_por_unidad"]').value = data.gramos_por_unidad;
-                
+
                 // 2. Construir el desglose visualmente
                 const base = data.precio_base.toLocaleString();
                 const extra = data.precio_extra.toLocaleString();
                 const total = data.precio_unitario.toLocaleString();
-                
+
                 if (data.precio_extra > 0) {
                     infoPrecio.innerHTML = `<span class="text-emerald-400">Precio Base: RD$ ${base}</span> + <span class="text-amber-400">Precio Extra: RD$ ${extra}</span> = <b class="text-white">Precio Total: RD$ ${total}</b>`;
                 } else {
@@ -177,44 +179,117 @@ if (selectVariante) {
     });
 }
 
-// --- LÓGICA PARA MODAL PERSONALIZADO ---
-// Variable global para el precio
-let precioGramoPers = 0;
+// 1. Lógica de selección del material (Mejorada para Edición)
+function seleccionarMaterial(id, textoCompleto) {
+    // Buscamos el modal que esté visible actualmente (el de arriba en el stack)
+    const modalActivo = document.querySelector('.modal-overlay:not(.hidden)');
+    if (!modalActivo) return;
 
-function calcularSugeridoPersonalizado(contenedor) {
-    // Buscamos los elementos DENTRO del contenedor (puede ser el modal de crear o el de editar)
-    const inputGramos = contenedor.querySelector('[name="gramos_por_unidad"]');
-    const inputCant = contenedor.querySelector('[name="cantidad"]');
-    const inputPrecioVenta = contenedor.querySelector('[name="precio_unitario"]');
-    
-    // Los spans suelen estar fuera o tener IDs únicos
-    const spanCostoG = document.getElementById('pers-costo-g');
-    const spanInversionTotal = document.getElementById('pers-inversion-total');
-    const spanSugerido = document.getElementById('pers-sugerido');
-    const panelCostos = document.getElementById('panel-costos-pers');
+    const inputBusqueda = modalActivo.querySelector('#material-search-input');
+    // Buscamos el hidden por nombre si el ID falla o es dinámico
+    const inputHidden = modalActivo.querySelector('input[name="material_personalizado"]');
+    const resultados = modalActivo.querySelector('#search-results, #search-results-editar');
 
-    const gramos = parseFloat(inputGramos?.value) || 0;
-    const cantidad = parseInt(inputCant?.value) || 1;
-    
-    if (gramos > 0 && precioGramoPers > 0) {
-        const costoUnidad = gramos * precioGramoPers;
-        const inversionTotal = costoUnidad * cantidad;
-        const sugerido = (costoUnidad * 1.5).toFixed(2);
-        
-        if(spanCostoG) spanCostoG.innerText = `RD$ ${precioGramoPers.toFixed(2)}`;
-        if(spanInversionTotal) spanInversionTotal.innerText = `RD$ ${inversionTotal.toFixed(2)}`;
-        if(spanSugerido) spanSugerido.innerText = `RD$ ${sugerido}`;
-        
-        panelCostos?.classList.remove('hidden');
-        if (inputPrecioVenta) inputPrecioVenta.value = sugerido;
+    if (inputBusqueda) inputBusqueda.value = textoCompleto;
+    if (inputHidden) {
+        inputHidden.value = id;
+        // Disparar evento change manualmente para que otros listeners lo capten
+        inputHidden.dispatchEvent(new Event('change', { bubbles: true }));
     }
+
+    if (resultados) resultados.innerHTML = '';
+
+    // Ejecutar cálculos
+    calcularCostosPersonalizados();
+
+    // Focus al siguiente campo
+    const nextInput = modalActivo.querySelector('input[name="gramos_por_unidad"]');
+    if (nextInput) nextInput.focus();
 }
+
+
+/**
+ * 2. Función de cálculo de costos y actualización de precio unitario
+ */
+function calcularCostosPersonalizados() {
+    const modalActivo = document.querySelector('.modal-overlay:not(.hidden)');
+    if (!modalActivo) return;
+
+    const inputHidden = modalActivo.querySelector('input[name="material_personalizado"]');
+    const materialId = inputHidden ? inputHidden.value : null;
+
+    const gramosInput = modalActivo.querySelector('input[name="gramos_por_unidad"]');
+    const cantidadInput = modalActivo.querySelector('input[name="cantidad"]');
+    const precioUnitarioInput = modalActivo.querySelector('input[name="precio_unitario"]'); // Agregado
+    const panel = modalActivo.querySelector('#panel-costos-pers');
+
+    const gramos = parseFloat(gramosInput?.value) || 0;
+    const cantidad = parseFloat(cantidadInput?.value) || 1;
+
+    if (!materialId || materialId === "" || gramos <= 0) {
+        if (panel) panel.classList.add('hidden');
+        return;
+    }
+
+    fetch(`/administrador/api/materiales/${materialId}/precio/`)
+        .then(response => response.json())
+        .then(data => {
+            if (!modalActivo.isConnected) return;
+
+            const costoGramo = parseFloat(data.costo_por_gramo || data.costo_gramo);
+            const inversionTotal = costoGramo * gramos * cantidad;
+            const precioSugerido = (costoGramo * gramos) * 1.5; // Sugerido por unidad
+
+            // Actualizar Etiquetas del Panel
+            const elCostoG = modalActivo.querySelector('#pers-costo-g');
+            const elInversion = modalActivo.querySelector('#pers-inversion-total');
+            const elSugerido = modalActivo.querySelector('#pers-sugerido');
+
+            if (elCostoG) elCostoG.textContent = `RD$ ${costoGramo.toFixed(2)}`;
+            if (elInversion) elInversion.textContent = `RD$ ${inversionTotal.toFixed(2)}`;
+            if (elSugerido) elSugerido.textContent = `RD$ ${precioSugerido.toFixed(2)}`;
+
+            // Actualizar precio solo si NO fue editado manualmente por el usuario
+            if (precioUnitarioInput && precioUnitarioInput.dataset.manualEdit !== 'true') {
+                precioUnitarioInput.value = precioSugerido.toFixed(2);
+            }
+
+            if (panel) panel.classList.remove('hidden');
+        })
+        .catch(err => console.error('Error calculando costos:', err));
+}
+
+// Marcar precio como "editado manualmente" cuando el usuario escribe
+document.addEventListener('input', (e) => {
+    if (e.target.name === 'precio_unitario') {
+        e.target.dataset.manualEdit = 'true';
+    }
+});
+
+/**
+ * 3. Mejora UX: Permitir que al hacer clic en el precio sugerido se aplique al input
+ */
+document.addEventListener('click', (e) => {
+    if (e.target.id === 'pers-sugerido') {
+        const modalActivo = e.target.closest('.modal-overlay');
+        const precioTexto = e.target.textContent.replace('RD$ ', '').trim();
+        const precioInput = modalActivo?.querySelector('input[name="precio_unitario"]');
+
+        if (precioInput) {
+            precioInput.value = precioTexto;
+            precioInput.dataset.manualEdit = 'false'; // Reset para que siga auto-actualizando
+            mostrarToast('success', 'Precio sugerido aplicado');
+        }
+    }
+});
 
 // Escuchar cambios en CUALQUIER input de gramos o cantidad que esté dentro de un modal
 document.addEventListener('input', (e) => {
     if (e.target.name === 'gramos_por_unidad' || e.target.name === 'cantidad') {
+        console.log('[Input] Target:', e.target.name);
+        console.log('[Input] Modal encontrado:', e.target.closest('.modal-overlay'));
         const modal = e.target.closest('.modal-overlay');
-        if (modal) calcularSugeridoPersonalizado(modal);
+        if (modal) calcularCostosPersonalizados();
     }
 });
 
@@ -224,38 +299,10 @@ document.addEventListener('change', (e) => {
         const id = e.target.value;
         const modal = e.target.closest('.modal-overlay');
         if (!id || !modal) return;
-
         fetch(`/administrador/api/materiales/${id}/precio/`)
             .then(r => r.json())
             .then(data => {
-                precioGramoPers = parseFloat(data.costo_por_gramo);
-                calcularSugeridoPersonalizado(modal);
+                calcularCostosPersonalizados();
             });
     }
 });
-
-
-function abrirModalEditarDescripcion(pedidoId, url) {
-    console.log("ID:", pedidoId); // Verifica que no sea undefined
-    console.log("URL recibida:", url); // Verifica que la URL sea correcta
-    
-    if (!url || url.includes('undefined')) {
-        console.error("La URL es inválida:", url);
-        return;
-    }
-
-    const wrapper = document.getElementById('modal-editar-item-wrapper');
-    
-    fetch(url)
-        .then(response => {
-            if (!response.ok) throw new Error('Error en la red');
-            return response.text();
-        })
-        .then(html => {
-            wrapper.innerHTML = html;
-            abrirModal('modalEditarDescripcion');
-        })
-        .catch(error => {
-            console.error('Error al cargar el modal:', error);
-        });
-}

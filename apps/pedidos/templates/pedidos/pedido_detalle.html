@@ -22,23 +22,31 @@
                     {% csrf_token %}
                     <input type="hidden" name="accion" value="cambiar_estado">
                     {% if items %}
-                        <select name="nuevo_estado"
-                                class="flex-1 sm:w-56 bg-gray-800 border border-gray-700 text-white text-sm rounded-xl px-3 h-[40px] focus:ring-blue-500">
-                            {% for cod, nombre in estados %}
-                                <option value="{{ cod }}"
-                                        {% if pedido.estado_pedido == cod %}selected{% endif %}>{{ nombre }}</option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit"
-                                class="bg-blue-600 hover:bg-blue-500 text-white px-4 h-[40px] rounded-xl text-sm font-bold transition-all flex items-center gap-2 shrink-0">
-                            <svg class="w-4 h-4 shrink-0"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M20 8A8 8 0 005.64 5.64M4 16a8 8 0 0014.36 2.36" />
-                            </svg>
-                            <span class="hidden sm:inline">Actualizar</span>
-                        </button>
+                        {% if pedido.estado_pedido == 'Fallido' or pedido.estado_pedido == 'Entregado' or pedido.estado_pedido == 'Cancelado' %}
+                            <div class="px-4 py-2 bg-gray-700/50 rounded-xl border border-gray-600 text-gray-400 text-xs font-bold uppercase">
+                                Estado: {{ pedido.get_estado_pedido_display }}. No se puede cambiar el estado
+                            </div>
+                        {% else %}
+                            <select name="nuevo_estado"
+                                    class="flex-1 sm:w-56 bg-gray-800 border border-gray-700 text-white text-sm rounded-xl px-3 h-[40px] focus:ring-blue-500">
+                                {% for cod, nombre in estados %}
+                                    <option value="{{ cod }}"
+                                            {% if pedido.estado_pedido == cod %}selected{% endif %}>
+                                        {{ nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit"
+                                    class="bg-blue-600 hover:bg-blue-500 text-white px-4 h-[40px] rounded-xl text-sm font-bold transition-all flex items-center gap-2 shrink-0">
+                                <svg class="w-4 h-4 shrink-0"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M20 8A8 8 0 005.64 5.64M4 16a8 8 0 0014.36 2.36" />
+                                </svg>
+                                <span class="hidden sm:inline">Actualizar</span>
+                            </button>
+                        {% endif %}
                     {% else %}
                         <div class="text-gray-500 text-xs italic bg-gray-800/50 px-4 py-2 rounded-xl border border-gray-700">
                             Agregue ítems para cambiar estado
@@ -82,7 +90,7 @@
                         </button>
                     {% else %}
                         <div class="px-4 py-2 bg-gray-700/50 rounded-xl border border-gray-600 text-gray-400 text-xs font-bold uppercase">
-                            Pedido en {{ pedido.get_estado_pedido_display }} (Bloqueado)
+                            Estado: {{ pedido.get_estado_pedido_display }}. No puedes agregar items
                         </div>
                     {% endif %}
                 </div>
@@ -94,7 +102,6 @@
                 <h3 class="font-bold text-white">Ítems del Pedido</h3>
             </div>
             <div class="overflow-x-auto overflow-y-auto max-h-[500px] scrollbar-thin">
-            
                 <table class="w-full text-left text-gray-400 text-sm">
                     <thead>
                         <tr class="bg-[#1e293b]/60 text-gray-400 text-[10px] uppercase tracking-widest">
@@ -166,8 +173,21 @@
                                 </td>
                                 <td class="px-4 py-3 font-mono">{{ item.cantidad }} u.</td>
                                 <td class="px-4 py-3">
-                                    {% if pedido.estado_pedido == 'Entregado' or pedido.estado_pedido == 'Listo' %}
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-900/30 text-blue-400 border border-blue-800">Producido</span>
+                                    {% if pedido.estado_pedido == 'En_Produccion' or pedido.estado_pedido == 'Listo' or pedido.estado_pedido == 'Entregado' %}
+                                        <div class="flex items-center gap-2">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-900/30 text-blue-400 border border-blue-800">
+                                                <svg class="w-3 h-3 mr-1 animate-pulse"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20">
+                                                    <circle cx="10" cy="10" r="5"></circle>
+                                                </svg>
+                                                {% if item.variante %}
+                                                    Del Catalogo
+                                                {% else %}
+                                                    {{ item.impresora_asignada.nombre|default:"Sin máquina" }}
+                                                {% endif %}
+                                            </span>
+                                        </div>
                                     {% elif item.variante %}
                                         <span class="text-xs text-gray-400 italic">Descontado de Stock</span>
                                     {% else %}
@@ -178,12 +198,12 @@
                                             <select name="impresora_id"
                                                     onchange="this.form.submit()"
                                                     class="bg-gray-900 border border-gray-700 text-[11px] rounded p-1 text-gray-300">
-                                                <option value="">Asignar...</option>
+                                                <option value="">Sin asignar...</option>
+                                                {% if item.impresora_asignada %}
+                                                    <option value="{{ item.impresora_asignada.id }}" selected>{{ item.impresora_asignada.nombre }}</option>
+                                                {% endif %}
                                                 {% for imp in impresoras %}
-                                                    <option value="{{ imp.id }}"
-                                                            {% if item.impresora_asignada_id == imp.id %}selected{% endif %}>
-                                                        {{ imp.nombre }}
-                                                    </option>
+                                                    {% if imp.id != item.impresora_asignada_id %}<option value="{{ imp.id }}">{{ imp.nombre }}</option>{% endif %}
                                                 {% endfor %}
                                             </select>
                                         </form>
@@ -220,98 +240,127 @@
                 </table>
             </div>
         </div>
-        <!-- ── GRID 2x2: Descripción (full) + Costos + Pagos ─────── -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <!-- Detalle / Descripción → ocupa las 2 columnas -->
             <div class="lg:col-span-2 bg-gray-800 rounded-xl border border-gray-700 p-5">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-white">Detalle del Pedido</h3>
-                    <button onclick="abrirModalEditarDescripcion({{ pedido.id }}, '{% url 'pedidos:editar_descripcion_modal' pedido.id %}')"
-                            class="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
-                            </path>
+                    <h3 class="font-bold text-white flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-400"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
+                        Información y Seguimiento
+                    </h3>
+                    <button onclick="abrirModal('modalEditarNotas')"
+                            class="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider border border-blue-500/20">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Nueva Nota
                     </button>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Descripción texto -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Descripción / Requerimientos</p>
-                        <p class="text-gray-300 text-sm bg-gray-900/50 p-3 rounded-lg border border-gray-700/50 italic min-h-[80px]">
-                            {{ pedido.descripcion }}
-                        </p>
-                    </div>
-                    <!-- Archivos de referencia -->
-                    {% if pedido.solicitud %}
-                        <div>
-                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2">Archivos de Referencia</p>
-                            <div class="flex gap-2 flex-wrap">
-                                {% if pedido.solicitud.imagen_referencia %}
-                                    <a href="{{ pedido.solicitud.imagen_referencia.url }}"
-                                       target="_blank"
-                                       class="group relative w-16 h-16 rounded-lg overflow-hidden border border-gray-700">
-                                        <img src="{{ pedido.solicitud.imagen_referencia.url }}"
-                                             class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity">
-                                        <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <svg class="w-4 h-4 text-white"
-                                                 fill="none"
-                                                 stroke="currentColor"
-                                                 viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                                            </svg>
-                                        </div>
-                                    </a>
-                                {% endif %}
-                                {% if pedido.solicitud.enlace_referencia %}
-                                    <a href="{{ pedido.solicitud.enlace_referencia }}"
-                                       target="_blank"
-                                       class="flex items-center justify-center w-16 h-16 rounded-lg bg-gray-900 border border-gray-700 text-blue-400 hover:bg-blue-500/10 transition-colors">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                        </svg>
-                                    </a>
-                                {% endif %}
-                            </div>
+                        <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Solicitud Inicial del Cliente</p>
+                        <div class="text-gray-400 text-sm bg-gray-900/30 p-3 rounded-lg border border-gray-700/30 italic min-h-[120px]">
+                            {% if pedido.descripcion %}
+                                "{{ pedido.descripcion }}"
+                            {% else %}
+                                <span class="text-gray-600">Sin descripción del cliente.</span>
+                            {% endif %}
                         </div>
-                    {% endif %}
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-emerald-500 uppercase font-bold tracking-wider mb-1">Historial de Anotaciones</p>
+                        <div class="space-y-3 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin">
+                            {% for nota in pedido.anotaciones.all %}
+                                <div class="p-3 rounded-lg border {% if nota.visible_para_cliente %}bg-blue-500/5 border-blue-500/20{% else %}bg-gray-900/50 border-gray-700{% endif %}">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-[10px] font-bold {% if nota.visible_para_cliente %}text-blue-400{% else %}text-gray-500{% endif %} uppercase">
+                                            {{ nota.autor.get_full_name|default:nota.autor.username }}
+                                            {% if nota.visible_para_cliente %}
+                                                <span class="ml-2 text-[8px] bg-blue-500/20 px-1 rounded text-blue-300">PÚBLICO</span>
+                                            {% endif %}
+                                        </span>
+                                        <span class="text-[9px] text-gray-600 font-mono">{{ nota.fecha_creacion|date:"d/m H:i" }}</span>
+                                    </div>
+                                    <p class="text-xs text-gray-300">{{ nota.contenido|linebreaksbr }}</p>
+                                </div>
+                            {% empty %}
+                                <div class="flex flex-col items-center justify-center h-[120px] bg-gray-900/20 rounded-lg border border-dashed border-gray-700">
+                                    <span class="text-gray-600 italic text-xs text-center px-4">No hay notas de seguimiento registradas.</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
+                {% if pedido.solicitud %}
+                    <div class="mt-6 pt-4 border-t border-gray-700/50">
+                        <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2">Multimedia de Referencia</p>
+                        <div class="flex gap-2 flex-wrap">
+                            {% if pedido.solicitud.imagen_referencia %}
+                                <a href="{{ pedido.solicitud.imagen_referencia.url }}"
+                                   target="_blank"
+                                   class="group relative w-16 h-16 rounded-lg overflow-hidden border border-gray-700 bg-gray-900">
+                                    <img src="{{ pedido.solicitud.imagen_referencia.url }}"
+                                         class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity">
+                                    <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <svg class="w-4 h-4 text-white"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                        </svg>
+                                    </div>
+                                </a>
+                            {% endif %}
+                            {% if pedido.solicitud.enlace_referencia %}
+                                <a href="{{ pedido.solicitud.enlace_referencia }}"
+                                   target="_blank"
+                                   class="flex items-center justify-center w-16 h-16 rounded-lg bg-gray-900 border border-gray-700 text-blue-400 hover:bg-blue-500/10 transition-colors">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                    </svg>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
             </div>
-            <!-- Resumen de Costos → columna izquierda -->
             <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
                 <h3 class="font-bold text-white mb-4">Resumen de Costos</h3>
                 <div class="space-y-3 text-sm">
                     <div class="flex justify-between text-gray-400">
                         <span>Costo Material Est.:</span>
-                        <span>${{ pedido.costo_material }}</span>
+                        <span class="font-mono text-white">RD$ {{ pedido.costo_material }}</span>
                     </div>
                     <div class="flex justify-between text-gray-400">
                         <span>Otros Costos (Envío/Extras):</span>
-                        <span>${{ pedido.otros_costos }}</span>
+                        <span class="font-mono text-white">RD$ {{ pedido.otros_costos }}</span>
                     </div>
                     <div class="border-t border-gray-700 pt-3 flex justify-between text-lg font-bold text-white">
                         <span>Total:</span>
-                        <span class="text-green-400">${{ pedido.precio_total }}</span>
+                        <span class="text-green-400 font-mono">RD$ {{ pedido.precio_total }}</span>
                     </div>
                     <div class="mt-2 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
                         <div class="flex justify-between text-blue-400 font-bold">
                             <span>Ganancia Estimada:</span>
-                            <span>${{ pedido.ganancia }}</span>
+                            <span class="font-mono">RD$ {{ pedido.ganancia }}</span>
                         </div>
-                        <p class="text-[10px] text-blue-300 mt-1">Margen: {{ pedido.margen_porcentaje }}%</p>
+                        <p class="text-[10px] text-blue-300 mt-1 uppercase tracking-wider">Margen: {{ pedido.margen_porcentaje }}%</p>
                     </div>
                 </div>
             </div>
-            <!-- Pagos → columna derecha -->
             <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                <h3 class="font-bold text-white mb-4">Pagos</h3>
+                <h3 class="font-bold text-white mb-4">Estado de Cuenta</h3>
                 <div class="text-center py-4">
-                    <p class="text-3xl font-bold {% if pedido.esta_pagado %}text-green-400{% else %}text-red-400{% endif %}">
-                        ${{ pedido.saldo_pendiente }}
+                    <p class="text-3xl font-bold font-mono {% if pedido.esta_pagado %}text-green-400{% else %}text-red-400{% endif %}">
+                        RD$ {{ pedido.saldo_pendiente }}
                     </p>
-                    <p class="text-xs text-gray-500 uppercase mt-1">Saldo Pendiente</p>
+                    <p class="text-xs text-gray-500 uppercase mt-1 font-bold tracking-widest">Saldo Pendiente</p>
                 </div>
-                <button class="w-full bg-gray-700 hover:bg-gray-600 text-white text-sm py-2.5 rounded-lg transition-colors mt-2">
+                <button class="w-full bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold uppercase py-3 rounded-xl transition-all mt-2 tracking-widest border border-gray-600">
                     Registrar Pago
                 </button>
             </div>
@@ -319,6 +368,7 @@
         <!-- ── FIN GRID 2x2 ──────────────────────────────────────── -->
         {% include "pedidos/modals/item_catalogo.html" with modal_id="modalItemCatalogo" title="Item del Catálogo" description=" Añade un producto del catálogo al pedido " max_width="max-w-3xl" %}
         {% include "pedidos/modals/item_personalizado.html" with modal_id="modalItemPersonalizado" title="Item Personalizado" description=" Añade un producto personalizado al pedido " max_width="max-w-2xl" %}
+        {% include "pedidos/modals/editar_notas.html" with modal_id="modalNotasPedido" title="Notas del Pedido" description=" Añade notas al pedido " max_width="max-w-2xl" %}
         <div id="modal-editar-item-wrapper"></div>
     </div>
 {% endblock %}

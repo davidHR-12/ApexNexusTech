@@ -92,6 +92,7 @@ class ItemPersonalizadoForm(TailwindModelForm):
         required=True,
         label="Material",
         empty_label="Seleccione el material a usar",
+        widget=forms.HiddenInput(attrs={'id': 'material-id-hidden'})
     )
 
     class Meta:
@@ -103,6 +104,14 @@ class ItemPersonalizadoForm(TailwindModelForm):
             "cantidad",
             "precio_unitario",
         ]
+        widgets = {
+            # Asegura explícitamente que sea un input de texto visible
+            "gramos_por_unidad": forms.NumberInput(attrs={
+                "placeholder": "Ej: 100",
+                "class": "w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white outline-none focus:border-[#10b981] transition-all",
+                "step": "0.1",
+            }),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

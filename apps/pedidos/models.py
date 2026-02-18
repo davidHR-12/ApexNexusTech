@@ -8,6 +8,8 @@ from decimal import Decimal
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from apps.core.models import Impresora
+from django.contrib.auth.models import User
+from django.conf import settings
 
 
 # =============================
@@ -298,6 +300,28 @@ class Pedido(models.Model):
         ordering = ["-fecha_creacion"]
 
 
+# =============================
+# NOTAS DE PEDIDO
+# =============================
+
+class NotaPedido(models.Model):
+    pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name='anotaciones')
+    # Cambiamos User por settings.AUTH_USER_MODEL
+    autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    contenido = models.TextField()
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    
+    # Campo nuevo para controlar la visibilidad
+    visible_para_cliente = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-fecha_creacion']
+        verbose_name = "Nota de pedido"
+        verbose_name_plural = "Notas de pedido"
+
+    def __str__(self):
+        return f"Nota #{self.id} - Pedido {self.pedido.id}"
+        
 # =============================
 # ITEMS DE PEDIDO
 # =============================

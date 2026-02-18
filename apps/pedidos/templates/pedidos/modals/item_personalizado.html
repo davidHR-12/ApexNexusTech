@@ -10,9 +10,20 @@
             {{ form_personalizado.descripcion }}
         </div>
         <div class="grid grid-cols-3 gap-4">
-            <div class="col-span-2">
+            <div class="col-span-2 relative">
                 <label class="block text-sm font-medium text-gray-400 mb-1">Material</label>
+                <input type="text"
+                       name="q"
+                       id="material-search-input"
+                       placeholder="Buscar material..."
+                       class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 pl-10 text-white focus:border-blue-500 outline-none transition-all"
+                       hx-get="{% url 'materiales:buscar_material_ajax' %}"
+                       hx-trigger="keyup[key!='ArrowDown'&&key!='ArrowUp'&&key!='Enter'] changed delay:300ms"
+                       hx-target="#search-results"
+                       @input="if($el.value === '') { document.getElementById('search-results').innerHTML = '' }"
+                       autocomplete="off">
                 {{ form_personalizado.material_personalizado }}
+                <div id="search-results" class="absolute z-50 w-full mt-1"></div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-400 mb-1">Gramos (Peso)</label>

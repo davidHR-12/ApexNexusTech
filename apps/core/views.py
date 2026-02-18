@@ -134,7 +134,16 @@ def configuracion(request):
 @admin_required
 def lista_impresoras(request):
     impresoras = Impresora.objects.all().order_by('estado', 'nombre')
+    rescatadas = 0
+
+    for imp in impresoras:
+        if imp.actualizar_estado_automatico():
+            rescatadas += 1
+    if rescatadas > 0:
+        messages.info(request, f"Se han liberado {rescatadas} impresoras que no tenían trabajo activo.")
     
+    
+
     stats = Impresora.objects.aggregate(
         total=Count('id'),
         disponibles=Count('id', filter=Q(estado='Disponible')),

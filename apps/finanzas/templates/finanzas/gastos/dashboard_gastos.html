@@ -2,6 +2,12 @@
 {% load static %}
 {% block content %}
   <div class="space-y-6">
+    <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest gap-2">
+      <a href="{% url 'finanzas:gastos' %}"
+        class="hover:text-white transition-colors">Gastos</a>
+      <span>/</span>
+      <span class="text-[#10b981]">Dashboard Financiero</span>
+    </nav>
     <!-- ENCABEZADO -->
     <div id="dashboard-container" data-url-gastos="{% url 'finanzas:gastos_por_mes' %}">
       <h1 class="text-3xl font-bold text-white">Dashboard Financiero</h1>
@@ -27,14 +33,14 @@
 
       <!-- Mayor Gasto -->
       <div class="bg-gradient-to-br from-orange-900/20 to-orange-900/5 border border-orange-500/20 rounded-2xl p-6">
-        <p class="text-orange-400/70 text-xs uppercase font-bold tracking-wider mb-2">Mayor Mes</p>
+        <p class="text-orange-400/70 text-xs uppercase font-bold tracking-wider mb-2">Mes de Mayor Gasto</p>
         <p class="text-3xl font-bold text-white" id="kpiMayorMes">-RD$ 0.00</p>
         <p class="text-gray-500 text-xs mt-3" id="kpiMayorMesNombre">-</p>
       </div>
 
       <!-- Meses Analizados -->
       <div class="bg-gradient-to-br from-blue-900/20 to-blue-900/5 border border-blue-500/20 rounded-2xl p-6">
-        <p class="text-blue-400/70 text-xs uppercase font-bold tracking-wider mb-2">Meses Datos</p>
+        <p class="text-blue-400/70 text-xs uppercase font-bold tracking-wider mb-2">Meses Registrados</p>
         <p class="text-3xl font-bold text-white" id="kpiMesesData">0</p>
         <p class="text-gray-500 text-xs mt-3">Histórico</p>
       </div>
@@ -48,12 +54,12 @@
       <div class="flex gap-4 mb-6">
         <label class="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" id="filterTodos" checked 
-                 onchange="actualizarGrafico()" 
+                 onchange="if(this.checked) document.getElementById('filterTipo').value = ''; actualizarGrafico()"
                  class="w-4 h-4 rounded">
           <span class="text-gray-300 text-sm">Todos los gastos</span>
         </label>
         
-        <select id="filterTipo" onchange="actualizarGrafico()" 
+        <select id="filterTipo" onchange="if(this.value) document.getElementById('filterTodos').checked = false; actualizarGrafico()" 
                 class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-300 text-sm outline-none">
           <option value="">-- Por tipo --</option>
           <option value="Mantenimiento">Mantenimiento</option>

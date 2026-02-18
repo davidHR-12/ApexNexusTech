@@ -1,0 +1,133 @@
+{% extends 'clientes/base_cliente.html' %}
+{% block content %}
+    <div class="space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <a href="{% url 'clientes:mis_pedidos' %}"
+                   class="text-[#10b981] text-sm font-bold flex items-center gap-2 mb-2 hover:underline">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Volver a mis pedidos
+                </a>
+                <h1 class="text-3xl font-bold text-white">Detalle de Pedido #{{ pedido.id }}</h1>
+                <p class="text-gray-400">Realizado el {{ pedido.fecha_creacion|date:"d \d\e F, Y" }}</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest border {% if pedido.estado_pedido == 'En_Espera' %} border-amber-500/50 text-amber-500 bg-amber-500/10 {% elif pedido.estado_pedido == 'Entregado' or pedido.estado_pedido == 'Listo' %} border-emerald-500/50 text-emerald-500 bg-emerald-500/10 {% elif pedido.estado_pedido == 'Cancelado' or pedido.estado_pedido == 'Fallido' %} border-red-500/50 text-red-500 bg-red-500/10 {% else %} border-blue-500/50 text-blue-500 bg-blue-500/10 {% endif %}">
+                    {{ pedido.get_estado_pedido_display }}
+                </span>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-4">
+                <div class="bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+                    <div class="p-4 border-b border-gray-800 bg-gray-800/30">
+                        <h2 class="text-white font-bold">Productos en este pedido</h2>
+                    </div>
+                    <div class="divide-y divide-gray-800">
+                        {% for item in items %}
+                            <div class="p-4 flex items-center justify-between hover:bg-gray-800/20 transition-colors">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 bg-[#334155] rounded-lg flex items-center justify-center text-[#10b981]">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-white font-bold">
+                                            {% if item.descripcion %}
+                                                {{ item.descripcion }}
+                                            {% elif item.variante %}
+                                                {{ item.variante.producto.nombre }}
+                                            {% else %}
+                                                Producto Personalizado
+                                            {% endif %}
+                                        </p>
+                                        <p class="text-gray-500 text-xs italic">
+                                            {{ item.cantidad }} unidad(es) x RD$ {{ item.precio_unitario|floatformat:2 }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-white font-mono font-bold">RD$ {{ item.subtotal|floatformat:2 }}</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-4">
+                {# 1. DESCRIPCIÓN ORIGINAL DEL CLIENTE #}
+                {% if pedido.descripcion %}
+                    <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-6">
+                        <div class="flex items-center gap-2 mb-4">
+                            <svg class="w-5 h-5 text-gray-400"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <h2 class="text-white font-bold">Mi Solicitud</h2>
+                        </div>
+                        <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+                            <p class="text-gray-300 text-sm leading-relaxed italic">"{{ pedido.descripcion }}"</p>
+                        </div>
+                    </div>
+                {% endif %}
+                {# 2. HISTORIAL DE ANOTACIONES PÚBLICAS #}
+                <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <svg class="w-5 h-5 text-[#10b981]"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                        <h2 class="text-white font-bold">Seguimiento de la Tienda</h2>
+                    </div>
+                    <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
+                        {% for nota in notas %}
+                            <div class="bg-gray-800/40 rounded-xl p-4 border border-gray-700/30">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Actualización</span>
+                                    <span class="text-[10px] text-gray-500 font-mono">{{ nota.fecha_creacion|date:"d M, H:i" }}</span>
+                                </div>
+                                <p class="text-gray-300 text-sm leading-relaxed">{{ nota.contenido|linebreaksbr }}</p>
+                            </div>
+                        {% empty %}
+                            <p class="text-gray-500 text-xs italic text-center py-4">No hay actualizaciones públicas todavía.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                {# 3. RESUMEN DE PAGO #}
+                <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-6">
+                    <h2 class="text-white font-bold mb-4">Resumen de Pago</h2>
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-gray-400 text-sm">
+                            <span>Subtotal</span>
+                            <span>RD$ {{ pedido.precio_total|floatformat:2 }}</span>
+                        </div>
+                        <div class="border-t border-gray-800 pt-3 flex justify-between text-white font-bold text-xl">
+                            <span>Total</span>
+                            <span class="text-[#10b981]">RD$ {{ pedido.precio_total|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-blue-900/10 border border-blue-500/20 rounded-2xl p-4">
+                    <div class="flex gap-3">
+                        <svg class="w-5 h-5 text-blue-400 flex-shrink-0"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p class="text-blue-400 text-xs">
+                            Si tienes alguna duda sobre tu pedido, por favor contáctanos con el número de referencia <b>#{{ pedido.id }}</b>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

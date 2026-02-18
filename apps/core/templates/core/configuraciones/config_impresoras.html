@@ -141,7 +141,7 @@
                                       class="form-eliminar">
                                     {% csrf_token %}
                                     <button type="button"
-                                            {% if imp.estado == 'Imprimiendo' %} disabled class="opacity-30 cursor-not-allowed p-2.5 rounded-xl text-gray-500 bg-gray-800 border border-gray-700" {% else %} onclick="confirmarEliminacion(this, '{{ imp.nombre }}')" class="p-2.5 rounded-xl text-gray-500 bg-gray-800 border border-gray-700 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-300 cursor-pointer" {% endif %}
+                                            {% if imp.estado == 'Imprimiendo' %} disabled class="opacity-30 cursor-not-allowed p-2.5 rounded-xl text-gray-500 bg-gray-800 border border-gray-700" {% else %} onclick="confirmarEliminarImpresora(this, '{{ imp.nombre }}')" class="p-2.5 rounded-xl text-gray-500 bg-gray-800 border border-gray-700 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-300 cursor-pointer" {% endif %}
                                             title="Eliminar">
                                         <svg class="w-5 h-5"
                                              fill="none"
@@ -186,4 +186,29 @@
             </div>
         </div>
     </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function confirmarEliminarImpresora(boton, nombre) {
+    Swal.fire({
+        ...swalConfigBase,
+        title: '¿Eliminar Impresora?',
+        html: `<p class="text-gray-300">¿Estás seguro de eliminar <b>${nombre}</b> de la lista de impresoras?</p>
+               <p class="text-red-400 text-[10px] mt-2 font-bold uppercase">Esta acción no se puede deshacer</p>`,
+        iconHtml: swalIcons.warningRed,
+        confirmButtonText: 'Sí, Eliminar',
+        cancelButtonText: 'Cancelar',
+        showCloseButton: true,
+        customClass: {
+            ...swalCustomClasses,
+            icon: 'border-0'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            boton.closest('form').submit();
+        }
+    });
+    
+}
+</script>
 {% endblock %}

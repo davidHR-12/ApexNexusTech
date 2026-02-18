@@ -29,20 +29,20 @@
   <div class="mini-separator"></div>
 
   {# ── Mis Pedidos ── #}
-  <a href="#"
-     data-tooltip="Mis Pedidos"
-     class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group
-            {% if request.resolver_match.url_name == '#' %}
-              bg-[#334155] text-[#10b981]
-            {% else %}
-              text-gray-300 hover:bg-[#334155] hover:text-[#10b981]
-            {% endif %}">
-    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-    </svg>
-    <span class="nav-text whitespace-nowrap">Mis Pedidos</span>
-  </a>
+<a href="{% url 'clientes:mis_pedidos' %}"
+   data-tooltip="Mis Pedidos"
+   class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group
+          {% if request.resolver_match.url_name == 'mis_pedidos' %}
+            bg-[#334155] text-[#10b981]
+          {% else %}
+            text-gray-300 hover:bg-[#334155] hover:text-[#10b981]
+          {% endif %}">
+  <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+  </svg>
+  <span class="nav-text whitespace-nowrap">Mis Pedidos</span>
+</a>
 
   <div class="mini-separator"></div>
 
