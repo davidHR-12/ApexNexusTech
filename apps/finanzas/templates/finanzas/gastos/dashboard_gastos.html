@@ -8,37 +8,37 @@
       <span>/</span>
       <span class="text-[#10b981]">Dashboard Financiero</span>
     </nav>
-    <!-- ENCABEZADO -->
+    {# ENCABEZADO #}
     <div id="dashboard-container" data-url-gastos="{% url 'finanzas:gastos_por_mes' %}">
       <h1 class="text-3xl font-bold text-white">Dashboard Financiero</h1>
       <p class="text-gray-400 text-sm font-medium">Análisis de gastos y tendencias</p>
     </div>
 
-    <!-- TARJETAS KPI -->
+    {# TARJETAS KPI #}
     
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <!-- Total Gastos -->
+      {# Total Gastos #}
       <div class="bg-gradient-to-br from-red-900/20 to-red-900/5 border border-red-500/20 rounded-2xl p-6">
         <p class="text-red-400/70 text-xs uppercase font-bold tracking-wider mb-2">Total de Gastos</p>
         <p class="text-3xl font-bold text-white" id="kpiTotalGastos">-RD$ 0.00</p>
         <p class="text-gray-500 text-xs mt-3" id="kpiCountGastos">0 gastos</p>
       </div>
 
-      <!-- Promedio Mensual -->
+      {# Promedio Mensual #}
       <div class="bg-gradient-to-br from-yellow-900/20 to-yellow-900/5 border border-yellow-500/20 rounded-2xl p-6">
         <p class="text-yellow-400/70 text-xs uppercase font-bold tracking-wider mb-2">Promedio Mensual</p>
         <p class="text-3xl font-bold text-white" id="kpiPromedioDiario">-RD$ 0.00</p>
         <p class="text-gray-500 text-xs mt-3">Por mes</p>
       </div>
 
-      <!-- Mayor Gasto -->
+      {# Mayor Gasto #}
       <div class="bg-gradient-to-br from-orange-900/20 to-orange-900/5 border border-orange-500/20 rounded-2xl p-6">
         <p class="text-orange-400/70 text-xs uppercase font-bold tracking-wider mb-2">Mes de Mayor Gasto</p>
         <p class="text-3xl font-bold text-white" id="kpiMayorMes">-RD$ 0.00</p>
         <p class="text-gray-500 text-xs mt-3" id="kpiMayorMesNombre">-</p>
       </div>
 
-      <!-- Meses Analizados -->
+      {# Meses Analizados #}
       <div class="bg-gradient-to-br from-blue-900/20 to-blue-900/5 border border-blue-500/20 rounded-2xl p-6">
         <p class="text-blue-400/70 text-xs uppercase font-bold tracking-wider mb-2">Meses Registrados</p>
         <p class="text-3xl font-bold text-white" id="kpiMesesData">0</p>
@@ -46,7 +46,7 @@
       </div>
     </div>
 
-    <!-- GRÁFICO PRINCIPAL -->
+    {# GRÁFICO PRINCIPAL #}
     
     <div class="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
       <h2 class="text-xl font-bold text-white mb-6">Tendencia de Gastos Mensual</h2>
@@ -76,7 +76,7 @@
       </div>
     </div>
 
-    <!-- TABLA COMPARATIVA -->
+    {# TABLA COMPARATIVA #}
     
     <div class="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
       <h2 class="text-xl font-bold text-white mb-6">Desglose por Mes</h2>
@@ -92,13 +92,13 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-800" id="tablaMesesBody">
-            <!-- Se llena con JavaScript -->
+            {# Se llena con JavaScript #}
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- GRÁFICO PASTEL Y RESUMEN -->
+    {# GRÁFICO PASTEL Y RESUMEN #}
     
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
@@ -108,17 +108,17 @@
         </div>
       </div>
 
-      <!-- TABLA RESUMEN POR TIPO -->
+      {# TABLA RESUMEN POR TIPO #}
       <div class="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
         <h2 class="text-xl font-bold text-white mb-6">Resumen por Tipo</h2>
         
         <div class="space-y-3" id="resumenPorTipo">
-          <!-- Se llena con JavaScript -->
+          {# Se llena con JavaScript #}
         </div>
       </div>
     </div>
 
-    <!-- BOTONES DE ACCIÓN -->
+    {# BOTONES DE ACCIÓN #}
     
     <div class="flex gap-4">
       <a href="{% url 'finanzas:gastos' %}"
@@ -132,7 +132,7 @@
     </div>
   </div>
 
-  <!-- SCRIPTS -->
+  {# SCRIPTS #}
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <script src="{% static 'finanzas/js/dashboard_gastos.js' %}"></script>
 {% endblock %}

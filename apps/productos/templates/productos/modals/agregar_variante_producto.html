@@ -7,13 +7,12 @@
                 Define los materiales para: <span class="text-emerald-400">{{ producto.nombre }}</span>
             </p>
         </div>
-
         <form action="{% url 'productos:crear_variante' producto.id %}"
               method="POST"
-              class="flex flex-col flex-1 min-h-0"> {% csrf_token %}
-            
+              class="flex flex-col flex-1 min-h-0">
+            {% csrf_token %}
             <div class="flex-shrink-0 mb-4">
-                <div class="grid grid-cols-2 gap-4 bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+                <div class="grid grid-cols-3 gap-3 bg-gray-900/50 p-4 rounded-xl border border-gray-800">
                     <div>
                         <label class="text-gray-400 text-[10px] uppercase font-bold mb-2 block tracking-widest">Stock Físico</label>
                         {{ form.stock_disponible }}
@@ -22,17 +21,25 @@
                         <label class="text-gray-400 text-[10px] uppercase font-bold mb-2 block tracking-widest">Precio Extra</label>
                         {{ form.precio_adicional }}
                     </div>
+                    <div>
+                        <label class="text-emerald-400 text-[10px] uppercase font-bold mb-2 block tracking-widest">Tiempo (Hrs)</label>
+                        {{ form.tiempo_impresion_horas }}
+                    </div>
                 </div>
+                {% if form.es_default %}
+                    <div class="mt-3 flex items-center gap-2 px-1">
+                        {{ form.es_default }}
+                        <label for="{{ form.es_default.id_for_label }}"
+                               class="text-xs text-gray-400">Marcar como variante principal del producto</label>
+                    </div>
+                {% endif %}
             </div>
-
             <div class="flex-1 min-h-0 flex flex-col mb-4">
                 <div class="flex items-center justify-between mb-3 flex-shrink-0">
                     <label class="text-emerald-400 text-[10px] uppercase font-bold tracking-widest">Composición de Materiales</label>
                     <span id="contador-materiales" class="text-xs text-gray-500 font-mono">0 materiales</span>
                 </div>
-                
                 {{ formset.management_form }}
-                
                 <div id="material-list"
                      class="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar transition-all">
                     {% for form_m in formset %}
@@ -60,25 +67,31 @@
                                         {{ form_m.gramos_usados }}
                                     </div>
                                 </div>
-                                <button type="button" class="eliminar-material flex-shrink-0 w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 hidden">
-                                    <svg class="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                <button type="button"
+                                        class="eliminar-material flex-shrink-0 w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 hidden">
+                                    <svg class="w-4 h-4 mx-auto"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
                                 </button>
                             </div>
                         </div>
                     {% endfor %}
                 </div>
-
                 <div class="flex-shrink-0 mt-3">
                     <button type="button"
                             id="add-material"
                             data-max-materials="12"
                             class="w-full py-3 px-4 border-2 border-dashed border-gray-700 rounded-xl text-emerald-400 hover:border-emerald-500 hover:bg-emerald-500/5 font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+                        </svg>
                         Añadir otro material
                     </button>
                 </div>
             </div>
-
             <div class="flex-shrink-0 pt-4 border-t border-gray-800">
                 <div class="flex gap-3">
                     <button type="button"

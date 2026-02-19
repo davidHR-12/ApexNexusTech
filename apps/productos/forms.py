@@ -2,7 +2,14 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 from decimal import Decimal, InvalidOperation
-from .models import Categoria, Producto, ProduccionInterna, VarianteProducto, ImagenProducto, VarianteMaterialDetalle
+from .models import (
+    Categoria,
+    Producto,
+    ProduccionInterna,
+    VarianteProducto,
+    ImagenProducto,
+    VarianteMaterialDetalle,
+)
 from apps.materiales.models import Material
 from django.forms import inlineformset_factory
 from django.forms import BaseInlineFormSet
@@ -34,47 +41,57 @@ class TailwindModelForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
-                field.widget.attrs["class"] = "rounded border-gray-700 text-[#10b981] focus:ring-[#10b981] bg-gray-900"
+                field.widget.attrs["class"] = (
+                    "rounded border-gray-700 text-[#10b981] focus:ring-[#10b981] bg-gray-900"
+                )
             elif isinstance(field.widget, (forms.FileInput, forms.ClearableFileInput)):
-                field.widget.attrs["class"] = "w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-800 file:text-emerald-400 hover:file:bg-gray-700"
+                field.widget.attrs["class"] = (
+                    "w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-800 file:text-emerald-400 hover:file:bg-gray-700"
+                )
             else:
-                field.widget.attrs["class"] = "w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white outline-none focus:border-[#10b981]"
+                field.widget.attrs["class"] = (
+                    "w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white outline-none focus:border-[#10b981]"
+                )
+
 
 # --- FORMULARIOS ---
 
 
 class ProductoForm(TailwindModelForm):
-    imagenes_galeria = MultipleFileField(
-        required=False, label="Imágenes de galería")
-    
+    imagenes_galeria = MultipleFileField(required=False, label="Imágenes de galería")
+
     eliminar_portada = forms.BooleanField(
-        required=False, 
-        initial=False, 
-        widget=forms.HiddenInput()
+        required=False, initial=False, widget=forms.HiddenInput()
     )
 
     class Meta:
         model = Producto
         fields = [
-            "nombre", "categoria", "descripcion", "precio_venta",
-            "peso_gramos", "imagen", "mostrar_en_web", "destacado", "activo"
+            "nombre",
+            "categoria",
+            "descripcion",
+            "precio_venta",
+            "imagen",
+            "mostrar_en_web",
+            "destacado",
+            "activo",
         ]
         widgets = {"descripcion": forms.Textarea(attrs={"rows": 2})}
 
     def __init__(self, *args, **kwargs):
         # Extraemos la categoría predefinida si se pasa desde la vista
-        self.categoria_predefinida = kwargs.pop('categoria_predefinida', None)
+        self.categoria_predefinida = kwargs.pop("categoria_predefinida", None)
         super().__init__(*args, **kwargs)
-        
+
         if self.categoria_predefinida:
             # Seteamos el valor inicial
-            self.fields['categoria'].initial = self.categoria_predefinida
+            self.fields["categoria"].initial = self.categoria_predefinida
             # Lo hacemos no requerido para que no falle al estar 'disabled' en el HTML
-            self.fields['categoria'].required = False
+            self.fields["categoria"].required = False
             clases_bloqueo = " pointer-events-none opacity-70 bg-[#111827] border-gray-800 text-gray-500 border-gray-600"
-            self.fields['categoria'].widget.attrs['class'] += clases_bloqueo
-            self.fields['categoria'].widget.attrs['disabled'] = 'disabled'
-            self.fields['categoria'].widget.attrs['tabindex'] = '-1'
+            self.fields["categoria"].widget.attrs["class"] += clases_bloqueo
+            self.fields["categoria"].widget.attrs["disabled"] = "disabled"
+            self.fields["categoria"].widget.attrs["tabindex"] = "-1"
 
     def _limpiar_decimal(self, valor):
         if isinstance(valor, str):
@@ -87,19 +104,16 @@ class ProductoForm(TailwindModelForm):
     def clean_precio_venta(self):
         return self._limpiar_decimal(self.cleaned_data.get("precio_venta"))
 
-    def clean_peso_gramos(self):
-        return self._limpiar_decimal(self.cleaned_data.get("peso_gramos"))
-
     def save(self, commit=True):
         producto = super().save(commit=False)
         producto.slug = slugify(producto.nombre)
-        if self.cleaned_data.get('eliminar_portada'):
+        if self.cleaned_data.get("eliminar_portada"):
             if producto.imagen:
                 producto.imagen.delete(save=False)
                 producto.imagen = None
         if commit:
             producto.save()
-            imagenes = self.cleaned_data.get('imagenes_galeria')
+            imagenes = self.cleaned_data.get("imagenes_galeria")
             if imagenes:
                 for f in imagenes:
                     ImagenProducto.objects.create(producto=producto, imagen=f)
@@ -113,16 +127,16 @@ class CategoriaForm(TailwindModelForm):
     class Meta:
         model = Categoria
         fields = ["nombre", "descripcion", "imagen", "orden", "activa"]
-    
+
     def save(self, commit=True):
         instance = super().save(commit=False)
         # Si el usuario marcó eliminar imagen, la borramos físicamente
-        if self.cleaned_data.get('eliminar_imagen') == 'true':
+        if self.cleaned_data.get("eliminar_imagen") == "true":
             if instance.imagen:
                 instance.imagen.delete(save=False)
                 instance.imagen = None
         print("orden", self.cleaned_data.get("orden"))
-        
+
         if commit:
             instance.save()
         return instance
@@ -132,19 +146,31 @@ class VarianteProductoForm(TailwindModelForm):
     """
     Nota: El material se gestiona a través de VarianteMaterialDetalle (Inlines o Formsets)
     """
+
     class Meta:
         model = VarianteProducto
-        fields = ["stock_disponible",
-                  "precio_adicional", "activa"]
+        fields = [
+            "stock_disponible",
+            "tiempo_impresion_horas",
+            "es_default",
+            "precio_adicional",
+        ]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Quita el 0 inicial
-        self.fields['stock_disponible'].initial = None
-        self.fields['precio_adicional'].initial = None
-        
-         #Añadir un placeholder para que no se vea vacío
-        self.fields['stock_disponible'].widget.attrs.update({'placeholder': '0'})
-        self.fields['precio_adicional'].widget.attrs.update({'placeholder': '0.00'})
+        self.fields["stock_disponible"].initial = None
+        self.fields["precio_adicional"].initial = None
+        self.fields["tiempo_impresion_horas"].initial = None
+        if "stock_disponible" in self.fields:
+            self.fields["stock_disponible"].required = False
+
+        # Añadir un placeholder para que no se vea vacío
+        self.fields["stock_disponible"].widget.attrs.update({"placeholder": "0"})
+        self.fields["precio_adicional"].widget.attrs.update({"placeholder": "0.00"})
+        self.fields["tiempo_impresion_horas"].widget.attrs.update(
+            {"placeholder": "Horas (ej: 2.5)"}
+        )
 
     def validar_materiales_del_formset(self, formset_data):
         """
@@ -158,13 +184,14 @@ class VarianteProductoForm(TailwindModelForm):
                 gramos = f.cleaned_data.get("gramos_usados")
                 if mat and gramos:
                     nuevos_materiales.append((mat.id, Decimal(str(gramos))))
-        
+
         nuevos_materiales.sort()
-        
+
         if not nuevos_materiales:
             return False, [], "Debes agregar al menos un material a la variante."
-        
+
         return True, nuevos_materiales, None
+
 
 class VarianteMaterialDetalleForm(TailwindModelForm):
     class Meta:
@@ -174,10 +201,11 @@ class VarianteMaterialDetalleForm(TailwindModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["material"].queryset = Material.objects.filter(
-            stock_actual__gt=0).select_related("marca", "color", "tipo")
-            
-        self.fields['gramos_usados'].initial = None
-        self.fields['gramos_usados'].widget.attrs.update({'placeholder': '0'})
+            stock_actual__gt=0
+        ).select_related("marca", "color", "tipo")
+
+        self.fields["gramos_usados"].initial = None
+        self.fields["gramos_usados"].widget.attrs.update({"placeholder": "0"})
 
 
 class BaseMaterialDetalleFormSet(BaseInlineFormSet):
@@ -189,7 +217,7 @@ class BaseMaterialDetalleFormSet(BaseInlineFormSet):
             super().clean()
         except ValidationError as e:
             # Si el error es por duplicados, lanzar mensaje personalizado
-            if 'duplicate' in str(e).lower():
+            if "duplicate" in str(e).lower():
                 raise ValidationError(
                     "No puedes agregar el mismo material más de una vez en la variante."
                 )
@@ -219,7 +247,7 @@ class BaseMaterialDetalleFormSet(BaseInlineFormSet):
 
 
 MaterialDetalleFormSet = inlineformset_factory(
-    VarianteProducto, 
+    VarianteProducto,
     VarianteMaterialDetalle,
     form=VarianteMaterialDetalleForm,
     formset=BaseMaterialDetalleFormSet,
@@ -227,7 +255,7 @@ MaterialDetalleFormSet = inlineformset_factory(
     can_delete=True,
     min_num=0,
     max_num=12,
-    validate_min=False
+    validate_min=False,
 )
 
 
@@ -235,7 +263,14 @@ class ProduccionInternaForm(TailwindModelForm):
     class Meta:
         model = ProduccionInterna
         fields = ["variante", "cantidad_producida", "observaciones"]
-        widgets = {"observaciones": forms.Textarea(attrs={"rows": 2,'style': 'min-height: 80px; max-height: 150px; resize: none;'})}
+        widgets = {
+            "observaciones": forms.Textarea(
+                attrs={
+                    "rows": 2,
+                    "style": "min-height: 80px; max-height: 150px; resize: none;",
+                }
+            )
+        }
 
     def clean(self):
         cd = super().clean()
@@ -246,5 +281,7 @@ class ProduccionInternaForm(TailwindModelForm):
             for detalle in variante.detalles_material.all():
                 total_necesario = detalle.gramos_usados * cantidad
                 if detalle.material.stock_actual < total_necesario:
-                    raise ValidationError(f"Stock insuficiente de {detalle.material}. Necesitas {total_necesario}g.")
+                    raise ValidationError(
+                        f"Stock insuficiente de {detalle.material}. Necesitas {total_necesario}g."
+                    )
         return cd

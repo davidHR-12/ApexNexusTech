@@ -94,8 +94,7 @@ def crear_material(request):
     if request.method == "POST":
         data = request.POST.copy()
 
-        # --- CORRECCIÓN AQUÍ ---
-        # Usamos los nombres exactos que vienen del HTML (mira tu traceback)
+        # Usamos los nombres exactos que vienen del HTML
         campos_a_limpiar = ["marca_nombre", "tipo_nombre", "color_nombre", "enlace_compra"]
 
         for campo in campos_a_limpiar:

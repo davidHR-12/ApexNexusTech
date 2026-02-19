@@ -2,7 +2,7 @@
 {% load static %}
 {% block content %}
     <div class="p-4 md:p-6 max-w-screen-xl mx-auto">
-        <!-- ── CABECERA ─────────────────────────────────────────── -->
+        {# ── CABECERA ─────────────────────────────────────────── #}
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-5 gap-4">
             <div>
                 <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest m-2 gap-2">
@@ -15,7 +15,7 @@
                 <p class="text-gray-400 text-sm">Cliente: {{ pedido.usuario.get_full_name }} | {{ pedido.usuario.email }}</p>
             </div>
             <div class="grid grid-cols-1 sm:flex sm:items-center gap-3 w-full sm:w-auto">
-                <!-- Cambiar estado -->
+                {# Cambiar estado #}
                 <form method="post"
                       action="{% url 'pedidos:cambiar_estado' pedido.id %}"
                       class="flex items-center gap-2 w-full sm:w-auto">
@@ -53,7 +53,7 @@
                         </div>
                     {% endif %}
                 </form>
-                <!-- Botones agregar item -->
+                {# Botones agregar item #}
                 <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
                     {% if pedido.estado_pedido == 'En_Espera' %}
                         <button onclick="abrirModal('modalItemCatalogo')"
@@ -96,7 +96,7 @@
                 </div>
             </div>
         </div>
-        <!-- ── TABLA DE ÍTEMS (ancho completo) ───────────────────── -->
+        {# ── TABLA DE ÍTEMS (ancho completo) ───────────────────── #}
         <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden mb-5">
             <div class="px-4 py-3 border-b border-gray-700 bg-gray-700/30">
                 <h3 class="font-bold text-white">Ítems del Pedido</h3>
@@ -365,7 +365,7 @@
                 </button>
             </div>
         </div>
-        <!-- ── FIN GRID 2x2 ──────────────────────────────────────── -->
+        {# ── FIN GRID 2x2 ──────────────────────────────────────── #}
         {% include "pedidos/modals/item_catalogo.html" with modal_id="modalItemCatalogo" title="Item del Catálogo" description=" Añade un producto del catálogo al pedido " max_width="max-w-3xl" %}
         {% include "pedidos/modals/item_personalizado.html" with modal_id="modalItemPersonalizado" title="Item Personalizado" description=" Añade un producto personalizado al pedido " max_width="max-w-2xl" %}
         {% include "pedidos/modals/editar_notas.html" with modal_id="modalNotasPedido" title="Notas del Pedido" description=" Añade notas al pedido " max_width="max-w-2xl" %}

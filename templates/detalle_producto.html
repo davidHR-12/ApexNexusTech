@@ -1,86 +1,154 @@
-{% extends "base_cliente.html" %}
+{% extends "base_publica.html" %}
+{% block title %} {{ producto.nombre }} - A.N.T{% endblock title %}
 {% block content %}
-  <section class="max-w-7xl mx-auto px-4 py-12 md:py-20">
+<section class="max-w-7xl mx-auto px-4 py-12 md:py-20">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-      <div class="space-y-6">
-        <div class="aspect-square bg-gray-900/50 rounded-[2.5rem] overflow-hidden border border-gray-800 shadow-2xl flex items-center justify-center p-6">
-          <img id="mainImage"
-               src="{{ producto.imagen.url }}"
-               alt="{{ producto.nombre }}"
-               class="max-w-full max-h-full object-contain transition-all duration-300 transform scale-100">
+        
+        <div class="space-y-6">
+            <div class="aspect-square bg-gray-900/50 rounded-[2.5rem] overflow-hidden border border-gray-800 shadow-2xl flex items-center justify-center p-6">
+                <img id="mainImage"
+                     src="{{ producto.imagen.url }}"
+                     alt="{{ producto.nombre }}"
+                     class="max-w-full max-h-full object-contain transition-all duration-300 transform scale-100">
+            </div>
+            
+            {% if galeria %}
+            <div id="thumbnailContainer" class="grid grid-cols-4 sm:grid-cols-5 gap-4">
+                <button onclick="changeImage('{{ producto.imagen.url }}', this)"
+                        class="thumb-btn aspect-square rounded-2xl overflow-hidden border-2 border-[#10b981] bg-gray-900/50 p-1 transition-all">
+                    <img src="{{ producto.imagen.url }}" loading="lazy" class="w-full h-full object-contain">
+                </button>
+                {% for img in galeria %}
+                <button onclick="changeImage('{{ img.imagen.url }}', this)"
+                        class="thumb-btn aspect-square rounded-2xl overflow-hidden border-2 border-transparent hover:border-gray-600 bg-gray-900/50 p-1 transition-all">
+                    <img src="{{ img.imagen.url }}" loading="lazy" class="w-full h-full object-contain">
+                </button>
+                {% endfor %}
+            </div>
+            {% endif %}
         </div>
-        {% if galeria %}
-          <div id="thumbnailContainer" class="grid grid-cols-4 sm:grid-cols-5 gap-4">
-            <button onclick="changeImage('{{ producto.imagen.url }}', this)"
-                    class="thumb-btn aspect-square rounded-2xl overflow-hidden border-2 border-[#10b981] bg-gray-900/50 p-1 transition-all">
-              <img src="{{ producto.imagen.url }}" loading="lazy" class="w-full h-full object-contain">
-            </button>
-            {% for img in galeria %}
-              <button onclick="changeImage('{{ img.imagen.url }}', this)"
-                      class="thumb-btn aspect-square rounded-2xl overflow-hidden border-2 border-transparent hover:border-gray-600 bg-gray-900/50 p-1 transition-all">
-                <img src="{{ img.imagen.url }}" loading="lazy" class="w-full h-full object-contain">
-              </button>
-            {% endfor %}
-          </div>
-        {% endif %}
-      </div>
-      <div class="flex flex-col justify-center lg:pl-6">
-        <nav class="flex mb-6 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">
-          <a href="{% url 'clientes:productos' %}"
-             class="hover:text-[#10b981] transition-colors">Catálogo</a>
-          <span class="mx-3 opacity-30">/</span>
-          <span class="text-[#10b981]">{{ producto.material_base.nombre|default:"3D Print" }}</span>
-        </nav>
-        <h1 class="text-4xl md:text-6xl font-black mb-6 text-white leading-tight">{{ producto.nombre }}</h1>
-        <div class="bg-[#1e293b]/50 backdrop-blur-sm p-6 rounded-3xl border border-gray-800 mb-8">
-          <p class="text-gray-400 leading-relaxed text-lg">
-            {{ producto.descripcion|default:"Esta pieza es fabricada mediante impresión 3D de alta precisión, garantizando detalles únicos y durabilidad." }}
-          </p>
+
+        <div class="flex flex-col justify-center lg:pl-6">
+            <nav class="flex mb-6 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">
+                <a href="{% url 'clientes:productos' %}" class="hover:text-[#10b981] transition-colors">Catálogo</a>
+                <span class="mx-3 opacity-30">/</span>
+                <span class="text-[#10b981]">{{ producto.categoria.nombre }}</span>
+            </nav>
+
+            <h1 class="text-4xl md:text-6xl font-black mb-6 text-white leading-tight">{{ producto.nombre }}</h1>
+
+            <div class="bg-[#1e293b]/50 backdrop-blur-sm p-6 rounded-3xl border border-gray-800 mb-8">
+                <p class="text-gray-400 leading-relaxed text-lg">
+                    {{ producto.descripcion|default:"Esta pieza es fabricada mediante impresión 3D de alta precisión." }}
+                </p>
+            </div>
+
+            <div class="mb-8">
+                <label class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4 block">
+                    Selecciona Material / Acabado
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {% for v in variantes %}
+                        <button type="button" 
+                                data-variante-id="{{ v.id }}"
+                                data-precio="{{ v.precio_final|floatformat:0 }}"
+                                data-nombre="{{ v|escapejs }}"
+                                onclick="seleccionarVariante(this)"
+                                class="variante-btn group flex flex-col p-4 rounded-2xl border-2 transition-all text-left bg-[#1e293b]/30 
+                                {% if forloop.first %}border-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.1)]{% else %}border-gray-800 hover:border-gray-600{% endif %}">
+                            
+                            <span class="text-white font-bold text-sm mb-1 group-hover:text-[#10b981]">{{ v }}</span>
+                            
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="text-[10px] {% if v.stock_disponible > 0 %}text-emerald-400{% else %}text-amber-500{% endif %} font-bold uppercase">
+                                    {% if v.stock_disponible > 0 %} Stock: {{ v.stock_disponible }} {% else %} Bajo Pedido {% endif %}
+                                </span>
+                                <span class="text-white font-black text-sm font-mono">RD$ {{ v.precio_final|floatformat:0 }}</span>
+                            </div>
+                        </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-8 mb-10">
+                <div class="border-l-4 border-[#10b981] pl-6 py-2 bg-gradient-to-r from-[#10b981]/10 to-transparent rounded-r-2xl">
+                    <p class="text-gray-500 text-[10px] uppercase font-bold mb-1 tracking-widest">Inversión Estimada</p>
+                    <p class="text-5xl font-black text-white" id="displayPrecio">
+                        RD$ {{ variantes.0.precio_final|floatformat:0 }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:grid sm:grid-cols-2 gap-4">
+                <a id="btnWhatsapp" 
+                   href="#" 
+                   target="_blank"
+                   class="flex items-center justify-center gap-2 bg-[#10b981] text-white py-5 rounded-2xl font-black text-lg hover:bg-[#059669] transition-all hover:scale-[1.02] shadow-xl shadow-[#10b981]/20">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.888 11.888-11.888 3.176 0 6.161 1.237 8.404 3.48s3.481 5.229 3.481 8.406c0 6.555-5.332 11.887-11.888 11.887-2.011 0-3.987-.51-5.742-1.478l-6.242 1.632z" />
+                    </svg>
+                    Pedir por WhatsApp
+                </a>
+                <button class="flex items-center justify-center border-2 border-gray-700 text-white py-5 rounded-2xl font-bold text-lg hover:bg-gray-800 transition-all hover:border-gray-500">
+                    Cotización Pro
+                </button>
+            </div>
+
+            <p class="text-gray-500 text-[10px] mt-8 italic text-center lg:text-left uppercase tracking-tight">
+                * Precios sujetos a cambios según complejidad y material seleccionado.
+            </p>
         </div>
-        <div class="grid grid-cols-2 gap-8 mb-10">
-          <div class="border-l-2 border-[#10b981] pl-4">
-            <p class="text-gray-500 text-[10px] uppercase font-bold mb-1 tracking-widest">Inversión</p>
-            <p class="text-4xl font-black text-white">RD$ {{ producto.precio_venta|floatformat:0 }}</p>
-          </div>
-        </div>
-        <div class="flex flex-col sm:grid sm:grid-cols-2 gap-4">
-          <a href="https://wa.me/TUNUMERO?text=Hola! Me interesa el producto: {{ producto.nombre }}"
-             class="flex items-center justify-center gap-2 bg-[#10b981] text-white py-5 rounded-2xl font-black text-lg hover:bg-[#059669] transition-all hover:scale-[1.02] shadow-xl shadow-[#10b981]/10">
-            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.888 11.888-11.888 3.176 0 6.161 1.237 8.404 3.48s3.481 5.229 3.481 8.406c0 6.555-5.332 11.887-11.888 11.887-2.011 0-3.987-.51-5.742-1.478l-6.242 1.632z" />
-            </svg>
-            Comprar por WhatsApp
-          </a>
-          <a href="{% url 'usuarios:register' %}"
-             class="flex items-center justify-center border-2 border-gray-700 text-white py-5 rounded-2xl font-bold text-lg hover:bg-gray-800 transition-all hover:border-gray-500">
-            Cotización Pro
-          </a>
-        </div>
-        <p class="text-gray-500 text-[10px] mt-8 italic text-center lg:text-left uppercase tracking-tighter">
-          * Los precios pueden variar según material (PLA, PETG, Resina) y complejidad del post-procesado.
-        </p>
-      </div>
     </div>
-  </section>
-  <script>
-      function changeImage(src, btn) {
-          const mainImg = document.getElementById('mainImage');
+</section>
 
-          // Efecto de transición
-          mainImg.classList.add('opacity-0', 'scale-95');
+<script>
+    // 1. GESTIÓN DE GALERÍA
+    function changeImage(src, btn) {
+        const mainImg = document.getElementById('mainImage');
+        mainImg.classList.add('opacity-0', 'scale-95');
 
-          setTimeout(() => {
-              mainImg.src = src;
-              mainImg.classList.remove('opacity-0', 'scale-95');
-          }, 200);
+        setTimeout(() => {
+            mainImg.src = src;
+            mainImg.classList.remove('opacity-0', 'scale-95');
+        }, 200);
 
-          // Actualizar bordes de miniaturas
-          document.querySelectorAll('.thumb-btn').forEach(b => {
-              b.classList.remove('border-[#10b981]');
-              b.classList.add('border-transparent');
-          });
-          btn.classList.add('border-[#10b981]');
-          btn.classList.remove('border-transparent');
-      }
-  </script>
+        document.querySelectorAll('.thumb-btn').forEach(b => {
+            b.classList.remove('border-[#10b981]');
+            b.classList.add('border-transparent');
+        });
+        btn.classList.add('border-[#10b981]');
+        btn.classList.remove('border-transparent');
+    }
+
+    // 2. GESTIÓN DE VARIANTES Y WHATSAPP
+    function seleccionarVariante(elemento) {
+        const precio = elemento.getAttribute('data-precio');
+        const nombreVariante = elemento.getAttribute('data-nombre');
+        const id = elemento.getAttribute('data-variante-id');
+
+        // Actualizar Precio Visual
+        document.getElementById('displayPrecio').innerText = `RD$ ${precio}`;
+
+        // Actualizar Link de WhatsApp
+        const numeroWA = "1809XXXXXXX"; // CAMBIAR ESTO POR NÚMERO REAL
+        const mensaje = encodeURIComponent(`¡Hola! Me interesa este producto:\n- *${"{{ producto.nombre|escapejs }}"}*\n- Variante: *${nombreVariante}*\n- Ref: #${id}`);
+        document.getElementById('btnWhatsapp').href = `https://wa.me/${numeroWA}?text=${mensaje}`;
+
+        // Actualizar Estados de los Botones
+        document.querySelectorAll('.variante-btn').forEach(btn => {
+            btn.classList.remove('border-[#10b981]', 'shadow-[0_0_15px_rgba(16,185,129,0.1)]');
+            btn.classList.add('border-gray-800');
+        });
+        elemento.classList.remove('border-gray-800');
+        elemento.classList.add('border-[#10b981]', 'shadow-[0_0_15px_rgba(16,185,129,0.1)]');
+    }
+
+    // Inicializar el botón de WhatsApp al cargar la página con la primera variante
+    document.addEventListener('DOMContentLoaded', () => {
+        const primeraVariante = document.querySelector('.variante-btn');
+        if (primeraVariante) {
+            seleccionarVariante(primeraVariante);
+        }
+    });
+</script>
 {% endblock %}

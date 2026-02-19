@@ -4,6 +4,7 @@
         <h2 class="text-2xl font-bold text-white">Nuevo Producto Base</h2>
         <p class="text-gray-400 text-sm">Define las especificaciones base para tu catálogo.</p>
     </div>
+
     <form id="formNuevoProducto"
           action="{% if categoria %}{% url 'productos:crear_producto_base' categoria.id %}{% else %}{% url 'productos:crear_producto_base_general' %}{% endif %}"
           method="post"
@@ -13,6 +14,7 @@
         <input type="hidden"
                name="next"
                value="{% if current_page == 'categoria_detalle' and categoria %}{% url 'productos:categoria_detalle' categoria.slug %}{% endif %}">
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <label class="text-gray-400 text-[11px] uppercase mb-2 block font-bold tracking-widest">Nombre del Producto</label>
@@ -31,8 +33,7 @@
                             required>
                         <option value="" disabled selected>Selecciona una categoría...</option>
                         {% for cat in categorias %}
-                            <option value="{{ cat.id }}"
-                                    {% if categoria and cat.id == categoria.id %}selected{% endif %}>
+                            <option value="{{ cat.id }}" {% if categoria and cat.id == categoria.id %}selected{% endif %}>
                                 {{ cat.nombre }}
                             </option>
                         {% endfor %}
@@ -43,155 +44,88 @@
                         <script>document.getElementById('select-categoria-modal').name = "categoria";</script>
                     {% endif %}
                     <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                        <svg class="w-4 h-4 {% if categoria %}text-gray-600{% else %}text-gray-500{% endif %}"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 {% if categoria %}text-gray-600{% else %}text-gray-500{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <div class="bg-emerald-500/5 p-2 rounded-2xl border border-emerald-500/20 focus-within:border-emerald-500/50 transition-all">
-                <label class="text-emerald-400/70 text-[10px] uppercase mb-1 block font-bold">Precio de Venta (RD$)</label>
-                <input type="number"
-                       step="0.01"
-                       name="precio_venta"
-                       placeholder="0.00"
-                       class="w-full bg-transparent text-white font-mono text-2xl outline-none"
-                       required>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/20 focus-within:border-emerald-500/50 transition-all">
+                <label class="text-emerald-400/70 text-[10px] uppercase mb-1 block font-bold">Precio Base (RD$)</label>
+                <input type="number" step="0.01" name="precio_venta" placeholder="0.00"
+                       class="w-full bg-transparent text-white font-mono text-xl outline-none" required>
             </div>
-            <div class="bg-blue-500/5 p-2 rounded-2xl border border-blue-500/20 focus-within:border-blue-500/50 transition-all">
-                <label class="text-blue-400/70 text-[10px] uppercase mb-1 block font-bold">Peso Estimado (g)</label>
-                <input type="number"
-                       step="0.01"
-                       name="peso_gramos"
-                       placeholder="0.00"
-                       class="w-full bg-transparent text-white font-mono text-2xl outline-none"
-                       required>
-            </div>
-            <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-2 group hover:border-emerald-500/30 transition-all">
-                <div class="grid grid-cols-2 gap-2 h-full">
-                    <label class="flex items-center justify-center gap-2 cursor-pointer hover:bg-emerald-500/5 rounded-xl transition-colors">
-                        <input type="checkbox"
-                               name="mostrar_en_web"
-                               checked
-                               class="w-5 h-5 rounded border-gray-700 text-emerald-500 bg-gray-800 focus:ring-0">
-                        <span class="text-gray-400 group-hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Visible en Web</span>
-                    </label>
-                    <label class="flex items-center justify-center gap-2 cursor-pointer hover:bg-emerald-500/5 rounded-xl transition-colors border-l border-gray-800">
-                        <input type="checkbox"
-                               name="activo"
-                               checked
-                               class="w-5 h-5 rounded border-gray-700 text-emerald-500 bg-gray-800 focus:ring-0">
-                        <span class="text-gray-400 group-hover:text-white text-[10px] font-bold uppercase tracking-tight">Activo</span>
-                    </label>
-                </div>
-            </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-4">
-                <label class="text-emerald-400 text-[11px] uppercase font-bold tracking-[0.2em]">Imagen de Portada</label>
-                <div id="zoneNuevo"
-                     class="relative border-2 border-dashed border-gray-800 rounded-2xl bg-gray-900/30 p-3 flex flex-col items-center justify-center hover:border-emerald-500/40 transition-all min-h-[100px] overflow-hidden group">
-                    <img id="previewNuevo"
-                         src=""
-                         width="100%"
-                         height="100%"
-                         alt="Imagen de la portada"
-                         class="absolute inset-0 w-full h-full object-cover hidden pointer-events-none z-0">
-                    <button type="button"
-                            id="btnDeletePortadaNuevo"
-                            onclick="limpiarPreviewImagen('previewNuevo', 'contentNuevo', 'inputPortadaNuevo', 'eliminar_portada_flag_nuevo')"
-                            class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg z-30 hidden">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                    <div id="contentNuevo"
-                         class="relative z-10 flex flex-col items-center pointer-events-none">
-                        <svg class="w-10 h-10 text-gray-500 group-hover:text-emerald-400 mb-3 transition-colors"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <p class="text-[10px] text-gray-400 font-bold uppercase text-center">Click para subir portada</p>
-                    </div>
-                    <input type="hidden" id="eliminar_portada_flag_nuevo" value="false">
-                    <input type="file"
-                           name="imagen"
-                           id="inputPortadaNuevo"
-                           accept="image/*"
-                           onchange="handleImagePreview(this, 'previewNuevo', 'contentNuevo', 'zoneNuevo'); document.getElementById('btnDeletePortadaNuevo').classList.remove('hidden');"
-                           class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20">
-                </div>
-            </div>
-            <div class="space-y-4">
-                <label class="text-blue-400 text-[11px] uppercase font-bold tracking-[0.2em]">Galería del Producto</label>
-                <div id="zone-galeria-nuevo"
-                     class="relative border-2 border-dashed border-gray-800 rounded-2xl bg-gray-900/30 p-3 flex flex-col items-center justify-center hover:border-blue-500/40 transition-all min-h-[100px] overflow-hidden">
-                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-3" id="galeria-grid-nuevo">
-                        <div id="preview-galeria-nuevo" class="contents"></div>
-                        <button type="button"
-                                onclick="document.getElementById('input-galeria-nuevo').click()"
-                                class="flex flex-col items-center justify-center aspect-square rounded-xl border-2 border-dashed border-gray-700 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group">
-                            <svg class="w-6 h-6 text-gray-600 group-hover:text-blue-400"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            <span id="text-galeria-nuevo"
-                                  class="text-[9px] text-gray-600 group-hover:text-blue-400 font-bold uppercase mt-1 text-center">Añadir más</span>
-                        </button>
-                    </div>
-                    <input type="file"
-                           id="input-galeria-nuevo"
-                           name="imagenes_galeria"
-                           accept="image/*"
-                           multiple
-                           onchange="handleMultiplePreviewsWithDelete(this, 'preview-galeria-nuevo', 'content-galeria-nuevo', 'text-galeria-nuevo')"
-                           class="hidden">
-                </div>
-            </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-            <div class="md:col-span-2">
-                <label class="text-gray-400 text-[11px] uppercase mb-2 block font-bold tracking-widest">
-                    Descripción del Producto
+
+            <div class="flex flex-col gap-2">
+                <label class="flex items-center gap-3 p-2.5 bg-gray-900/50 border border-gray-800 rounded-xl cursor-pointer hover:border-emerald-500/30 transition-all group">
+                    <input type="checkbox" name="mostrar_en_web" checked class="w-4 h-4 rounded border-gray-700 text-emerald-500 bg-gray-800 focus:ring-0">
+                    <span class="text-gray-400 group-hover:text-white text-[10px] font-bold uppercase tracking-tight">Visible en Web</span>
                 </label>
-                <textarea name="descripcion"
-                          placeholder="Escribe detalles sobre la escala, material recomendado o tiempo de impresión..."
-                          class="w-full bg-gray-900 border border-gray-700 rounded-2xl p-4 text-white resize-none focus:border-emerald-500 outline-none min-h-[10px] text-sm leading-relaxed"></textarea>
+                <label class="flex items-center gap-3 p-2.5 bg-gray-900/50 border border-gray-800 rounded-xl cursor-pointer hover:border-emerald-500/30 transition-all group">
+                    <input type="checkbox" name="activo" checked class="w-4 h-4 rounded border-gray-700 text-emerald-500 bg-gray-800 focus:ring-0">
+                    <span class="text-gray-400 group-hover:text-white text-[10px] font-bold uppercase tracking-tight">Activo</span>
+                </label>
             </div>
-            <div class="bg-gray-800/40 border border-gray-700 p-3 rounded-2xl flex flex-col gap-2 text-sm mt-4 mb-4">
-                <div class="flex items-center gap-2 text-blue-400 text-xs">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+            <div class="bg-blue-500/5 border border-blue-500/20 p-3 rounded-2xl flex flex-col justify-center">
+                <div class="flex items-center gap-2 text-blue-400 mb-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span class="font-bold uppercase tracking-wider text-[10px]">Recordatorio</span>
+                    <span class="font-bold uppercase text-[9px]">Info</span>
                 </div>
-                <p class="text-white/80 leading-relaxed italic text-[10px]">
+                <p class="text-white/60 text-[9px] leading-tight italic">
                     Este es el producto base. Podrás añadir variantes de color y stock real una vez creado el modelo maestro.
                 </p>
             </div>
         </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <label class="text-emerald-400 text-[11px] uppercase font-bold tracking-[0.2em]">Imagen de Portada</label>
+                <div id="zoneNuevo" class="relative border-2 border-dashed border-gray-800 rounded-2xl bg-gray-900/30 p-3 flex flex-col items-center justify-center hover:border-emerald-500/40 transition-all min-h-[100px] overflow-hidden group">
+                    <img id="previewNuevo" src="" class="absolute inset-0 w-full h-full object-cover hidden pointer-events-none z-0">
+                    <button type="button" id="btnDeletePortadaNuevo" onclick="limpiarPreviewImagen('previewNuevo', 'contentNuevo', 'inputPortadaNuevo', 'eliminar_portada_flag_nuevo')" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-30 hidden">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                    <div id="contentNuevo" class="relative z-10 flex flex-col items-center">
+                        <svg class="w-8 h-8 text-gray-500 group-hover:text-emerald-400 mb-2 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        <p class="text-[9px] text-gray-400 font-bold uppercase">Subir portada</p>
+                    </div>
+                    <input type="file" name="imagen" id="inputPortadaNuevo" accept="image/*" onchange="handleImagePreview(this, 'previewNuevo', 'contentNuevo', 'zoneNuevo'); document.getElementById('btnDeletePortadaNuevo').classList.remove('hidden');" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20">
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <label class="text-blue-400 text-[11px] uppercase font-bold tracking-[0.2em]">Galería</label>
+                <div id="zone-galeria-nuevo" class="relative border-2 border-dashed border-gray-800 rounded-2xl bg-gray-900/30 p-3 min-h-[100px]">
+                    <div class="grid grid-cols-4 gap-2" id="galeria-grid-nuevo">
+                        <div id="preview-galeria-nuevo" class="contents"></div>
+                        <button type="button" onclick="document.getElementById('input-galeria-nuevo').click()" class="flex flex-col items-center justify-center aspect-square rounded-xl border border-dashed border-gray-700 hover:border-blue-500/50 transition-all">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                        </button>
+                    </div>
+                    <input type="file" id="input-galeria-nuevo" name="imagenes_galeria" accept="image/*" multiple onchange="handleMultiplePreviewsWithDelete(this, 'preview-galeria-nuevo', 'content-galeria-nuevo', 'text-galeria-nuevo')" class="hidden">
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full">
+            <label class="text-gray-400 text-[11px] uppercase mb-2 block font-bold tracking-widest">Descripción del Producto</label>
+            <textarea name="descripcion" 
+                      placeholder="Detalles sobre escala, materiales o tiempo de impresión..." 
+                      class="w-full bg-gray-900 border border-gray-700 rounded-2xl p-4 text-white resize-none focus:border-emerald-500 outline-none min-h-[80px] text-sm leading-relaxed"></textarea>
+        </div>
+
         <div class="flex gap-3 border-t border-gray-800 pt-4">
-            <button type="button"
-                    onclick="cerrarUltimoModal()"
-                    class="flex-1 px-4 py-3 rounded-xl border border-gray-700 text-gray-400 hover:bg-gray-800 transition-all font-bold text-sm">
+            <button type="button" onclick="cerrarUltimoModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-700 text-gray-400 hover:bg-gray-800 transition-all font-bold text-sm">
                 Descartar
             </button>
-            <button type="submit"
-                    class="flex-1 px-4 py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-500 transition-all shadow-xl shadow-emerald-500/20 text-xs uppercase tracking-[0.2em]">
-                {% if current_page == 'productos' %}
-                    Crear y configurar variante
-                {% else %}
-                    Crear pieza base
-                {% endif %}
+            <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-500 transition-all shadow-xl shadow-emerald-500/20 text-[10px] uppercase tracking-widest">
+                {% if current_page == 'productos' %} Crear y configurar variante {% else %} Crear pieza base {% endif %}
             </button>
         </div>
     </form>

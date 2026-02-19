@@ -1,0 +1,66 @@
+<div id="modal-container" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="cerrarModalDinamico()"></div>
+
+    <div class="relative bg-[#1e293b] w-full max-w-lg rounded-3xl border border-gray-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        
+        <form id="varianteForm" method="POST" action="{{ request.path }}" class="p-6 space-y-6">
+            {% csrf_token %}
+            
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-xl font-bold text-white">
+                    {% if editando %}Editar Parámetros{% else %}Nueva Variante{% endif %}
+                </h3>
+                <button type="button" onclick="cerrarModalDinamico()" class="text-gray-500 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+
+            {% if editando %}
+                <p class="text-emerald-400 text-xs font-bold uppercase tracking-widest">{{ variante }}</p>
+            {% endif %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-gray-500 uppercase">Tiempo Estimado (Horas)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2"/></svg>
+                        </span>
+                        <input type="number" name="tiempo_impresion_horas" step="0.1" 
+                               value="{{ form.tiempo_impresion_horas.value|default:0 }}"
+                               class="w-full bg-gray-800 border border-gray-700 rounded-xl py-2.5 pl-10 pr-4 text-white focus:border-blue-500 outline-none transition-all">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-gray-500 uppercase">Precio Adicional (RD$)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 font-mono">$</span>
+                        <input type="number" name="precio_adicional" step="0.01"
+                               value="{{ form.precio_adicional.value|default:0 }}"
+                               class="w-full bg-gray-800 border border-gray-700 rounded-xl py-2.5 pl-10 pr-4 text-white focus:border-emerald-500 outline-none transition-all">
+                    </div>
+                </div>
+            </div>
+
+            {% if not editando %}
+            <div class="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                <p class="text-blue-400 text-xs italic">
+                    Nota: La configuración de materiales se realiza al crear la variante.
+                </p>
+            </div>
+            {% endif %}
+
+            <div class="flex gap-3 pt-4">
+                <button type="button" onclick="cerrarModalDinamico()" 
+                        class="flex-1 px-4 py-3 rounded-xl bg-gray-800 text-gray-400 font-bold hover:bg-gray-700 transition-all">
+                    Cancelar
+                </button>
+                <button type="submit" 
+                        class="flex-[2] px-4 py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-500 shadow-lg shadow-emerald-900/20 transition-all">
+                    {% if editando %}Guardar Cambios{% else %}Crear Variante{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

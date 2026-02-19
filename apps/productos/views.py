@@ -10,6 +10,8 @@ from decimal import Decimal
 import json
 import logging
 import hashlib
+from django.db.models import ProtectedError
+from django.db import IntegrityError
 
 from .models import Categoria, Producto, VarianteProducto, ImagenProducto, ProduccionInterna
 from .forms import CategoriaForm, ProductoForm, ProduccionInternaForm, VarianteProductoForm, MaterialDetalleFormSet
@@ -216,7 +218,6 @@ def obtener_producto_json(request, pk):
         "nombre": producto.nombre,
         "categoria_id": producto.categoria.id if producto.categoria else None,
         "precio_venta": str(producto.precio_venta),
-        "peso_gramos": str(producto.peso_gramos),
         "mostrar_en_web": producto.mostrar_en_web,
         "descripcion": producto.descripcion,
         "activo": producto.activo,
@@ -400,7 +401,6 @@ def crear_variante(request, producto_id):
     formset = MaterialDetalleFormSet()
     return _renderizar_formulario(request, producto, form, formset)
 
-
 def _procesar_post_valido(request, producto, form, formset):
     """Procesa el POST válido al crear una variante"""
     materiales_nuevos = _extraer_materiales_del_formset(formset)
@@ -413,6 +413,7 @@ def _procesar_post_valido(request, producto, form, formset):
 
     firma = _generar_firma_materiales(materiales_nuevos)
 
+    # 1. Validación preventiva manual
     if producto.variantes.filter(firma_materiales=firma).exists():
         messages.error(
             request,
@@ -423,20 +424,26 @@ def _procesar_post_valido(request, producto, form, formset):
         return redirect("productos:producto_detalle", slug=producto.slug)
 
     try:
+        # 2. Intento de guardado capturando errores de base de datos
         variante = form.save(commit=False)
         variante.firma_materiales = firma
         _guardar_variante_con_materiales(variante, producto, formset)
 
         messages.success(request, "Variante creada correctamente.")
-        if request.htmx:
-            return _redirect_producto_detalle_htmx(request, producto)
-        return redirect("productos:producto_detalle", slug=producto.slug)
-
+        
+    except IntegrityError:
+        # Este captura el error de UNIQUE constraint directamente desde la DB
+        messages.error(
+            request, 
+            "No se pudo guardar: Ya existe otra variante con esta misma configuración técnica."
+        )
     except Exception as e:
-        messages.error(request, f"Error al guardar: {e}")
-        if request.htmx:
-            return _redirect_producto_detalle_htmx(request, producto)
-        return redirect("productos:producto_detalle", slug=producto.slug)
+        messages.error(request, f"Error inesperado al guardar: {e}")
+    
+    # Redirección final (común para éxito o error capturado)
+    if request.htmx:
+        return _redirect_producto_detalle_htmx(request, producto)
+    return redirect("productos:producto_detalle", slug=producto.slug)
 
 
 def _procesar_post_invalido(request, producto, form, formset):
@@ -490,7 +497,6 @@ def registrar_produccion(request, variante_id):
 
 @admin_required
 def eliminar_variante_json(request, variante_id):
-    """Elimina una variante específica y retorna confirmación en JSON"""
     if request.method == "POST":
         variante = get_object_or_404(VarianteProducto, id=variante_id)
         try:
@@ -500,10 +506,15 @@ def eliminar_variante_json(request, variante_id):
                 "success": True,
                 "message": f"Variante '{nombre_variante}' eliminada."
             })
+        except ProtectedError:
+            return JsonResponse({
+                "success": False, 
+                "error": "No puedes eliminar esta variante porque ya está asociada a pedidos existentes. Prueba a desactivarla en su lugar.",
+                "tipo_error": "protegido"
+            }, status=400)
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)}, status=400)
     return JsonResponse({"success": False, "message": "Método no permitido"}, status=405)
-
 
 @admin_required
 def crear_categoria(request):
@@ -609,7 +620,7 @@ def obtener_precio_variante(request, variante_id):
             'precio_base': float(variante.producto.precio_venta),
             'precio_extra': float(variante.precio_adicional),
             'precio_unitario': float(variante.precio_final),
-            'gramos_por_unidad': float(variante.producto.peso_gramos),
+            'gramos_por_unidad': float(variante.peso_total),
             'nombre': str(variante)
         })
     except Exception as e:
@@ -663,3 +674,90 @@ def buscar_material_variante(request):
             "query": query
         }
     )
+
+logger = logging.getLogger(__name__)
+
+@admin_required
+def toggle_variante_activo(request, variante_id):
+    if request.method == "POST":
+        try:
+            variante = get_object_or_404(VarianteProducto, id=variante_id)
+            variante.activa = not variante.activa
+            # Usamos full_clean para ver si hay errores de validación antes de salvar
+            variante.save() 
+            
+            estado = "activada" if variante.activa else "desactivada"
+            return JsonResponse({
+                "success": True, 
+                "nuevo_estado": variante.activa,
+                "message": f"Variante {estado} correctamente"
+            })
+        except Exception as e:
+            # Esto imprimirá el error real en consola
+            print(f"ERROR AL TOGGLE VARIANTE: {str(e)}") 
+            return JsonResponse({
+                "success": False, 
+                "error": str(e)
+            }, status=500)
+            
+    return JsonResponse({"success": False}, status=405)
+
+# --- VISTA PARA REACTIVACIÓN MÚLTIPLE ---
+@admin_required
+def reactivar_multiples_variantes(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            ids = data.get('ids', [])
+            # Actualizamos de forma masiva (esto no llama al método save() individual,
+            # lo cual es más rápido y evita errores de validación individuales)
+            VarianteProducto.objects.filter(id__in=ids).update(activa=True)
+            
+            return JsonResponse({
+                "success": True,
+                "message": f"{len(ids)} variantes reactivadas correctamente"
+            })
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+    return JsonResponse({"success": False}, status=405)
+
+@admin_required
+def obtener_variantes_archivadas(request, producto_id):
+    # Obtenemos el producto o devolvemos 404
+    producto = get_object_or_404(Producto, id=producto_id)
+    
+    # Filtramos solo las variantes que están desactivadas
+    # Usamos select_related o prefetch_related para optimizar la carga de materiales
+    variantes = producto.variantes.filter(activa=False).prefetch_related(
+        'detalles_material__material__color',
+        'detalles_material__material__marca'
+    )
+    
+    return render(request, 'productos/partials/lista_variantes_archivadas.html', {
+        'variantes': variantes,
+        'producto': producto
+    })
+
+@admin_required
+def editar_variante(request, variante_id):
+    variante = get_object_or_404(VarianteProducto, id=variante_id)
+    if request.method == "POST":
+        form = VarianteProductoForm(request.POST, instance=variante)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Variante actualizada correctamente.")
+            return redirect("productos:producto_detalle", slug=variante.producto.slug)
+        else:
+            return render(request, "productos/modals/editar_variante.html", {
+                "producto": variante.producto,
+                "editando": True,
+                "variante": variante
+            })
+    
+    form = VarianteProductoForm(instance=variante)
+    return render(request, "productos/modals/editar_variante.html", {
+        "form": form,
+        "producto": variante.producto,
+        "editando": True,
+        "variante": variante
+    })

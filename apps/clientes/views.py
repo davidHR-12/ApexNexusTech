@@ -48,16 +48,15 @@ def productos(request):
     return render(request, "productos.html", {"productos": productos})
 
 def detalle_producto(request, pk):
-    """Detalle de producto para compra"""
     producto = get_object_or_404(Producto, pk=pk, mostrar_en_web=True)
-    galeria = producto.imagenes.all()
-    # IMPORTANTE: Enviamos las variantes para que el cliente elija color/tamaño
-    variantes = producto.variantes.filter(activo=True)
-
+    # Traemos las variantes con sus materiales ya cargados para que sea rápido
+    variantes = producto.variantes.filter(activa=True).prefetch_related('detalles_material__material')
+    
     return render(request, "detalle_producto.html", {
-        "producto": producto, 
-        "galeria": galeria,
-        "variantes": variantes
+        "producto": producto,
+        "galeria": producto.imagenes.all(),
+        "variantes": variantes,
+        "variante_default": variantes.first() # La que saldrá seleccionada al cargar
     })
 
 # ==========================================
@@ -163,7 +162,7 @@ def crear_pedido_catalogo(request, variante_id):
     )
     
     # 2. Crear el Ítem
-    # Al guardar el ítem, tu método save() en ItemPedido dispara actualizar_totales() en el Pedido
+    # Al guardar el ítem, el método save() en ItemPedido dispara actualizar_totales() en el Pedido
     ItemPedido.objects.create(
         pedido=pedido,
         variante=variante,
@@ -174,5 +173,5 @@ def crear_pedido_catalogo(request, variante_id):
     
     messages.success(request, f"¡Pedido #{pedido.id} creado! Por favor gestiona el pago.")
     
-    # Redirigir al detalle del pedido (o al dashboard si no tienes vista pública de detalle)
+    # Redirigir al detalle del pedido (o al dashboard si no no hay vista pública de detalle)
     return redirect('clientes:home')

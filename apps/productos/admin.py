@@ -47,7 +47,7 @@ class ProductoAdmin(admin.ModelAdmin):
             'fields': ('nombre', 'slug', 'categoria', 'descripcion', 'imagen')
         }),
         ('Datos Técnicos', {
-            'fields': ('precio_venta', 'peso_gramos', 'tiempo_impresion_horas')
+            'fields': ('precio_venta', 'tiempo_impresion_horas')
         }),
         ('Estado', {
             'fields': ('mostrar_en_web', 'destacado', 'activo')

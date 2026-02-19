@@ -21,7 +21,6 @@ from django.db.models import Q, Count
 @admin_required
 def gestionar_media_huerfana(request):
     # Mapeo de carpetas -> (Modelo, campo_en_el_modelo)
-    # Si tienes un modelo para la galería o gastos, añádelos aquí.
     mapeo_config = {
         'categorias': (Categoria, 'imagen'),
         'productos': (Producto, 'imagen'),

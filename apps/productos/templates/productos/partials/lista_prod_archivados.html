@@ -1,4 +1,19 @@
 <div class="max-h-[60vh] overflow-y-auto pr-2 custom-scroll">
+    {% if productos %}
+    <div class="flex items-center gap-3 p-3 mb-4 bg-gray-800/20 border border-gray-800/50 rounded-xl">
+        <label class="relative flex items-center cursor-pointer">
+            <input type="checkbox" id="selectAllProductos" 
+                   class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-700 bg-gray-800 checked:bg-emerald-600 checked:border-emerald-600 transition-all"
+                   onclick="toggleSelectAllProductos(this)">
+            <span class="absolute text-white opacity-0 peer-checked:opacity-100 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+            </span>
+        </label>
+        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Seleccionar todos los productos</span>
+    </div>
+    {% endif %}
     <div class="space-y-3 pb-20">
         {% for p in productos %}
             <div class="flex items-center justify-between p-4 bg-gray-900/40 border border-gray-800 rounded-2xl hover:border-emerald-500/30 transition-all group">
@@ -8,7 +23,7 @@
                                name="productos_ids"
                                value="{{ p.id }}"
                                class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-700 bg-gray-800 checked:bg-emerald-500 checked:border-emerald-500 transition-all"
-                               onchange="toggleBatchButton()">
+                               onchange="toggleBatchButtonProductos()">
                         <span class="absolute text-white opacity-0 peer-checked:opacity-100 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
                             <svg xmlns="http://www.w3.org/2000/svg"
                                  class="h-3.5 w-3.5"
@@ -52,13 +67,13 @@
             </div>
         {% endfor %}
     </div>
-    <div id="batchActionContainer"
+    <div id="batchActionProductos"
          class="hidden absolute bottom-4 left-0 right-0 px-6">
         <button onclick="reactivarMultiplesProductos()"
                 class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-2xl shadow-emerald-900/40 flex items-center justify-center gap-3 transition-all transform hover:scale-[1.02]">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>Reactivar<span id="selectedCount">0</span><span id="selectedText"></span>
+            </svg>Reactivar<span id="selectedCountProductos">0</span><span id="selectedText"></span>
         </button>
     </div>
 </div>

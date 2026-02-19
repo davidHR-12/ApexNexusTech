@@ -153,7 +153,7 @@ def verificar_email(request, uidb64, token):
         messages.success(
             request, "Cuenta verificada correctamente. Ya puedes iniciar sesión."
         )
-        return redirect("usuarios:login")  # nombre de tu url de login
+        return redirect("usuarios:login")
     else:
         return HttpResponse("El enlace es inválido o ha expirado")
 
@@ -182,7 +182,7 @@ def reenviar_verificacion(request):
                 messages.info(request, "Esta cuenta ya está verificada.")
                 return redirect("usuarios:login")
 
-            # 2. Generación de Link y Envío (Tu lógica actual)
+            # 2. Generación de Link y Envío
             token = email_verification_token.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             link = request.build_absolute_uri(
@@ -269,7 +269,6 @@ def login_view(request):
                     messages.error(request, "Correo o contraseña incorrectos")
 
             except PermissionDenied:
-                # Por si tu backend sí logra propagar la excepción
                 messages.warning(
                     request, "Tu cuenta no ha sido verificada aún.")
                 request.session["email_no_verificado"] = email

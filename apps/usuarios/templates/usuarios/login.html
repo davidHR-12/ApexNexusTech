@@ -31,11 +31,11 @@
         {% if field.name == "password" %}
           <div class="relative">
             {{ field }}
-            <!-- Botón ojo -->
+            {# Botón ojo #}
             <button type="button"
                     id="toggle-password"
                     class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-[#10b981] transition">
-              <!-- Ojo cerrado (default) -->
+              {# Ojo cerrado (default) #}
               <svg id="eye-closed"
                    xmlns="http://www.w3.org/2000/svg"
                    class="h-5 w-5"
@@ -45,7 +45,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.657.402-3.22 1.125-4.575M9.88 9.88a3 3 0 104.243 4.243" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18" />
               </svg>
-              <!-- Ojo abierto -->
+              {# Ojo abierto #}
               <svg id="eye-open"
                    xmlns="http://www.w3.org/2000/svg"
                    class="h-5 w-5 hidden"

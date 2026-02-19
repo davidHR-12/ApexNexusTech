@@ -184,7 +184,7 @@ LOGGING = {
             "level": "INFO",
             "propagate": True,
         },
-        # logger de tu app
+        # logger
         "apps.core": {
             "handlers": ["console"],
             "level": "INFO",

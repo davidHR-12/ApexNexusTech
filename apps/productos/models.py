@@ -4,7 +4,9 @@ Modelos para la gestión de productos y catálogo
 from django.db import models
 from django.utils.text import slugify
 from decimal import Decimal
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+import hashlib
 
 # =============================
 # CATEGORÍAS
@@ -113,21 +115,6 @@ class Producto(models.Model):
         verbose_name="Imagen principal"
     )
 
-    # Datos técnicos para cálculos
-    peso_gramos = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0,
-        verbose_name="Peso (gramos)"
-    )
-    tiempo_impresion_horas = models.DecimalField(
-        max_digits=8,
-        decimal_places=2,
-        default=0,
-        help_text="Tiempo estimado de impresión",
-        verbose_name="Tiempo de impresión (horas)"
-    )
-
     # Configuración del catálogo
     mostrar_en_web = models.BooleanField(
         default=False,
@@ -159,19 +146,16 @@ class Producto(models.Model):
         return sum(v.stock_disponible for v in self.variantes.all())
 
     @property
-    def costo_produccion(self):
-        """Calcula el costo basado en la variante por defecto (la primera)"""
-        primera_variante = self.variantes.first()
-        if primera_variante:
-            return primera_variante.costo_materiales
-        return Decimal("0.00")
+    def variante_principal(self):
+        """Retorna la variante marcada como default o la primera disponible"""
+        return self.variantes.filter(es_default=True).first() or self.variantes.first()
 
     @property
-    def margen_ganancia(self):
-        """Calcula el margen de ganancia"""
-        costo = self.costo_produccion
-        if costo > 0:
-            return ((self.precio_venta - costo) / costo * 100).quantize(Decimal("0.01"))
+    def margen_ganancia_base(self):
+        """Calcula el margen basado en la variante principal"""
+        v = self.variante_principal
+        if v and v.costo_produccion_total > 0:
+            return ((v.precio_final - v.costo_produccion_total) / v.costo_produccion_total * 100).quantize(Decimal("0.01"))
         return Decimal("0.00")
 
     def save(self, *args, **kwargs):
@@ -210,6 +194,14 @@ class VarianteProducto(models.Model):
         help_text="Sobreprecio respecto al precio base",
         verbose_name="Precio adicional"
     )
+    tiempo_impresion_horas = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0,
+        help_text="Tiempo estimado de impresión",
+        verbose_name="Tiempo de impresión (horas)"
+    )
+    es_default = models.BooleanField(default=False, verbose_name="Variante principal")
     codigo_sku = models.CharField(max_length=50, blank=True, unique=True, null=True, verbose_name="SKU")
     activa = models.BooleanField(default=True, verbose_name="Activa")
 
@@ -219,6 +211,11 @@ class VarianteProducto(models.Model):
     @property
     def precio_final(self):
         return self.producto.precio_venta + self.precio_adicional
+
+    @property
+    def peso_total(self):
+        """Suma de los gramos de todos los materiales en esta variante"""
+        return sum(d.gramos_usados for d in self.detalles_material.all())
 
     @property
     def costo_materiales(self):
@@ -231,20 +228,45 @@ class VarianteProducto(models.Model):
         """Suma costo de materiales + costo estimado de energía"""
         # Calculamos costo de energía: (Tiempo en horas * Consumo Promedio Kw * Precio Kwh)
         # Por ahora, para no complicar, usamos solo materiales o una fórmula simple:
-        costo_energia_estimado = self.producto.tiempo_impresion_horas * Decimal("2.5") # Ejemplo: RD$2.5 por hora
+        costo_energia_estimado = self.tiempo_impresion_horas * Decimal("2.5") 
         return self.costo_materiales + costo_energia_estimado
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs) # Guardamos primero para tener ID si es nuevo
+    def generar_firma(self):
+        # Forzamos refrescar de la BD para obtener los materiales recién guardados
+        detalles = self.detalles_material.all()
+        materiales = self.obtener_materiales_normalizados(detalles)
         
-        if not self.codigo_sku:
-            # Para el SKU, tomamos el nombre del primer material disponible
-            primer_detalle = self.detalles_material.first()
-            if primer_detalle:
-                material_slug = slugify(f"{primer_detalle.material.color.nombre}-{primer_detalle.material.tipo.nombre}")
-                self.codigo_sku = f"{self.producto.slug}-{material_slug}"[:50]
-                # Guardamos de nuevo para actualizar el SKU
-                super().save(update_fields=['codigo_sku'])
+        if not materiales:
+            return None
+
+        cadena_materiales = str(materiales).encode()
+        return hashlib.md5(cadena_materiales).hexdigest()
+
+    def generar_sku_y_firma(self):
+        """Calcula y guarda la firma y el SKU"""
+        nueva_firma = self.generar_firma()
+        if not nueva_firma:
+            return
+
+        # Buscamos el material para el nombre del SKU
+        primer_detalle = self.detalles_material.first()
+        nuevo_sku = self.codigo_sku # Mantener el actual si ya tiene
+        
+        if not nuevo_sku and primer_detalle:
+            mat_nombre = slugify(primer_detalle.material.color.nombre)
+            nuevo_sku = f"{self.producto.slug[:20]}-{mat_nombre[:15]}-{nueva_firma[:6]}"
+
+        # Usamos update para no disparar el save() de nuevo y evitar bucles infinitos
+        VarianteProducto.objects.filter(pk=self.pk).update(
+            firma_materiales=nueva_firma,
+            codigo_sku=nuevo_sku
+        )
+
+    def save(self, *args, **kwargs):
+        # El save ahora solo se encarga de guardar los campos básicos (precio, tiempo, etc.)
+        super().save(*args, **kwargs)
+        # Intentamos actualizar por si es una edición
+        self.generar_sku_y_firma()
 
     def __str__(self):
         # Muestra algo como: "Cráneo T-Rex (Rojo, Dorado)"
@@ -309,6 +331,7 @@ class VarianteProducto(models.Model):
         ]
 
 
+
 class VarianteMaterialDetalle(models.Model):
     """
 
@@ -360,6 +383,15 @@ class ImagenProducto(models.Model):
         verbose_name_plural = "Galería de Imágenes"
         ordering = ["producto", "orden"]
 
+
+
+@receiver(post_save, sender=VarianteMaterialDetalle)
+def actualizar_variante_al_cambiar_materiales(sender, instance, **kwargs):
+    """
+    Este signal se dispara cada vez que se agrega, edita o quita un material.
+    Obliga a la variante a recalcular su SKU y firma.
+    """
+    instance.variante.generar_sku_y_firma()
 
 # =============================
 # PRODUCCIÓN INTERNA

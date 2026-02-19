@@ -116,7 +116,7 @@ def _validar_requisitos_produccion(pedido, request):
                         maquinas_con_error.append(f"{maquina.nombre} ({maquina.estado})")
                     
                     # Si está "Imprimiendo", solo damos error si el pedido actual NO es el que la tiene
-                    # (Esto previene el error de "doble ítem" que te salió)
+                    # (Esto previene el error de "doble ítem")
                     elif maquina.estado == "Imprimiendo":
                         # Verificamos si hay otros ítems de OTROS pedidos que tengan esta máquina
                         from .models import ItemPedido
@@ -359,7 +359,7 @@ def agregar_item_pedido(request, pedido_id):
         if tipo == "catalogo":
             item.precio_unitario = item.variante.precio_final
             item.descripcion = item.variante.producto.nombre
-            item.gramos_por_unidad = item.variante.producto.peso_gramos
+            item.gramos_por_unidad = item.variante.peso_total
             item.costo_material_unitario = item.variante.costo_materiales
         else:
             item.costo_material_unitario = item.material_personalizado.costo_por_gramo
@@ -387,7 +387,7 @@ def editar_item_pedido(request, item_id):
         messages.warning(request, "Los itens de catálogo no pueden ser editados. Remuévalos y agréguelos nuevamente si es necesario.")
         return redirect("pedidos:pedido_detalle", pedido_id=item.pedido.id)
 
-    # Bloqueo por Procesamiento de Stock (ya existente en tu lógica)
+    # Bloqueo por Procesamiento de Stock
     if getattr(item.pedido, "stock_descontado", False):
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse({
@@ -457,7 +457,7 @@ def asignar_impresora_item(request, item_id):
         return redirect("pedidos:pedido_detalle", pedido_id=item.pedido.id)
 
     if impresora_id:
-        # Lógica de asignación (la que ya tienes optimizada)
+        # Lógica de asignación
         impresora = get_object_or_404(Impresora, id=impresora_id)
         if impresora.estado != "Disponible" and item.impresora_asignada != impresora:
             messages.error(request, f"La impresora {impresora.nombre} no está disponible.")
@@ -552,7 +552,7 @@ def agregar_nota_pedido(request, pedido_id):
     es_publica = request.POST.get("visible_para_cliente") == 'on'
 
     if contenido:
-        # Usamos el related_name 'anotaciones' que tienes en tu HTML
+        # Usamos el related_name 'anotaciones'
         NotaPedido.objects.create(
             pedido=pedido,
             autor=request.user,

@@ -440,7 +440,6 @@ function abrirEditarProducto(id) {
             if (elementos.nombre) elementos.nombre.value = data.nombre;
             if (elementos.categoria) elementos.categoria.value = data.categoria_id;
             if (elementos.precio) elementos.precio.value = data.precio_venta;
-            if (elementos.peso) elementos.peso.value = data.peso_gramos;
             if (elementos.web) elementos.web.checked = data.mostrar_en_web;
             if (elementos.activo) elementos.activo.checked = data.activo;
             if (elementos.descripcion) elementos.descripcion.value = data.descripcion || '';
@@ -591,21 +590,31 @@ function reactivarProducto(id) {
     });
 }
 
-// Controla la visibilidad del botón de acción masiva
-function toggleBatchButton() {
-    const checkboxes = document.querySelectorAll('input[name="productos_ids"]:checked').length;
-    const container = document.getElementById('batchActionContainer');
-    const countSpan = document.getElementById('selectedCount');
-    const textSpan = document.getElementById('selectedText');
-    
-    if (checkboxes > 0) {
-        container.classList.remove('hidden');
-        countSpan.innerText = checkboxes;
+function toggleSelectAllProductos(source) {
+    const checkboxes = document.querySelectorAll('input[name="productos_ids"]');
+    checkboxes.forEach(cb => {
+        cb.checked = source.checked;
+    });
+    // Actualizamos el botón de acción masiva y el contador
+    toggleBatchButtonProductos();
+}
 
-        // Ajuste de plural/singular
-        if (textSpan) {
-            textSpan.innerText = checkboxes === 1 ? 'producto seleccionado' : 'productos seleccionados';
-        }
+// Controla la visibilidad del botón de acción masiva
+function toggleBatchButtonProductos() {
+    const totalCheckboxes = document.querySelectorAll('input[name="productos_ids"]');
+    const checkedCheckboxes = document.querySelectorAll('input[name="productos_ids"]:checked');
+    const selectAll = document.getElementById('selectAllProductos');
+    const container = document.getElementById('batchActionProductos');
+    const countSpan = document.getElementById('selectedCountProductos');
+    
+    // Si desmarcamos uno manual, el "Seleccionar todos" debe desmarcarse
+    if (selectAll) {
+        selectAll.checked = (totalCheckboxes.length === checkedCheckboxes.length);
+    }
+
+    if (checkedCheckboxes.length > 0) {
+        container.classList.remove('hidden');
+        countSpan.innerText = checkedCheckboxes.length;
     } else {
         container.classList.add('hidden');
     }

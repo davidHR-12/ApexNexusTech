@@ -17,8 +17,7 @@ class UsuarioAdmin(UserAdmin):
     ordering = ('-date_joined',)
 
     # 5. Configuración de los formularios de edición (Fieldsets)
-    # IMPORTANTE: UserAdmin usa fieldsets para organizar los campos. 
-    # Aquí añadimos tus campos personalizados (rol, telefono, etc.)
+    # IMPORTANTE: UserAdmin usa fieldsets para organizar los campos.
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Información Personal', {'fields': ('first_name', 'last_name', 'username', 'telefono')}),

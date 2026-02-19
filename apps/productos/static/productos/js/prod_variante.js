@@ -588,3 +588,126 @@ function cambiarVisor(url) {
         placeholder.classList.add('hidden');
     }
 }
+
+/**
+ * Abre el modal de variantes desactivadas
+ */
+function abrirArchivoVariantes(productoId) {
+    const contenedor = document.querySelector('#modalArchivoVariantes .custom-scrollbar');
+    if (contenedor) contenedor.innerHTML = '<div class="text-center py-10 text-gray-500">Cargando archivo...</div>';
+    
+    // El endpoint debe devolver un partial HTML con la lista de variantes activa=False
+    fetch(`/administrador/productos/${productoId}/variantes-archivadas/`)
+        .then(response => response.text())
+        .then(html => {
+            contenedor.innerHTML = html;
+            abrirModal('modalArchivoVariantes');
+        })
+        .catch(err => mostrarToast('error', 'Error al cargar el archivo de variantes'));
+}
+
+/**
+ * Reactiva una variante individual
+ */
+function reactivarVariante(id) {
+    fetch(`/administrador/productos/variante/${id}/toggle-activo/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+    })
+    .then(response => {
+        // Si el servidor responde con 500 o 404, lanzamos error para el catch
+        if (!response.ok) {
+            return response.json().then(err => { throw new Error(err.error || 'Error interno') });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if(data.success) {
+            mostrarToast('success', 'Variante reactivada');
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        mostrarToast('error', 'No se pudo reactivar: ' + error.message);
+    });
+}
+
+/**
+ * Selecciona o deselecciona todos los checkboxes de variantes
+ */
+function toggleSelectAllVariantes(source) {
+    const checkboxes = document.querySelectorAll('input[name="variantes_ids"]');
+    checkboxes.forEach(cb => {
+        cb.checked = source.checked;
+    });
+    // Actualizamos el botón de acción masiva y el contador
+    toggleBatchButtonVariantes();
+}
+
+/**
+ * Modifica ligeramente la función actual para que el checkbox 
+ * "master" se desmarque si quitas uno individual
+ */
+function toggleBatchButtonVariantes() {
+    const totalCheckboxes = document.querySelectorAll('input[name="variantes_ids"]');
+    const checkedCheckboxes = document.querySelectorAll('input[name="variantes_ids"]:checked');
+    const selectAll = document.getElementById('selectAllVariantes');
+    const container = document.getElementById('batchActionVariantes');
+    const countSpan = document.getElementById('selectedCountVariantes');
+    
+    // Si desmarcamos uno manual, el "Seleccionar todos" debe desmarcarse
+    if (selectAll) {
+        selectAll.checked = (totalCheckboxes.length === checkedCheckboxes.length);
+    }
+
+    if (checkedCheckboxes.length > 0) {
+        container.classList.remove('hidden');
+        countSpan.innerText = checkedCheckboxes.length;
+    } else {
+        container.classList.add('hidden');
+    }
+}
+
+function reactivarMultiplesVariantes() {
+    const ids = Array.from(document.querySelectorAll('input[name="variantes_ids"]:checked')).map(cb => cb.value);
+    
+    fetch('/administrador/productos/variantes/reactivar-multiples/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ids: ids })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            mostrarToast('success', data.message);
+            location.reload();
+        }
+    });
+}
+
+/**
+ * Función mejorada para el switch de la tabla principal
+ */
+function toggleVarianteEstado(varianteId) {
+    fetch(`/administrador/productos/variante/${varianteId}/toggle-activo/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const msg = data.nuevo_estado ? 'Variante activada' : 'Variante desactivada';
+            mostrarToast(data.nuevo_estado ? 'success' : 'info', msg);
+            
+            // Recargamos para que desaparezca de la lista de "Activas" si se desactivó
+            setTimeout(() => location.reload(), 1000);
+        }
+    });
+}

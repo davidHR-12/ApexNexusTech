@@ -38,6 +38,10 @@ urlpatterns = [
     path("variantes/registrar/<int:variante_id>/", views.registrar_produccion, name="registrar_produccion"),
     path("variantes/obtener/<int:producto_id>/", views.obtener_variantes_producto, name="obtener_variantes_producto"),
     path("variantes/eliminar/<int:variante_id>/", views.eliminar_variante_json, name="eliminar_variante_json"),
+    path("productos/variante/<int:variante_id>/toggle-activo/", views.toggle_variante_activo, name="toggle_variante_activo"),
+    path("productos/variantes/reactivar-multiples/", views.reactivar_multiples_variantes, name="reactivar_multiples_variantes"),
+    path("productos/variante/<int:variante_id>/editar/", views.editar_variante, name="editar_variante"),
+    path("productos/<int:producto_id>/variantes-archivadas/", views.obtener_variantes_archivadas, name="obtener_variantes_archivadas"),
     
     # API IDs
     path("api/productos/<int:pk>/", views.obtener_producto_json, name="obtener_producto_json"),

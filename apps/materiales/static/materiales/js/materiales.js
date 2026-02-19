@@ -190,7 +190,6 @@ function abrirEditar(id) {
             if (enlace) enlace.value = data.enlace_compra || '';
             
             if (colorNombreSpan) {
-                // 'color_nombre' debe venir en tu respuesta JSON de la API
                 colorNombreSpan.innerText = `"${data.color_nombre || 'Color sin asignar'}"`;
             }
             if (inputHex && data.color_hex) {

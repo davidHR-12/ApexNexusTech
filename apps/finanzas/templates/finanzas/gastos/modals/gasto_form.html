@@ -40,10 +40,10 @@
          class="text-[10px] text-blue-300 leading-relaxed italic"></p>
     </div>
   {% endif %}
-  <!-- Contenedor flex para el efecto "libro" plegable -->
+  {# Contenedor flex para el efecto "libro" plegable #}
   <div id="modal_container_gasto"
        class="flex flex-row transition-all duration-500 ease-in-out gap-0">
-    <!-- COLUMNA IZQUIERDA: Formulario con campos principales -->
+    {# COLUMNA IZQUIERDA: Formulario con campos principales #}
     <div class="flex-1 flex flex-col">
       <form id="{% if is_edit %}formEditarGasto{% else %}formGasto{% endif %}"
             action="{% if not is_edit %}{% url 'finanzas:crear_gasto' %}{% else %}#{% endif %}"
@@ -129,7 +129,7 @@
                       rows="6"
                       class="w-full flex-1 resize-none bg-gray-900 border border-gray-700 rounded-xl p-3 text-white focus:border-red-500 outline-none text-sm">{% if is_edit and gasto %}{{ gasto.notas }}{% endif %}</textarea>
           </div>
-          <!-- BOTÓN PARA EXPANDIR -->
+          {# BOTÓN PARA EXPANDIR #}
           <button type="button"
                   onclick="toggleExtraInfoGasto()"
                   class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-800/50 hover:bg-gray-800 border border-gray-700 text-gray-300 hover:text-white transition-all">
@@ -145,7 +145,7 @@
         </div>
       </form>
     </div>
-    <!-- COLUMNA DERECHA: Información adicional (plegable) -->
+    {# COLUMNA DERECHA: Información adicional (plegable) #}
     <div id="extra_info_panel_gasto"
          class="w-0 opacity-0 overflow-hidden transition-all duration-500 ease-in-out border-l border-gray-800/0">
       <div class="pl-6 pr-2 space-y-5 min-w-[400px]">
@@ -224,7 +224,7 @@
       </div>
     </div>
   </div>
-        <!-- BOTONES FUERA DEL FORMULARIO para que ocupen ambas columnas -->
+        {# BOTONES FUERA DEL FORMULARIO para que ocupen ambas columnas #}
       <div class="flex gap-3 pt-6 border-t border-gray-800 mt-6">
         <button type="button"
                 onclick="cerrarUltimoModal()"
@@ -242,7 +242,7 @@
           {% endif %}
         </button>
       </div>
-  <!-- SCRIPT PARA TOGGLE -->
+  {# SCRIPT PARA TOGGLE #}
   <script>
 function toggleExtraInfoGasto() {
     const btn = event.currentTarget;
