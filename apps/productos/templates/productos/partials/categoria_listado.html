@@ -1,0 +1,73 @@
+{% load humanize %}
+
+{# OOB: Actualiza la barra de búsqueda para mostrar/ocultar el botón de limpiar #}
+{# Usamos una etiqueta template o el div directo con el ID correspondiente #}
+<template>
+    <div id="barra-filtros-container" hx-swap-oob="true">
+        {% include "productos/partials/barra_filtros.html" %}
+    </div>
+</template>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+    {% for cat in categorias %}
+        <div class="group relative">
+            <a href="{% url 'productos:categoria_detalle' cat.slug %}"
+               class="bg-[#1e293b] border border-gray-800 rounded-2xl p-4 hover:border-[#10b981] transition flex flex-col h-full overflow-hidden">
+                
+                <div class="relative h-48 w-full bg-gray-900 rounded-xl mb-4 overflow-hidden flex items-center justify-center">
+                    {% if cat.imagen %}
+                        <img src="{{ cat.imagen.url }}"
+                             loading="lazy"
+                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-60 group-hover:opacity-100"
+                             alt="{{ cat.nombre }}">
+                    {% else %}
+                        <div class="flex flex-col items-center text-gray-700 group-hover:text-[#10b981] transition-colors">
+                            <svg class="w-16 h-16 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                            </svg>
+                            <span class="text-[10px] uppercase tracking-[0.2em] mt-2 opacity-40">Sin Imagen</span>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="absolute top-2 left-2">
+                        <span class="bg-gray-900/90 text-[#10b981] text-[10px] font-bold px-3 py-1.5 rounded-lg border border-[#10b981]/30 backdrop-blur-sm shadow-xl">
+                            {{ cat.total_productos|default:"0" }} PIEZAS
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex-grow">
+                    <h3 class="font-bold text-xl text-white group-hover:text-[#10b981] transition-colors">{{ cat.nombre }}</h3>
+                    <p class="text-xs text-gray-500 mt-2 line-clamp-2 leading-relaxed">
+                        {{ cat.descripcion|default:"Sin descripción para esta categoría." }}
+                    </p>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-gray-800/50 flex items-center justify-between">
+                    <span class="text-[10px] text-[#10b981] font-bold uppercase tracking-[0.2em] transition-all">Ver Catálogo →</span>
+                    <div class="flex gap-2">
+                        <button onclick="event.preventDefault(); event.stopPropagation(); abrirEditarCat('{{ cat.id }}')"
+                                class="p-2 bg-gray-800 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                        </button>
+                        
+                        {% if cat.nombre != "Sin Categorizar" %}
+                            <button onclick="event.preventDefault(); event.stopPropagation(); ejecutarEliminarCat('{{ cat.id }}', '{{ cat.nombre }}')"
+                                    class="p-2 bg-gray-800 text-red-400 rounded-lg hover:bg-red-600 hover:text-white transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        </div>
+    {% empty %}
+        <div class="col-span-full p-12 text-center bg-gray-900/40 rounded-2xl border border-dashed border-gray-800">
+            <p class="text-gray-500 italic">No se encontraron categorías que coincidan con "{{ search_query }}"</p>
+        </div>
+    {% endfor %}
+</div>

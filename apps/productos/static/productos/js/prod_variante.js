@@ -206,6 +206,22 @@ async function abrirModalDinamico(url) {
     }
 }
 
+function cerrarModalDinamico() {
+    const modal = document.getElementById('modal-container');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = ''; // Restaurar scroll
+        
+        // Limpiar el contenido
+        modal.innerHTML = '';
+        
+        // Quitar del stack global
+        if (typeof modalStack !== 'undefined') {
+            modalStack.pop();
+        }
+    }
+}
+
 // ============================================================================
 // LÓGICA DEL FORMSET (AÑADIR/ELIMINAR MATERIALES)
 // ============================================================================

@@ -8,23 +8,8 @@
                 <h1 class="text-3xl font-bold text-white">Catálogo de Productos</h1>
                 <p class="text-gray-400 text-sm">Gestiona tus piezas organizadas por categorías</p>
             </div>
-            <div class="flex flex-wrap gap-3 w-full md:w-auto">
-                <button onclick="abrirModal('modalNuevaCategoria')"
-                        class="flex-1 md:flex-none bg-gray-800 text-gray-300 hover:bg-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border border-gray-700 flex items-center justify-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                    </svg>
-                    Agregar Categoría
-                </button>
-                <button onclick="abrirModal('modalNuevoProducto')"
-                        class="flex-1 md:flex-none bg-[#10b981] text-white hover:bg-[#059669] px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Nuevo Producto
-                </button>
-            </div>
         </div>
+
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="bg-[#1e293b] border border-gray-800 rounded-xl p-4 text-white shadow-sm">
                 <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Total Categorías</p>
@@ -52,79 +37,29 @@
                 <p class="text-2xl font-bold text-[#10b981]">RD$ {{ valor_inventario|floatformat:2|intcomma }}</p>
             </div>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {% for cat in categorias %}
-                <div class="group relative">
-                    <a href="{% url 'productos:categoria_detalle' cat.slug %}"
-                       class="bg-[#1e293b] border border-gray-800 rounded-2xl p-4 hover:border-[#10b981] transition flex flex-col h-full overflow-hidden">
-                        <div class="relative h-48 w-full bg-gray-900 rounded-xl mb-4 overflow-hidden flex items-center justify-center">
-                            {% if cat.imagen %}
-                                <img src="{{ cat.imagen.url }}"
-                                     width="100%"
-                                     height="100%"
-                                     loading="lazy"
-                                     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-60 group-hover:opacity-100"
-                                     alt="{{ cat.nombre }}">
-                            {% else %}
-                                <div class="flex flex-col items-center text-gray-700 group-hover:text-[#10b981] transition-colors">
-                                    <svg class="w-16 h-16 mb-2"
-                                         fill="none"
-                                         stroke="currentColor"
-                                         viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                                    </svg>
-                                    <span class="text-[10px] uppercase tracking-[0.2em] mt-2 opacity-40">Agrega una Imagen</span>
-                                </div>
-                            {% endif %}
-                            <div class="absolute top-2 left-2">
-                                <span class="bg-gray-900/90 text-[#10b981] text-[10px] font-bold px-3 py-1.5 rounded-lg border border-[#10b981]/30 backdrop-blur-sm shadow-xl">
-                                    {{ cat.productos.count|default:"0" }} PIEZAS
-                                </span>
-                            </div>
-                        </div>
-                        <div class="flex-grow">
-                            <h3 class="font-bold text-xl text-white group-hover:text-[#10b981] transition-colors">{{ cat.nombre }}</h3>
-                            <p class="text-xs text-gray-500 mt-2 line-clamp-2 leading-relaxed">
-                                {{ cat.descripcion|default:"Sin descripción para esta categoría." }}
-                            </p>
-                        </div>
-                        <div class="mt-6 pt-4 border-t border-gray-800/50 flex items-center justify-between">
-                            <span class="text-[10px] text-[#10b981] font-bold uppercase tracking-[0.2em] transition-all">Ver Catálogo →</span>
-                            <div class="flex gap-2">
-                                <button onclick="event.preventDefault(); event.stopPropagation(); abrirEditarCat('{{ cat.id }}')"
-                                        class="p-2 bg-gray-800 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
-                                        title="Editar">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                    </svg>
-                                </button>
-                                {% if cat.nombre != "Sin Categorizar" %}
-                                    <button onclick="event.preventDefault(); event.stopPropagation(); ejecutarEliminarCat('{{ cat.id }}', '{{ cat.nombre }}')"
-                                            class="p-2 bg-gray-800 text-red-400 rounded-lg hover:bg-red-600 hover:text-white transition-all"
-                                            title="Eliminar">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            {% empty %}
-            {% endfor %}
+
+        {# BARRA DE BÚSQUEDA HTMX - ID UNIFICADO #}
+        <div id="barra-filtros-container">
+            {% include "productos/partials/barra_filtros.html" %}
+        </div>
+
+        {# CONTENEDOR DE LAS CARDS #}
+        <div id="categorias-container">
+            {% include "productos/partials/categoria_listado.html" %}
         </div>
     </div>
+
+    {# Modales #}
     {% include "productos/modals/agregar_categoria.html" with modal_id="modalNuevaCategoria" max_width="max-w-2xl" title="Nueva Categoría de Piezas" %}
     {% include "productos/modals/editar_categoria.html" with modal_id="modalEditarCat" max_width="max-w-2xl" %}
     {% include "productos/modals/eliminar_categoria.html" with modal_id="modalEliminarCategoria" max_width="max-w-md" %}
     {% include "productos/modals/agregar_producto_base.html" with modal_id="modalNuevoProducto" current_page="productos" max_width="max-w-4xl" %}
 {% endblock content %}
+
 {% block extra_js %}
     <script src="{% static 'productos/js/productos.js' %}"></script>
     <script src="{% static 'productos/js/categoria.js' %}"></script>
     <script>
-            // Envolvemos la llamada para pasarle la URL de redirección de Django
             function ejecutarEliminarCat(id, nombre) {
                 confirmarEliminarCategoria(id, nombre, "{% url 'productos:productos_index' %}");
             }

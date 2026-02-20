@@ -138,7 +138,7 @@ class Pedido(models.Model):
         ("Listo", "Listo para entrega"),
         ("Entregado", "Entregado"),
         ("Cancelado", "Cancelado"),
-        ('Fallido', 'Error de Impresión / Desperdicio'),
+        ("Fallido", "Error de Impresión / Desperdicio"),
     )
 
     # Relación con cliente
@@ -147,6 +147,8 @@ class Pedido(models.Model):
         on_delete=models.CASCADE,
         related_name="pedidos",
         verbose_name="Cliente",
+        null=True,
+        blank=True,
     )
 
     # Relación opcional con solicitud de cotización
@@ -167,10 +169,16 @@ class Pedido(models.Model):
     )
     # Datos técnicos
     peso_estimado_g = models.DecimalField(
-        max_digits=12, decimal_places=2, verbose_name="Peso estimado (gramos)"
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name="Peso estimado (gramos)",
     )
     tiempo_estimado_h = models.DecimalField(
-        max_digits=10, decimal_places=2, verbose_name="Tiempo estimado (horas)"
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Tiempo estimado (horas)",
     )
 
     # Costos
@@ -195,7 +203,7 @@ class Pedido(models.Model):
         verbose_name="Otros costos",
     )
     precio_total = models.DecimalField(
-        max_digits=12, decimal_places=2, verbose_name="Precio total"
+        max_digits=12, decimal_places=2, default=0, verbose_name="Precio total"
     )
 
     # Estado y fechas
@@ -217,6 +225,13 @@ class Pedido(models.Model):
 
     # Información adicional
     notas = models.TextField(blank=True, verbose_name="Notas")
+
+
+    guest_nombre = models.CharField(max_length=200, blank=True, verbose_name="Nombre (Invitado)")
+    guest_email = models.EmailField(blank=True, verbose_name="Email (Invitado)")
+    guest_telefono = models.CharField(max_length=20, blank=True, verbose_name="Teléfono (Invitado)")
+    guest_direccion = models.TextField(blank=True, verbose_name="Dirección (Invitado)")
+    guest_ciudad = models.CharField(max_length=100, blank=True, verbose_name="Ciudad (Invitado)")
 
     @property
     def costo_total_produccion(self):
@@ -263,25 +278,45 @@ class Pedido(models.Model):
         }
         return progresos.get(self.estado_pedido, 0)
 
+    @property
+    def nombre_cliente(self):
+        if self.usuario:
+            return self.usuario.get_full_name_or_user()
+        return self.guest_nombre or "Invitado"
+
+    @property
+    def email_cliente(self):
+        if self.usuario:
+            return self.usuario.email
+        return self.guest_email or "—"
+
+    @property
+    def telefono_cliente(self):
+        if self.usuario:
+            return self.usuario.telefono or "—"
+        return self.guest_telefono or "—"
+
     def actualizar_totales(self):
         items = self.items.all()
-        total_costo_prod = Decimal('0.00')
-        total_venta = Decimal('0.00')
-        total_peso = Decimal('0.00')
+        total_costo_prod = Decimal("0.00")
+        total_venta = Decimal("0.00")
+        total_peso = Decimal("0.00")
 
         for item in items:
             cantidad = Decimal(item.cantidad or 0)
-            
+
             # Lógica de Costo
             if item.variante:
                 costo_u = item.variante.costo_produccion_total
             else:
                 # Si es manual, usamos los gramos por el costo del material asociado
-                costo_u = Decimal(item.gramos_por_unidad or 0) * Decimal(item.costo_material_unitario or 0)
-            
-            total_costo_prod += (costo_u * cantidad)
-            total_venta += (Decimal(item.precio_unitario or 0) * cantidad)
-            total_peso += (Decimal(item.gramos_por_unidad or 0) * cantidad)
+                costo_u = Decimal(item.gramos_por_unidad or 0) * Decimal(
+                    item.costo_material_unitario or 0
+                )
+
+            total_costo_prod += costo_u * cantidad
+            total_venta += Decimal(item.precio_unitario or 0) * cantidad
+            total_peso += Decimal(item.gramos_por_unidad or 0) * cantidad
 
         self.costo_material = total_costo_prod
         self.precio_total = total_venta
@@ -292,7 +327,8 @@ class Pedido(models.Model):
         )
 
     def __str__(self):
-        return f"Pedido #{self.id} - {self.usuario.email} ({self.get_estado_pedido_display()})"
+        # Usamos el ID y la propiedad nombre_cliente para evitar errores de None
+        return f"Pedido #{self.id} - {self.nombre_cliente} ({self.get_estado_pedido_display()})"
 
     class Meta:
         verbose_name = "Pedido"
@@ -304,24 +340,30 @@ class Pedido(models.Model):
 # NOTAS DE PEDIDO
 # =============================
 
+
 class NotaPedido(models.Model):
-    pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name='anotaciones')
+    pedido = models.ForeignKey(
+        Pedido, on_delete=models.CASCADE, related_name="anotaciones"
+    )
     # Cambiamos User por settings.AUTH_USER_MODEL
-    autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    autor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
+    )
     contenido = models.TextField()
     fecha_creacion = models.DateTimeField(auto_now_add=True)
-    
+
     # Campo nuevo para controlar la visibilidad
     visible_para_cliente = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['-fecha_creacion']
+        ordering = ["-fecha_creacion"]
         verbose_name = "Nota de pedido"
         verbose_name_plural = "Notas de pedido"
 
     def __str__(self):
         return f"Nota #{self.id} - Pedido {self.pedido.id}"
-        
+
+
 # =============================
 # ITEMS DE PEDIDO
 # =============================
@@ -365,20 +407,20 @@ class ItemPedido(models.Model):
         max_digits=12, decimal_places=2, default=0.00, verbose_name="Precio unitario"
     )
     gramos_por_unidad = models.DecimalField(
-        default=0.00,
-        max_digits=10, decimal_places=2, verbose_name="Gramos por unidad"
+        default=0.00, max_digits=10, decimal_places=2, verbose_name="Gramos por unidad"
     )
     costo_material_unitario = models.DecimalField(
         max_digits=12, decimal_places=4, default=0.00
     )
     impresora_asignada = models.ForeignKey(
-        'core.Impresora', 
+        "core.Impresora",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="items_asignados",
         verbose_name="Impresora",
     )
+
     @property
     def subtotal(self):
         """Subtotal del ítem"""
@@ -404,7 +446,7 @@ class ItemPedido(models.Model):
             self.gramos_por_unidad is None or self.gramos_por_unidad == 0
         ):
             # Si el producto base tiene el peso, lo traemos
-            self.gramos_por_unidad = self.variante.producto.peso_base_g
+            self.gramos_por_unidad = self.variante.peso_total
 
         # Guardamos el ítem
         super(ItemPedido, self).save(*args, **kwargs)
@@ -514,6 +556,7 @@ class ActualizacionPedido(models.Model):
 # =============================
 # SIGNALS
 # =============================
+
 
 @receiver(post_delete, sender=ItemPedido)
 def recalcular_pedido_al_borrar_item(sender, instance, **kwargs):

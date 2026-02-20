@@ -13,51 +13,61 @@ from .models import Pedido, ItemPedido, Impresora, SolicitudCotizacion, NotaPedi
 # ==========================================
 
 
+@admin_required
+def pedidos_list(request):
+    """Vista principal de pedidos con soporte para HTMX."""
+    context = _obtener_contexto_dashboard(request)
+    context["form"] = PedidoManualForm()
+    context["segment"] = "pedidos"
+    
+    # Si es HTMX, devolvemos solo la tabla
+    if request.headers.get("HX-Request"):
+        return render(request, "pedidos/partials/pedido_tabla.html", context)
+        
+    return render(request, "pedidos/pedidos_list.html", context)
+
 def _obtener_contexto_dashboard(request):
-    pedidos_list = Pedido.objects.select_related("usuario").order_by("-fecha_creacion")
-    print(f"DEBUG: Total pedidos en DB: {Pedido.objects.count()}")
-    estado_filtro = request.GET.get("estado")
-    busqueda = request.GET.get("q")
+    # Aseguramos que los valores sean strings vacíos en lugar de None
+    estado_filtro = request.GET.get("estado", "")
+    busqueda = request.GET.get("q", "")
+    page_number = request.GET.get("page", 1)
+
+    pedidos_qs = Pedido.objects.select_related("usuario").order_by("-fecha_creacion")
 
     if estado_filtro:
-        pedidos_list = pedidos_list.filter(estado_pedido=estado_filtro)
+        pedidos_qs = pedidos_qs.filter(estado_pedido=estado_filtro)
 
     if busqueda:
-        pedidos_list = pedidos_list.filter(
-            Q(id__icontains=busqueda)
-            | Q(usuario__first_name__icontains=busqueda)
-            | Q(usuario__email__icontains=busqueda)
-        )
+        palabras = busqueda.split()
+        for palabra in palabras:
+            pedidos_qs = pedidos_qs.filter(
+                Q(id__icontains=palabra) |
+                Q(usuario__first_name__icontains=palabra) |
+                Q(usuario__last_name__icontains=palabra) |
+                Q(usuario__email__icontains=palabra) |
+                Q(guest_nombre__icontains=palabra) |
+                Q(guest_email__icontains=palabra) |
+                Q(guest_telefono__icontains=palabra)
+            )
+        pedidos_qs = pedidos_qs.distinct()
+
+    # Paginación
+    paginator = Paginator(pedidos_qs, 10)
+    pedidos_paginados = paginator.get_page(page_number)
 
     kpis = {
-        "pendientes": Pedido.objects.filter(
-            estado_pedido__in=["En_Espera", "Confirmado"]
-        ).count(),
+        "pendientes": Pedido.objects.filter(estado_pedido__in=["En_Espera", "Confirmado"]).count(),
         "produccion": Pedido.objects.filter(estado_pedido="En_Produccion").count(),
         "listos": Pedido.objects.filter(estado_pedido="Listo").count(),
-        "solicitudes_nuevas": SolicitudCotizacion.objects.filter(
-            estado="Pendiente"
-        ).count(),
     }
 
-    paginator = Paginator(pedidos_list, 10)
-    pedidos = paginator.get_page(request.GET.get("page"))
-
     return {
-        "pedidos": pedidos,
+        "pedidos": pedidos_paginados,
         "kpis": kpis,
         "filtro_actual": estado_filtro,
         "busqueda_actual": busqueda,
         "estados_opciones": Pedido.ESTADOS_PEDIDO,
     }
-
-
-@admin_required
-def pedidos_list(request):
-    context = _obtener_contexto_dashboard(request)
-    context["form"] = PedidoManualForm()
-    context["segment"] = "pedidos"
-    return render(request, "pedidos/pedidos_list.html", context)
 
 
 @admin_required

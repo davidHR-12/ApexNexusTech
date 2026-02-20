@@ -12,7 +12,7 @@
                     <span class="text-[#10b981]">Pedido #{{ pedido.id }}</span>
                 </nav>
                 <h1 class="text-2xl font-bold text-white">Pedido #{{ pedido.id }}</h1>
-                <p class="text-gray-400 text-sm">Cliente: {{ pedido.usuario.get_full_name }} | {{ pedido.usuario.email }}</p>
+                <p class="text-gray-400 text-sm">Cliente: {{ pedido.nombre_cliente }} | {{ pedido.email_cliente }}</p>
             </div>
             <div class="grid grid-cols-1 sm:flex sm:items-center gap-3 w-full sm:w-auto">
                 {# Cambiar estado #}
@@ -119,7 +119,14 @@
                                 <td class="px-4 py-3">
                                     <div class="flex flex-col">
                                         <div class="flex items-center gap-2">
-                                            <span class="text-white font-medium">{{ item.descripcion }}</span>
+                                            {# SOLUCIÓN AL "NONE": Priorizar nombre de producto de catálogo, si no, descripción manual #}
+                                            <span class="text-white font-medium">
+                                                {% if item.variante %}
+                                                    {{ item.variante.producto.nombre }}
+                                                {% else %}
+                                                    {{ item.descripcion|default:"Sin descripción" }}
+                                                {% endif %}
+                                            </span>
                                             {# Alerta Material Variante #}
                                             {% if item.variante %}
                                                 {% for detalle in item.variante.detalles_material.all %}

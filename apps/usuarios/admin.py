@@ -1,37 +1,28 @@
+# apps/usuarios/admin.py
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import Usuario
 
+
 @admin.register(Usuario)
 class UsuarioAdmin(UserAdmin):
-    # 1. Campos que se verán en el listado principal
-    list_display = ('email', 'username', 'first_name', 'last_name', 'rol', 'is_email_verified', 'is_staff')
-    
-    # 2. Filtros laterales
-    list_filter = ('rol', 'is_email_verified', 'is_staff', 'is_superuser', 'is_active')
-    
-    # 3. Campos por los que se puede buscar
-    search_fields = ('email', 'username', 'first_name', 'last_name')
-    
-    # 4. Orden por defecto
-    ordering = ('-date_joined',)
+    list_display = ("email", "get_full_name_or_user", "rol", "is_email_verified", "is_manual", "is_active", "date_joined")
+    list_filter = ("rol", "is_email_verified", "is_manual", "is_active", "is_superuser")
+    search_fields = ("email", "first_name", "last_name", "username")
+    ordering = ("-date_joined",)
+    readonly_fields = ("date_joined", "last_login", "last_verification_email")
 
-    # 5. Configuración de los formularios de edición (Fieldsets)
-    # IMPORTANTE: UserAdmin usa fieldsets para organizar los campos.
     fieldsets = (
-        (None, {'fields': ('email', 'password')}),
-        ('Información Personal', {'fields': ('first_name', 'last_name', 'username', 'telefono')}),
-        ('Roles y Permisos', {
-            'fields': ('rol', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
-        }),
-        ('Verificación', {'fields': ('is_email_verified', 'last_verification_email')}),
-        ('Fechas Importantes', {'fields': ('last_login', 'date_joined')}),
+        ("Credenciales", {"fields": ("email", "username", "password")}),
+        ("Información personal", {"fields": ("first_name", "last_name", "telefono")}),
+        ("Rol y estado", {"fields": ("rol", "is_active", "is_manual", "is_email_verified")}),
+        ("Permisos", {"fields": ("is_staff", "is_superuser", "groups", "user_permissions")}),
+        ("Fechas", {"fields": ("date_joined", "last_login", "last_verification_email")}),
     )
 
-    # 6. Configuración del formulario de creación (cuando das a "Añadir usuario")
     add_fieldsets = (
         (None, {
-            'classes': ('wide',),
-            'fields': ('email', 'password', 'rol', 'is_email_verified'),
+            "classes": ("wide",),
+            "fields": ("email", "password1", "password2", "rol"),
         }),
     )

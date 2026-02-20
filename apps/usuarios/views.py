@@ -40,49 +40,56 @@ def api_crear_cliente_express(request):
     return JsonResponse({'success': False}, status=405)
 
 # Vista de registro
+# En apps/usuarios/views.py
+
 def registro_view(request):
     """
-    Maneja el registro de nuevos clientes.
+    Maneja el registro de nuevos clientes y vincula pedidos previos realizados como invitado.
     """
     if request.method == "POST":
         form = RegistroForm(request.POST)
         if form.is_valid():
             es_primer_usuario = not Usuario.objects.exists()
             user = form.save(commit=False)
-            # Si el username está vacío, usamos el email
+            
             if not user.username:
                 user.username = user.email
-            # Encriptamos la contraseña antes de guardar
+            
             user.set_password(form.cleaned_data["password"])
             user.is_active = True
 
-            # Si es el primer usuario, lo marcamos como administrador
             if es_primer_usuario:
                 user.rol = "Admin"
                 user.is_staff = True
                 user.is_superuser = True
                 user.is_email_verified = True
-            else:  # Si no es el primer usuario, lo marcamos como cliente
+            else:
                 user.rol = "Cliente"
                 user.is_staff = False
                 user.is_superuser = False
                 user.is_email_verified = False
+            
+            # 1. Guardamos el usuario primero para tener su ID
             user.save()
 
+            # 2. VINCULACIÓN DE PEDIDOS PREVIOS (Lógica de Reclamación)
+            # Buscamos pedidos que no tengan usuario asociado pero tengan su email
+            from apps.pedidos.models import Pedido # Importación local para evitar importes circulares
+            pedidos_previos = Pedido.objects.filter(usuario__isnull=True, guest_email__iexact=user.email)
+            
+            if pedidos_previos.exists():
+                # Actualizamos todos los pedidos encontrados para que pertenezcan al nuevo usuario
+                # Esto funciona sin importar si el pedido es de hoy o de hace meses
+                pedidos_previos.update(usuario=user)
+
             if not es_primer_usuario:
-                # Generamos el token y el uid
+                # Lógica de envío de token de verificación...
                 token = email_verification_token.make_token(user)
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
-
-                # Construimos el link de verificación
                 link = request.build_absolute_uri(
-                    reverse(
-                        "usuarios:verificar_email",
-                        kwargs={"uidb64": uid, "token": token},
-                    )
+                    reverse("usuarios:verificar_email", kwargs={"uidb64": uid, "token": token})
                 )
 
-                # Enviamos el correo electrónico
                 subject = "Verifica tu cuenta"
                 from_email = settings.EMAIL_HOST_USER
                 to = [user.email]
@@ -90,26 +97,12 @@ def registro_view(request):
                 html_content = f"""
                 <html>
                 <body style="font-family: Arial, sans-serif;">
-                    <h2>Verificación de cuenta</h2>
-                    <p>Hola,</p>
-                    <p>Gracias por registrarte. Para activar tu cuenta haz clic en el botón:</p>
-
-                    <a href="{link}"
-                    style="
-                    display:inline-block;
-                    padding:12px 20px;
-                    background-color:#22c55e;
-                    color:white;
-                    text-decoration:none;
-                    border-radius:6px;
-                    font-weight:bold;
-                    ">
-                    Verificar cuenta
+                    <h2>¡Bienvenido!</h2>
+                    <p>Gracias por registrarte. Hemos vinculado tus pedidos anteriores realizados con este correo a tu nueva cuenta.</p>
+                    <p>Para activar tu cuenta haz clic en el botón:</p>
+                    <a href="{link}" style="display:inline-block; padding:12px 20px; background-color:#22c55e; color:white; text-decoration:none; border-radius:6px; font-weight:bold;">
+                        Verificar cuenta
                     </a>
-
-                    <p style="margin-top:20px;">
-                        Si no solicitaste este registro, puedes ignorar este correo.
-                    </p>
                 </body>
                 </html>
                 """
@@ -118,25 +111,18 @@ def registro_view(request):
                 email.attach_alternative(html_content, "text/html")
                 email.send()
 
-                messages.success(
-                    request, "Cuenta creada. Revisa tu correo para verificar tu cuenta."
-                )
+                messages.success(request, "Cuenta creada. ¡Tus pedidos anteriores han sido vinculados! Revisa tu correo para verificar tu cuenta.")
             else:
-                messages.success(
-                    request,
-                    "Cuenta de administrador creada correctamente. Ya puedes iniciar sesión.",
-                )
+                messages.success(request, "Cuenta de administrador creada correctamente.")
+            
             return redirect("usuarios:login")
     else:
         form = RegistroForm()
-    return render(
-        request,
-        "usuarios/registro.html",
-        {
-            "form": form,
-            "creando_admin": not Usuario.objects.exists(),
-        },
-    )
+    
+    return render(request, "usuarios/registro.html", {
+        "form": form,
+        "creando_admin": not Usuario.objects.exists(),
+    })
 
 
 # Vista para verificar el correo electrónico

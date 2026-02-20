@@ -1,4 +1,3 @@
-# usuarios/decorators.py
 from django.core.exceptions import PermissionDenied
 from functools import wraps
 

@@ -141,6 +141,38 @@ class Producto(models.Model):
     )
 
     @property
+    def precio_minimo(self):
+        """Retorna el precio de la variante más económica o el precio base si no hay variantes"""
+        variantes_activas = self.variantes.filter(activa=True)
+        if variantes_activas.exists():
+            # Obtenemos el mínimo precio_final de las variantes
+            precios = [v.precio_final for v in variantes_activas]
+            return min(precios)
+        return self.precio_venta
+
+    @property
+    def material_base(self):
+        """
+        Analiza las variantes del producto para determinar el material principal.
+        """
+        # Obtenemos todos los materiales únicos usados en todas las variantes activas
+        materiales_ids = VarianteMaterialDetalle.objects.filter(
+            variante__producto=self, 
+            variante__activa=True
+        ).values_list('material__color__nombre', flat=True).distinct()
+
+        cantidad = materiales_ids.count()
+
+        if cantidad == 1:
+            # Si solo hay un material en todas las variantes, devolvemos ese
+            return materiales_ids[0]
+        elif cantidad > 1:
+            # Si hay más de uno, es multi-material
+            return "Multi-material"
+        
+        return "Sin definir"
+
+    @property
     def stock_total(self):
         """Suma el stock de todas las variantes"""
         return sum(v.stock_disponible for v in self.variantes.all())

@@ -50,6 +50,44 @@ class RegistroExpressClienteForm(TailwindModelForm):
             user.save()
         return user
 
+class CompraRapidaForm(forms.Form):
+    """
+    Formulario combinado para crear un usuario y su perfil de cliente
+    en un solo paso durante la compra.
+    """
+    nombre = forms.CharField(max_length=150, label="Nombre")
+    apellido = forms.CharField(max_length=150, label="Apellido")
+    telefono = forms.CharField(max_length=20, label="Teléfono / WhatsApp")
+    email = forms.EmailField(required=False, label="Email (Opcional)")
+    
+    # Campos de dirección para el envío
+    direccion = forms.CharField(
+        widget=forms.TextInput(attrs={'placeholder': 'Calle, No. Casa, Sector...'}),
+        label="Dirección de Envío"
+    )
+    ciudad = forms.CharField(max_length=100, initial="Santo Domingo")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Aplicamos estilos Tailwind a todos los campos
+        for field in self.fields.values():
+            field.widget.attrs.update({
+                "class": "w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white outline-none focus:border-[#10b981]"
+            })
+
+    def clean_telefono(self):
+        telefono = self.cleaned_data.get('telefono')
+        if telefono and not re.match(r'^[0-9-]+$', telefono):
+            raise forms.ValidationError("El teléfono solo debe contener números y guiones.")
+        return telefono
+
+    def verificar_reincidencia(self):
+        """
+        Retorna el usuario si el teléfono ya existe en la base de datos.
+        Esto nos servirá para decidir si pedimos verificación.
+        """
+        telefono = self.cleaned_data.get('telefono')
+        return Usuario.objects.filter(telefono=telefono).first()
 
 class LoginForm(forms.Form):
     """

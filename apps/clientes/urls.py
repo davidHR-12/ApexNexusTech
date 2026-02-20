@@ -19,4 +19,9 @@ urlpatterns = [
     path("perfil/", views.mi_perfil, name="perfil"),
     path("crear-pedido/<int:variante_id>/", views.crear_pedido_catalogo, name="crear_pedido_catalogo"),
     path("solicitar/", views.solicitar_cotizacion, name="solicitar_cotizacion"),
+    path("checkout/", views.checkout_paso_final, name="checkout_express"),
+    path('carrito/actualizar/<int:variante_id>/<str:accion>/', views.actualizar_carrito, name='actualizar_carrito'),
+    path("carrito/agregar/<int:variante_id>/", views.agregar_al_carrito, name="agregar_al_carrito"),
+    # Se corrige el 'name' para que coincida con el redirect de la vista
+    path("checkout/confirmacion/", views.pedido_confirmado_invitado, name="pedido_confirmado_invitado"),
 ]

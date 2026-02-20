@@ -1,26 +1,40 @@
 function smartRedirect(event, element) {
     const url = element.getAttribute('data-url');
     
-    // 1. Detectar si se presiona Ctrl/Cmd/Shift
+    // Detectar si se presiona Ctrl/Cmd/Shift para abrir en nueva pestaña
     if (event.ctrlKey || event.metaKey || event.shiftKey) {
-        // Abrir en pestaña nueva
         window.open(url, '_blank');
     } else {
-        // Clic normal: Redirigir en la misma pestaña
         window.location.href = url;
     }
 }
 
-// LÓGICA DEL SIDEBAR COLAPSABLE OPTIMIZADA
+document.addEventListener("DOMContentLoaded", () => {
+    // --- 1. Formateo de Teléfono ---
+    const inputTelefono = document.querySelector('input[name="telefono"]');
+    if (inputTelefono) {
+        inputTelefono.addEventListener('input', function (e) {
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
+            e.target.value = !x[2] ? x[1] : x[1] + '-' + x[2] + (x[3] ? '-' + x[3] : '');
+        });
+        inputTelefono.maxLength = 12;
+    }
+
+    // Inicializar estado del sidebar si existe
+    checkSidebarState();
+});
+
+// Referencias a elementos (pueden ser null en páginas públicas)
 const btnToggle = document.getElementById('toggleSidebar');
 const sidebar = document.getElementById('sidebar');
 const overlay = document.getElementById('sidebarOverlay');
 const mainContent = document.getElementById('mainContent');
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-const mobileSidebar = document.getElementById('mobileSidebar');
-const mobileOverlay = document.getElementById('mobileOverlay');
 
 function checkSidebarState() {
+    // Si no hay sidebar en esta página, no ejecutar nada
+    if (!sidebar) return;
+
     const isMobile = window.innerWidth < 768;
     const savedState = localStorage.getItem('sidebarMini');
 
@@ -33,70 +47,76 @@ function checkSidebarState() {
     } else {
         sidebar.classList.add('-translate-x-full');
         sidebar.classList.remove('mini', 'w-20');
-        mainContent.classList.remove('md:ml-20');
+        if (mainContent) mainContent.classList.remove('md:ml-20');
     }
 }
 
 function applyMiniState() {
+    if (!sidebar) return;
     document.documentElement.classList.add('sidebar-is-mini');
     sidebar.classList.add('mini');
     sidebar.classList.remove('w-64');
     sidebar.classList.add('w-20');
-    mainContent.classList.remove('md:ml-64');
-    mainContent.classList.add('md:ml-20');
+    if (mainContent) {
+        mainContent.classList.remove('md:ml-64');
+        mainContent.classList.add('md:ml-20');
+    }
     localStorage.setItem('sidebarMini', 'true');
 }
 
 function applyFullState() {
+    if (!sidebar) return;
     document.documentElement.classList.remove('sidebar-is-mini');
     sidebar.classList.remove('mini');
     sidebar.classList.remove('w-20');
     sidebar.classList.add('w-64');
-    mainContent.classList.remove('md:ml-20');
-    mainContent.classList.add('md:ml-64');
+    if (mainContent) {
+        mainContent.classList.remove('md:ml-20');
+        mainContent.classList.add('md:ml-64');
+    }
     localStorage.setItem('sidebarMini', 'false');
 }
 
 function toggleMenu() {
+    if (!sidebar) return;
     const isMobile = window.innerWidth < 768;
 
     if (isMobile) {
         const isHidden = sidebar.classList.contains('-translate-x-full');
         if (isHidden) {
             sidebar.classList.remove('-translate-x-full');
-            overlay.classList.remove('hidden');
+            if (overlay) overlay.classList.remove('hidden');
             document.body.classList.add('sidebar-open');
         } else {
             sidebar.classList.add('-translate-x-full');
-            overlay.classList.add('hidden');
+            if (overlay) overlay.classList.add('hidden');
             document.body.classList.remove('sidebar-open');
         }
     } else {
         const isCurrentlyMini = sidebar.classList.contains('mini');
         if (!isCurrentlyMini) {
             applyMiniState();
-            localStorage.setItem('sidebarMini', 'true');
         } else {
             applyFullState();
-            localStorage.setItem('sidebarMini', 'false');
         }
     }
 }
 
-// Event listeners
+// Event listeners con Optional Chaining o validación
 mobileMenuBtn?.addEventListener('click', toggleMenu);
 btnToggle?.addEventListener('click', toggleMenu);
 overlay?.addEventListener('click', () => {
-    sidebar.classList.add('-translate-x-full');
-    overlay.classList.add('hidden');
+    if (sidebar) sidebar.classList.add('-translate-x-full');
+    if (overlay) overlay.classList.add('hidden');
     document.body.classList.remove('sidebar-open');
 });
 
 window.addEventListener('resize', () => {
+    if (!sidebar) return;
     const isMobile = window.innerWidth < 768;
 
     if (!isMobile) {
-        overlay.classList.add('hidden');
+        if (overlay) overlay.classList.add('hidden');
         sidebar.classList.remove('-translate-x-full');
         
         if (localStorage.getItem('sidebarMini') === 'true') {
@@ -107,7 +127,7 @@ window.addEventListener('resize', () => {
     } else {
         sidebar.classList.remove('mini', 'w-20');
         sidebar.classList.add('w-64', '-translate-x-full');
-        mainContent.classList.remove('md:ml-20', 'md:ml-64');
+        if (mainContent) mainContent.classList.remove('md:ml-20', 'md:ml-64');
     }
 });
 

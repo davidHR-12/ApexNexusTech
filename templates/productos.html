@@ -1,5 +1,7 @@
 {% extends "base_publica.html" %}
-{% block title %}Productos - A.N.T{% endblock title %}
+{% block title %}
+  Productos - A.N.T
+{% endblock title %}
 {% block content %}
   <section class="max-w-7xl mx-auto px-4 py-16">
     <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
@@ -36,7 +38,10 @@
               </div>
             {% endif %}
             <div class="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-xl">
-              <span class="text-[#10b981] font-bold text-sm text-shadow-sm">RD$ {{ p.precio_venta|floatformat:0 }}</span>
+              <span class="text-[#10b981] font-bold text-sm">
+                {% if p.variantes.exists %}<span class="text-[10px] text-gray-400 font-normal mr-1">Desde</span>{% endif %}
+                RD$ {{ p.precio_minimo|floatformat:0 }}
+              </span>
             </div>
           </div>
           <div class="p-6 flex flex-col flex-grow">
@@ -47,7 +52,7 @@
               {{ p.descripcion|default:"Explora los detalles de esta pieza personalizada." }}
             </p>
             <div class="flex items-center justify-between pt-4 border-t border-gray-800">
-              <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{{ p.material_base.nombre|default:"Multi-material" }}</span>
+              <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{{ p.material_base }}</span>
               <div class="text-[#10b981] opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />

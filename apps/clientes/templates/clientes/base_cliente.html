@@ -1,143 +1,76 @@
 {% extends 'base_dashboard.html' %}
 {% load static %}
-
-{% block title %}Mi Panel - A.N.T{% endblock title %}
-
-{# ── URL de inicio al hacer clic en el logo ── #}
-{% block sidebar_home_url %}{% url 'clientes:home' %}{% endblock %}
-
-{# ── Navegación del cliente ── #}
+{% block title %}
+  Mi Panel - A.N.T
+{% endblock title %}
+{% block sidebar_home_url %}
+  {% url 'clientes:home' %}
+{% endblock %}
 {% block sidebar_nav %}
-
   <a href="{% url 'clientes:home' %}"
-     data-tooltip="Inicio"
-     class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group
-            {% if request.resolver_match.url_name == 'home' %}
-              bg-[#334155] text-[#10b981]
-            {% else %}
-              text-gray-300 hover:bg-[#334155] hover:text-[#10b981]
-            {% endif %}">
-    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2
-               m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4
-               a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+     class="nav-link flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'home' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
     </svg>
-    <span class="nav-text whitespace-nowrap">Dashboard</span>
+    <span class="nav-text">Dashboard</span>
   </a>
-
   <div class="mini-separator"></div>
-
-  {# ── Mis Pedidos ── #}
-<a href="{% url 'clientes:mis_pedidos' %}"
-   data-tooltip="Mis Pedidos"
-   class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group
-          {% if request.resolver_match.url_name == 'mis_pedidos' %}
-            bg-[#334155] text-[#10b981]
-          {% else %}
-            text-gray-300 hover:bg-[#334155] hover:text-[#10b981]
-          {% endif %}">
-  <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-  </svg>
-  <span class="nav-text whitespace-nowrap">Mis Pedidos</span>
-</a>
-
+  <a href="{% url 'clientes:checkout_express' %}"
+     class="nav-link flex items-center justify-between p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'checkout_express' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+    <div class="flex items-center gap-3">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+      <span class="nav-text">Mi Carrito</span>
+    </div>
+    {% if request.session.carrito %}
+      <span class="bg-[#10b981] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg shadow-[#10b981]/20">
+        {{ request.session.carrito|length }}
+      </span>
+    {% endif %}
+  </a>
   <div class="mini-separator"></div>
-
-  {# ── Catálogo de Productos ── #}
+  <a href="{% url 'clientes:mis_pedidos' %}"
+     class="nav-link flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'mis_pedidos' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+    </svg>
+    <span class="nav-text">Mis Pedidos</span>
+  </a>
+  <div class="mini-separator"></div>
   <a href="{% url 'clientes:productos' %}"
-     data-tooltip="Catálogo"
-     class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group
-            {% if request.resolver_match.url_name == 'productos' %}
-              bg-[#334155] text-[#10b981]
-            {% else %}
-              text-gray-300 hover:bg-[#334155] hover:text-[#10b981]
-            {% endif %}">
-    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+     class="nav-link flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'productos' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
     </svg>
-    <span class="nav-text whitespace-nowrap">Catálogo</span>
+    <span class="nav-text">Catálogo</span>
   </a>
-
   <div class="mini-separator"></div>
-
-  {# ── Nuevo Pedido ── #}
   <a href="{% url 'clientes:solicitar_cotizacion' %}"
-     data-tooltip="Nuevo Pedido"
-     class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group
-            {% if request.resolver_match.url_name == 'solicitar_cotizacion' %}
-              bg-[#334155] text-[#10b981]
-            {% else %}
-              text-gray-300 hover:bg-[#334155] hover:text-[#10b981]
-            {% endif %}">
-    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 4v16m8-8H4" />
+     class="nav-link flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'solicitar_cotizacion' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
     </svg>
-    <span class="nav-text whitespace-nowrap">Nuevo Pedido</span>
+    <span class="nav-text">Nueva Pieza</span>
   </a>
-
 {% endblock sidebar_nav %}
-
-
-{# ── Footer del sidebar del cliente ── #}
 {% block sidebar_footer %}
-
   <div class="mini-separator"></div>
-
-  {# ── Mi Perfil ── #}
   <a href="{% url 'clientes:perfil' %}"
-     data-tooltip="Mi Perfil"
-     class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition
-            {% if request.resolver_match.url_name == 'perfil' %}
-              bg-[#334155] text-[#10b981]
-            {% else %}
-              text-gray-300 hover:bg-[#334155] hover:text-[#10b981]
-            {% endif %}">
-    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804
-               M15 10a3 3 0 11-6 0 3 3 0 016 0z
-               M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+     class="nav-link flex items-center gap-3 p-3 rounded-xl text-gray-300 hover:bg-[#334155] hover:text-[#10b981] transition">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
     </svg>
-    <span class="nav-text whitespace-nowrap">Mi Perfil</span>
+    <span class="nav-text">Mi Perfil</span>
   </a>
-
-   <div class="mini-separator"></div>
-
-  <a href="{% url 'clientes:index' %}"
-     data-tooltip="Ver Sitio Público"
-     class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl text-gray-300 hover:bg-[#334155] hover:text-[#10b981] transition">
-    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3
-               m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9
-               m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-    </svg>
-    <span class="nav-text whitespace-nowrap">Volver al Inicio</span>
-  </a>
-
-  <div class="mini-separator"></div>
-
-  {# ── Cerrar Sesión ── #}
   <form action="{% url 'usuarios:logout' %}" method="post" class="w-full">
     {% csrf_token %}
     <button type="submit"
-            data-tooltip="Cerrar Sesión"
-            class="nav-link tooltip w-full flex items-center gap-3 p-3 rounded-xl text-red-400 hover:bg-red-400/10 transition">
-      <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            class="w-full flex items-center gap-3 p-3 rounded-xl text-red-400 hover:bg-red-400/10 transition">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7" />
       </svg>
-      <span class="nav-text whitespace-nowrap">Cerrar Sesión</span>
+      <span class="nav-text">Cerrar Sesión</span>
     </button>
   </form>
-
 {% endblock sidebar_footer %}
-
-
-{# ── Bloque de contenido (cada vista cliente lo sobreescribe) ── #}
-{% block content %}{% endblock content %}

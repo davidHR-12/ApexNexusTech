@@ -35,24 +35,38 @@ def _redirect_producto_detalle_htmx(request, producto):
 
 @admin_required
 def product_list(request):
-    """Muestra el listado de categorías con sus productos y estadísticas generales del inventario"""
+    """Muestra el listado de categorías con búsqueda HTMX y estadísticas de variantes."""
+    search_query = request.GET.get("search", "")
+    
+    # Filtrado de categorías basado en la búsqueda
     categorias = Categoria.objects.annotate(total_productos=Count("productos")).order_by("orden")
+    
+    if search_query:
+        categorias = categorias.filter(
+            Q(nombre__icontains=search_query) | 
+            Q(descripcion__icontains=search_query)
+        ).distinct()
+
+    # Estadísticas generales (se calculan sobre todo el inventario, no solo el filtrado)
     total_modelos = Producto.objects.count()
     total_stock_fisico = VarianteProducto.objects.aggregate(total=Sum('stock_disponible'))['total'] or 0
     valor_inventario = VarianteProducto.objects.aggregate(
         total=Sum(F('producto__precio_venta') * F('stock_disponible'))
     )['total'] or 0
 
-    return render(
-        request,
-        "productos/producto_list.html",
-        {
-            "categorias": categorias,
-            "total_modelos": total_modelos,
-            "total_stock_fisico": total_stock_fisico,
-            "valor_inventario": valor_inventario,
-        },
-    )
+    context = {
+        "categorias": categorias,
+        "total_modelos": total_modelos,
+        "total_stock_fisico": total_stock_fisico,
+        "valor_inventario": valor_inventario,
+        "search_query": search_query,
+    }
+
+    # Si es una petición de HTMX, solo devolvemos el listado de tarjetas
+    if request.headers.get("HX-Request"):
+        return render(request, "productos/partials/categoria_listado.html", context)
+
+    return render(request, "productos/producto_list.html", context)
 
 
 @admin_required
