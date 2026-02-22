@@ -1,383 +1,393 @@
 {% extends "core/base_admin.html" %}
 {% load static %}
 {% block content %}
-    <div class="p-4 md:p-6 max-w-screen-xl mx-auto">
-        {# ── CABECERA ─────────────────────────────────────────── #}
-        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-5 gap-4">
-            <div>
-                <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest m-2 gap-2">
-                    <a href="{% url 'pedidos:pedidos_lista' %}"
-                       class="hover:text-white transition-colors">Volver a pedidos</a>
-                    <span>/</span>
-                    <span class="text-[#10b981]">Pedido #{{ pedido.id }}</span>
-                </nav>
-                <h1 class="text-2xl font-bold text-white">Pedido #{{ pedido.id }}</h1>
-                <p class="text-gray-400 text-sm">Cliente: {{ pedido.nombre_cliente }} | {{ pedido.email_cliente }}</p>
+<div class="p-4 md:p-6 max-w-screen-xl mx-auto">
+
+    {# ── CABECERA COMPACTA ── #}
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-3">
+        <div>
+            <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest mb-1 gap-2">
+                <a href="{% url 'pedidos:pedidos_lista' %}" class="hover:text-white transition-colors">Volver a pedidos</a>
+                <span>/</span>
+                <span class="text-[#10b981]">Pedido #{{ pedido.id }}</span>
+            </nav>
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl font-bold text-white">Pedido #{{ pedido.id }}</h1>
+                <span class="text-gray-500 text-sm">·</span>
+                <p class="text-gray-400 text-sm">{{ pedido.nombre_cliente }} · {{ pedido.email_cliente }}</p>
             </div>
-            <div class="grid grid-cols-1 sm:flex sm:items-center gap-3 w-full sm:w-auto">
-                {# Cambiar estado #}
-                <form method="post"
-                      action="{% url 'pedidos:cambiar_estado' pedido.id %}"
-                      class="flex items-center gap-2 w-full sm:w-auto">
-                    {% csrf_token %}
-                    <input type="hidden" name="accion" value="cambiar_estado">
-                    {% if items %}
-                        {% if pedido.estado_pedido == 'Fallido' or pedido.estado_pedido == 'Entregado' or pedido.estado_pedido == 'Cancelado' %}
-                            <div class="px-4 py-2 bg-gray-700/50 rounded-xl border border-gray-600 text-gray-400 text-xs font-bold uppercase">
-                                Estado: {{ pedido.get_estado_pedido_display }}. No se puede cambiar el estado
+        </div>
+
+        {# Acciones: estado + agregar items #}
+        <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+            {# Cambiar estado #}
+            <form method="post" action="{% url 'pedidos:cambiar_estado' pedido.id %}" class="flex items-center gap-2">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="cambiar_estado">
+                {% if items %}
+                    {% if pedido.estado_pedido == 'Fallido' or pedido.estado_pedido == 'Entregado' or pedido.estado_pedido == 'Cancelado' %}
+                        <div class="px-3 py-2 bg-gray-700/50 rounded-xl border border-gray-600 text-gray-400 text-xs font-bold uppercase">
+                            {{ pedido.get_estado_pedido_display }} — Estado final
+                        </div>
+                    {% else %}
+                        <select name="nuevo_estado" class="bg-gray-800 border border-gray-700 text-white text-sm rounded-xl px-3 h-[38px] focus:ring-blue-500">
+                            {% for cod, nombre in estados %}
+                                <option value="{{ cod }}" {% if pedido.estado_pedido == cod %}selected{% endif %}>{{ nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-3 h-[38px] rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M20 8A8 8 0 005.64 5.64M4 16a8 8 0 0014.36 2.36"/>
+                            </svg>
+                            <span class="hidden sm:inline">Actualizar</span>
+                        </button>
+                    {% endif %}
+                {% else %}
+                    <div class="text-gray-500 text-xs italic bg-gray-800/50 px-3 py-2 rounded-xl border border-gray-700">Agregue ítems para cambiar estado</div>
+                {% endif %}
+            </form>
+
+            {# Botones agregar item #}
+            {% if pedido.estado_pedido == 'En_Espera' %}
+                <button onclick="abrirModal('modalItemCatalogo')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    <span>Catálogo</span>
+                </button>
+                <button onclick="abrirModal('modalItemPersonalizado')" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    <span>Personalizado</span>
+                </button>
+            {% else %}
+                <div class="px-3 py-2 bg-gray-700/50 rounded-xl border border-gray-600 text-gray-400 text-xs font-bold uppercase">
+                    No se pueden agregar ítems
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── GRID PRINCIPAL 3 COLUMNAS ── #}
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+
+        {# ── COL 1 + 2: Tabla de ítems (ocupa 2 columnas) ── #}
+        <div class="xl:col-span-2 space-y-4">
+
+            {# Tabla de ítems #}
+            <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-700 bg-gray-700/30 flex items-center justify-between">
+                    <h3 class="font-bold text-white text-sm">Ítems del Pedido</h3>
+                    <span class="text-xs text-gray-500">{{ items|length }} ítem{{ items|length|pluralize:"s" }}</span>
+                </div>
+                <div class="overflow-x-auto max-h-[320px] overflow-y-auto scrollbar-thin">
+                    <table class="w-full text-left text-gray-400 text-sm">
+                        <thead>
+                            <tr class="bg-[#1e293b]/60 text-gray-400 text-[10px] uppercase tracking-widest sticky top-0 z-10">
+                                <th class="px-4 py-2.5">Producto / Descripción</th>
+                                <th class="px-4 py-2.5 text-center">Tipo</th>
+                                <th class="px-4 py-2.5">Cant.</th>
+                                <th class="px-4 py-2.5">Producción</th>
+                                <th class="px-4 py-2.5 text-right">Subtotal</th>
+                                <th class="px-4 py-2.5 text-right">Acc.</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-700">
+                            {% for item in items %}
+                                <tr class="hover:bg-gray-800/30 transition-colors">
+                                    <td class="px-4 py-2.5">
+                                        <div class="flex flex-col">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-white font-medium text-sm">
+                                                    {% if item.variante %}{{ item.variante.producto.nombre }}{% else %}{{ item.descripcion|default:"Sin descripción" }}{% endif %}
+                                                </span>
+                                                {% if item.variante %}
+                                                    {% for detalle in item.variante.detalles_material.all %}
+                                                        {% if detalle.material.stock_actual < item.gramos_totales %}
+                                                            <svg class="w-4 h-4 text-orange-500 animate-pulse flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" title="Falta material">
+                                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                                            </svg>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% elif item.material_personalizado and item.material_personalizado.stock_actual < item.gramos_totales %}
+                                                    <svg class="w-4 h-4 text-red-500 animate-pulse flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" title="Falta material personalizado">
+                                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                                    </svg>
+                                                {% endif %}
+                                            </div>
+                                            <span class="text-[10px] text-blue-400">
+                                                Mat:
+                                                {% if item.variante %}
+                                                    {% for detalle in item.variante.detalles_material.all %}{{ detalle.material.tipo }} {{ detalle.material.color.nombre }}{% if not forloop.last %},{% endif %}{% endfor %}
+                                                {% else %}
+                                                    {{ item.material_personalizado.tipo }} {{ item.material_personalizado.color }}
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-2.5 text-center">
+                                        {% if item.variante %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">Catálogo</span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-wider">Custom</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-2.5 font-mono text-sm">{{ item.cantidad }} u.</td>
+                                    <td class="px-4 py-2.5">
+                                        {% if pedido.estado_pedido == 'En_Produccion' or pedido.estado_pedido == 'Listo' or pedido.estado_pedido == 'Entregado' %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-900/30 text-blue-400 border border-blue-800">
+                                                <svg class="w-3 h-3 mr-1 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="5"/></svg>
+                                                {% if item.variante %}Del Catálogo{% else %}{{ item.impresora_asignada.nombre|default:"Sin máquina" }}{% endif %}
+                                            </span>
+                                        {% elif item.variante %}
+                                            <span class="text-xs text-gray-400 italic">De Stock</span>
+                                        {% else %}
+                                            <form method="post" action="{% url 'pedidos:asignar_impresora' item.id %}" class="flex items-center">
+                                                {% csrf_token %}
+                                                <select name="impresora_id" onchange="this.form.submit()" class="bg-gray-900 border border-gray-700 text-[11px] rounded p-1 text-gray-300">
+                                                    <option value="">Sin asignar...</option>
+                                                    {% if item.impresora_asignada %}<option value="{{ item.impresora_asignada.id }}" selected>{{ item.impresora_asignada.nombre }}</option>{% endif %}
+                                                    {% for imp in impresoras %}{% if imp.id != item.impresora_asignada_id %}<option value="{{ imp.id }}">{{ imp.nombre }}</option>{% endif %}{% endfor %}
+                                                </select>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-2.5 text-right text-white font-bold font-mono">RD$ {{ item.subtotal }}</td>
+                                    <td class="px-4 py-2.5 text-center">
+                                        {% if pedido.estado_pedido == 'En_Espera' %}
+                                            <div class="flex items-center justify-center gap-1">
+                                                {% if not item.variante %}
+                                                    <button onclick="abrirModalEditarItem({{ item.id }}, '{% url 'pedidos:editar_item' item.id %}')" class="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded-lg">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                                    </button>
+                                                {% endif %}
+                                                <button onclick="eliminarItem({{ item.id }})" class="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                </button>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-gray-700 text-xs">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# ── FILA DE 2: Notas + Costos en paralelo ── #}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                {# Notas e información #}
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Información y Notas
+                        </h3>
+                        <button onclick="abrirModal('modalEditarNotas')" class="flex items-center gap-1 px-2.5 py-1 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors text-xs font-bold border border-blue-500/20">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Nueva Nota
+                        </button>
+                    </div>
+
+                    {# Solicitud del cliente #}
+                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Solicitud del Cliente</p>
+                    <div class="text-gray-400 text-xs bg-gray-900/30 p-2.5 rounded-lg border border-gray-700/30 italic mb-3 min-h-[60px]">
+                        {% if pedido.descripcion %}"{{ pedido.descripcion }}"{% else %}<span class="text-gray-600">Sin descripción.</span>{% endif %}
+                    </div>
+
+                    {# Historial de notas #}
+                    <p class="text-[10px] text-emerald-500 uppercase font-bold tracking-wider mb-1">Historial de Anotaciones</p>
+                    <div class="space-y-2 max-h-[160px] overflow-y-auto pr-1 scrollbar-thin">
+                        {% for nota in pedido.anotaciones.all %}
+                            <div class="p-2.5 rounded-lg border {% if nota.visible_para_cliente %}bg-blue-500/5 border-blue-500/20{% else %}bg-gray-900/50 border-gray-700{% endif %}">
+                                <div class="flex justify-between items-center mb-0.5">
+                                    <span class="text-[10px] font-bold {% if nota.visible_para_cliente %}text-blue-400{% else %}text-gray-500{% endif %} uppercase">
+                                        {{ nota.autor.get_full_name|default:nota.autor.username }}
+                                        {% if nota.visible_para_cliente %}<span class="ml-1 text-[8px] bg-blue-500/20 px-1 rounded text-blue-300">PÚBLICO</span>{% endif %}
+                                    </span>
+                                    <span class="text-[9px] text-gray-600 font-mono">{{ nota.fecha_creacion|date:"d/m H:i" }}</span>
+                                </div>
+                                <p class="text-xs text-gray-300">{{ nota.contenido|linebreaksbr }}</p>
+                            </div>
+                        {% empty %}
+                            <div class="flex items-center justify-center h-[80px] bg-gray-900/20 rounded-lg border border-dashed border-gray-700">
+                                <span class="text-gray-600 italic text-xs">Sin notas registradas.</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    {# Multimedia #}
+                    {% if pedido.solicitud %}
+                        {% if pedido.solicitud.imagen_referencia or pedido.solicitud.enlace_referencia %}
+                            <div class="mt-3 pt-3 border-t border-gray-700/50">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1.5">Multimedia</p>
+                                <div class="flex gap-2 flex-wrap">
+                                    {% if pedido.solicitud.imagen_referencia %}
+                                        <a href="{{ pedido.solicitud.imagen_referencia.url }}" target="_blank" class="w-12 h-12 rounded-lg overflow-hidden border border-gray-700 bg-gray-900 group">
+                                            <img src="{{ pedido.solicitud.imagen_referencia.url }}" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity">
+                                        </a>
+                                    {% endif %}
+                                    {% if pedido.solicitud.enlace_referencia %}
+                                        <a href="{{ pedido.solicitud.enlace_referencia }}" target="_blank" class="flex items-center justify-center w-12 h-12 rounded-lg bg-gray-900 border border-gray-700 text-blue-400 hover:bg-blue-500/10 transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                {# Resumen de costos #}
+                <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+                    <h3 class="font-bold text-white text-sm mb-3">Resumen de Costos</h3>
+                    <div class="space-y-2.5 text-sm">
+                        <div class="flex justify-between text-gray-400">
+                            <span>Costo Material Est.:</span>
+                            <span class="font-mono text-white">RD$ {{ pedido.costo_material }}</span>
+                        </div>
+                        <div class="flex justify-between text-gray-400">
+                            <span>Otros Costos:</span>
+                            <span class="font-mono text-white">RD$ {{ pedido.otros_costos }}</span>
+                        </div>
+                        <div class="border-t border-gray-700 pt-2.5 flex justify-between font-bold text-white">
+                            <span>Total:</span>
+                            <span class="text-green-400 font-mono">RD$ {{ pedido.precio_total }}</span>
+                        </div>
+                        <div class="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 mt-1">
+                            <div class="flex justify-between text-blue-400 font-bold">
+                                <span>Ganancia Estimada:</span>
+                                <span class="font-mono">RD$ {{ pedido.ganancia }}</span>
+                            </div>
+                            <p class="text-[10px] text-blue-300 mt-1 uppercase tracking-wider">Margen: {{ pedido.margen_porcentaje }}%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# ── COL 3: Pago (columna derecha fija) ── #}
+        <div class="xl:col-span-1">
+            <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden sticky top-4">
+                <div class="px-4 py-3 border-b border-gray-700 bg-gray-700/20 flex items-center justify-between">
+                    <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                        </svg>
+                        Estado de Cobro
+                    </h3>
+                    <a href="{% url 'core:configuracion_pago' %}" class="text-[10px] text-gray-500 hover:text-emerald-400 transition-colors font-bold uppercase tracking-wider flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Config.
+                    </a>
+                </div>
+
+                <div class="p-4 space-y-4">
+                    {# Método de pago #}
+                    <div>
+                        <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2">Método elegido por el cliente</p>
+                        {% if pedido.metodo_pago_preferido %}
+                            <div class="flex items-center gap-3 p-3 rounded-xl border {% if pedido.metodo_pago_preferido == 'Efectivo' %}bg-emerald-500/5 border-emerald-500/20{% elif pedido.metodo_pago_preferido == 'Transferencia' %}bg-blue-500/5 border-blue-500/20{% else %}bg-purple-500/5 border-purple-500/20{% endif %}">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 {% if pedido.metodo_pago_preferido == 'Efectivo' %}bg-emerald-500/10{% elif pedido.metodo_pago_preferido == 'Transferencia' %}bg-blue-500/10{% else %}bg-purple-500/10{% endif %}">
+                                    {% if pedido.metodo_pago_preferido == 'Efectivo' %}
+                                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    {% elif pedido.metodo_pago_preferido == 'Transferencia' %}
+                                        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg>
+                                    {% else %}
+                                        <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <p class="text-white font-semibold text-sm">{{ pedido.get_metodo_pago_preferido_display }}</p>
+                                    <p class="text-gray-500 text-xs">
+                                        {% if pedido.metodo_pago_preferido == 'Efectivo' %}Al momento de la entrega
+                                        {% elif pedido.metodo_pago_preferido == 'Transferencia' %}Ver comprobante abajo
+                                        {% else %}Al recibir el pedido{% endif %}
+                                    </p>
+                                </div>
                             </div>
                         {% else %}
-                            <select name="nuevo_estado"
-                                    class="flex-1 sm:w-56 bg-gray-800 border border-gray-700 text-white text-sm rounded-xl px-3 h-[40px] focus:ring-blue-500">
-                                {% for cod, nombre in estados %}
-                                    <option value="{{ cod }}"
-                                            {% if pedido.estado_pedido == cod %}selected{% endif %}>
-                                        {{ nombre }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit"
-                                    class="bg-blue-600 hover:bg-blue-500 text-white px-4 h-[40px] rounded-xl text-sm font-bold transition-all flex items-center gap-2 shrink-0">
-                                <svg class="w-4 h-4 shrink-0"
-                                     fill="none"
-                                     stroke="currentColor"
-                                     viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M20 8A8 8 0 005.64 5.64M4 16a8 8 0 0014.36 2.36" />
-                                </svg>
-                                <span class="hidden sm:inline">Actualizar</span>
-                            </button>
+                            <div class="flex items-center gap-2 p-3 bg-gray-900/40 rounded-xl border border-dashed border-gray-700">
+                                <p class="text-gray-500 text-xs italic">El cliente aún no seleccionó método de pago.</p>
+                            </div>
                         {% endif %}
-                    {% else %}
-                        <div class="text-gray-500 text-xs italic bg-gray-800/50 px-4 py-2 rounded-xl border border-gray-700">
-                            Agregue ítems para cambiar estado
-                        </div>
-                    {% endif %}
-                </form>
-                {# Botones agregar item #}
-                <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
-                    {% if pedido.estado_pedido == 'En_Espera' %}
-                        <button onclick="abrirModal('modalItemCatalogo')"
-                                class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5">
-                            <svg class="w-4 h-4 shrink-0"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            <svg class="w-4 h-4 shrink-0"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                            </svg>
-                            <span class="hidden lg:inline">Catálogo</span>
-                        </button>
-                        <button onclick="abrirModal('modalItemPersonalizado')"
-                                class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5">
-                            <svg class="w-4 h-4 shrink-0"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            <svg class="w-4 h-4 shrink-0"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                            </svg>
-                            <span class="hidden lg:inline">Personalizado</span>
-                        </button>
-                    {% else %}
-                        <div class="px-4 py-2 bg-gray-700/50 rounded-xl border border-gray-600 text-gray-400 text-xs font-bold uppercase">
-                            Estado: {{ pedido.get_estado_pedido_display }}. No puedes agregar items
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {# ── TABLA DE ÍTEMS (ancho completo) ───────────────────── #}
-        <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden mb-5">
-            <div class="px-4 py-3 border-b border-gray-700 bg-gray-700/30">
-                <h3 class="font-bold text-white">Ítems del Pedido</h3>
-            </div>
-            <div class="overflow-x-auto overflow-y-auto max-h-[500px] scrollbar-thin">
-                <table class="w-full text-left text-gray-400 text-sm">
-                    <thead>
-                        <tr class="bg-[#1e293b]/60 text-gray-400 text-[10px] uppercase tracking-widest">
-                            <th class="px-4 py-3">Producto / Descripción</th>
-                            <th class="px-4 py-3 text-center">Tipo</th>
-                            <th class="px-4 py-3">Cantidad</th>
-                            <th class="px-4 py-3">Producción</th>
-                            <th class="px-4 py-3 text-right">Subtotal</th>
-                            <th class="px-4 py-3 text-right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-700">
-                        {% for item in items %}
-                            <tr class="hover:bg-gray-800/30 transition-colors group">
-                                <td class="px-4 py-3">
-                                    <div class="flex flex-col">
-                                        <div class="flex items-center gap-2">
-                                            {# SOLUCIÓN AL "NONE": Priorizar nombre de producto de catálogo, si no, descripción manual #}
-                                            <span class="text-white font-medium">
-                                                {% if item.variante %}
-                                                    {{ item.variante.producto.nombre }}
-                                                {% else %}
-                                                    {{ item.descripcion|default:"Sin descripción" }}
-                                                {% endif %}
-                                            </span>
-                                            {# Alerta Material Variante #}
-                                            {% if item.variante %}
-                                                {% for detalle in item.variante.detalles_material.all %}
-                                                    {% if detalle.material.stock_actual < item.gramos_totales %}
-                                                        <span title="Falta material: {{ detalle.material.tipo }} {{ detalle.material.color.nombre }} (Disponible: {{ detalle.material.stock_actual }}g)"
-                                                              class="flex-shrink-0 cursor-help">
-                                                            <svg class="w-4 h-4 text-orange-500 animate-pulse"
-                                                                 fill="currentColor"
-                                                                 viewBox="0 0 20 20">
-                                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                                            </svg>
-                                                        </span>
-                                                    {% endif %}
-                                                {% endfor %}
-                                                {# Alerta Material Personalizado #}
-                                            {% elif item.material_personalizado and item.material_personalizado.stock_actual < item.gramos_totales %}
-                                                <span title="Falta material personalizado: {{ item.material_personalizado.tipo }} (Disponible: {{ item.material_personalizado.stock_actual }}g)"
-                                                      class="flex-shrink-0 cursor-help">
-                                                    <svg class="w-4 h-4 text-red-500 animate-pulse"
-                                                         fill="currentColor"
-                                                         viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                                    </svg>
-                                                </span>
-                                            {% endif %}
-                                        </div>
-                                        {# Subtexto de materiales #}
-                                        <span class="text-[10px] text-blue-400">
-                                            Mat:
-                                            {% if item.variante %}
-                                                {% for detalle in item.variante.detalles_material.all %}
-                                                    {{ detalle.material.tipo }} {{ detalle.material.color.nombre }}
-                                                    {% if not forloop.last %},{% endif %}
-                                                {% endfor %}
-                                            {% else %}
-                                                {{ item.material_personalizado.tipo }} {{ item.material_personalizado.color }}
-                                            {% endif %}
+                    </div>
+
+                    {# Comprobante — solo si es transferencia #}
+                    {% if pedido.metodo_pago_preferido == 'Transferencia' %}
+                        <div class="border-t border-gray-700 pt-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Comprobante</p>
+                                {% if pedido.comprobante_cliente %}
+                                    <button onclick="abrirModal('modalComprobante')" class="text-[10px] text-blue-400 hover:text-blue-300 font-bold uppercase tracking-wider">Ver / Revisar →</button>
+                                {% endif %}
+                            </div>
+                            {% if pedido.comprobante_cliente %}
+                                <div class="relative cursor-pointer rounded-xl overflow-hidden border border-gray-700 group" onclick="abrirModal('modalComprobante')">
+                                    <img src="{{ pedido.comprobante_cliente.url }}" alt="Comprobante" class="w-full h-24 object-cover opacity-70 group-hover:opacity-90 transition-opacity">
+                                    <div class="absolute inset-0 flex items-end p-2">
+                                        <span class="text-[10px] font-bold uppercase px-2 py-1 rounded-lg {% if pedido.comprobante_estado == 'Aprobado' %}bg-emerald-600 text-white{% elif pedido.comprobante_estado == 'Rechazado' %}bg-red-600 text-white{% else %}bg-amber-500 text-black{% endif %}">
+                                            {% if pedido.comprobante_estado == 'Aprobado' %}✓ Aprobado{% elif pedido.comprobante_estado == 'Rechazado' %}✗ Rechazado{% else %}⏳ Pendiente{% endif %}
                                         </span>
                                     </div>
-                                </td>
-                                <td class="px-4 py-3 text-center">
-                                    {% if item.variante %}
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
-                                            Catálogo
-                                        </span>
-                                    {% else %}
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-wider">
-                                            Personalizado
-                                        </span>
-                                    {% endif %}
-                                </td>
-                                <td class="px-4 py-3 font-mono">{{ item.cantidad }} u.</td>
-                                <td class="px-4 py-3">
-                                    {% if pedido.estado_pedido == 'En_Produccion' or pedido.estado_pedido == 'Listo' or pedido.estado_pedido == 'Entregado' %}
-                                        <div class="flex items-center gap-2">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-900/30 text-blue-400 border border-blue-800">
-                                                <svg class="w-3 h-3 mr-1 animate-pulse"
-                                                     fill="currentColor"
-                                                     viewBox="0 0 20 20">
-                                                    <circle cx="10" cy="10" r="5"></circle>
-                                                </svg>
-                                                {% if item.variante %}
-                                                    Del Catalogo
-                                                {% else %}
-                                                    {{ item.impresora_asignada.nombre|default:"Sin máquina" }}
-                                                {% endif %}
-                                            </span>
-                                        </div>
-                                    {% elif item.variante %}
-                                        <span class="text-xs text-gray-400 italic">Descontado de Stock</span>
-                                    {% else %}
-                                        <form method="post"
-                                              action="{% url 'pedidos:asignar_impresora' item.id %}"
-                                              class="flex items-center">
-                                            {% csrf_token %}
-                                            <select name="impresora_id"
-                                                    onchange="this.form.submit()"
-                                                    class="bg-gray-900 border border-gray-700 text-[11px] rounded p-1 text-gray-300">
-                                                <option value="">Sin asignar...</option>
-                                                {% if item.impresora_asignada %}
-                                                    <option value="{{ item.impresora_asignada.id }}" selected>{{ item.impresora_asignada.nombre }}</option>
-                                                {% endif %}
-                                                {% for imp in impresoras %}
-                                                    {% if imp.id != item.impresora_asignada_id %}<option value="{{ imp.id }}">{{ imp.nombre }}</option>{% endif %}
-                                                {% endfor %}
-                                            </select>
-                                        </form>
-                                    {% endif %}
-                                </td>
-                                <td class="px-4 py-3 text-right text-white font-bold">RD$ {{ item.subtotal }}</td>
-                                <td class="px-4 py-3 text-center">
-                                    {% if pedido.estado_pedido == 'En_Espera' %}
-                                        <div class="flex items-center justify-center gap-1">
-                                            {% if not item.variante %}
-                                                <button onclick="abrirModalEditarItem({{ item.id }}, '{% url 'pedidos:editar_item' item.id %}')"
-                                                        class="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
-                                                        </path>
-                                                    </svg>
-                                                </button>
-                                            {% endif %}
-                                            <button onclick="eliminarItem({{ item.id }})"
-                                                    class="p-2 text-red-400 hover:bg-red-500/10 rounded-lg">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                                    </path>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    {% else %}
-                                        <span class="text-gray-600 italic text-xs">Sin acciones</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div class="lg:col-span-2 bg-gray-800 rounded-xl border border-gray-700 p-5">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-white flex items-center gap-2">
-                        <svg class="w-5 h-5 text-blue-400"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Información y Seguimiento
-                    </h3>
-                    <button onclick="abrirModal('modalEditarNotas')"
-                            class="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider border border-blue-500/20">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        Nueva Nota
-                    </button>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Solicitud Inicial del Cliente</p>
-                        <div class="text-gray-400 text-sm bg-gray-900/30 p-3 rounded-lg border border-gray-700/30 italic min-h-[120px]">
-                            {% if pedido.descripcion %}
-                                "{{ pedido.descripcion }}"
+                                </div>
                             {% else %}
-                                <span class="text-gray-600">Sin descripción del cliente.</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div>
-                        <p class="text-[10px] text-emerald-500 uppercase font-bold tracking-wider mb-1">Historial de Anotaciones</p>
-                        <div class="space-y-3 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin">
-                            {% for nota in pedido.anotaciones.all %}
-                                <div class="p-3 rounded-lg border {% if nota.visible_para_cliente %}bg-blue-500/5 border-blue-500/20{% else %}bg-gray-900/50 border-gray-700{% endif %}">
-                                    <div class="flex justify-between items-center mb-1">
-                                        <span class="text-[10px] font-bold {% if nota.visible_para_cliente %}text-blue-400{% else %}text-gray-500{% endif %} uppercase">
-                                            {{ nota.autor.get_full_name|default:nota.autor.username }}
-                                            {% if nota.visible_para_cliente %}
-                                                <span class="ml-2 text-[8px] bg-blue-500/20 px-1 rounded text-blue-300">PÚBLICO</span>
-                                            {% endif %}
-                                        </span>
-                                        <span class="text-[9px] text-gray-600 font-mono">{{ nota.fecha_creacion|date:"d/m H:i" }}</span>
-                                    </div>
-                                    <p class="text-xs text-gray-300">{{ nota.contenido|linebreaksbr }}</p>
+                                <div class="flex items-center gap-2 p-3 bg-gray-900/40 rounded-xl border border-dashed border-gray-700">
+                                    <p class="text-gray-500 text-xs italic">Sin comprobante todavía.</p>
                                 </div>
-                            {% empty %}
-                                <div class="flex flex-col items-center justify-center h-[120px] bg-gray-900/20 rounded-lg border border-dashed border-gray-700">
-                                    <span class="text-gray-600 italic text-xs text-center px-4">No hay notas de seguimiento registradas.</span>
-                                </div>
-                            {% endfor %}
+                            {% endif %}
                         </div>
+                    {% endif %}
+
+                    {# Saldo pendiente + registrar pago #}
+                    <div class="border-t border-gray-700 pt-3">
+                        <div class="text-center py-2">
+                            <p class="text-2xl font-bold font-mono {% if pedido.esta_pagado %}text-green-400{% else %}text-red-400{% endif %}">RD$ {{ pedido.saldo_pendiente }}</p>
+                            <p class="text-xs text-gray-500 uppercase mt-0.5 font-bold tracking-widest">Saldo Pendiente</p>
+                        </div>
+                        <button onclick="abrirModal('modalRegistrarPago')" class="w-full mt-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold uppercase py-2.5 rounded-xl transition-all tracking-widest border border-gray-600 flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Registrar Pago
+                        </button>
                     </div>
-                </div>
-                {% if pedido.solicitud %}
-                    <div class="mt-6 pt-4 border-t border-gray-700/50">
-                        <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2">Multimedia de Referencia</p>
-                        <div class="flex gap-2 flex-wrap">
-                            {% if pedido.solicitud.imagen_referencia %}
-                                <a href="{{ pedido.solicitud.imagen_referencia.url }}"
-                                   target="_blank"
-                                   class="group relative w-16 h-16 rounded-lg overflow-hidden border border-gray-700 bg-gray-900">
-                                    <img src="{{ pedido.solicitud.imagen_referencia.url }}"
-                                         class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity">
-                                    <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <svg class="w-4 h-4 text-white"
-                                             fill="none"
-                                             stroke="currentColor"
-                                             viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                                        </svg>
+
+                    {# Pagos registrados #}
+                    {% if pagos %}
+                        <div class="border-t border-gray-700 pt-3">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2">Pagos registrados</p>
+                            <div class="space-y-1.5 max-h-[160px] overflow-y-auto scrollbar-thin">
+                                {% for pago in pagos %}
+                                    <div class="flex items-center justify-between text-xs p-2 bg-gray-900/40 rounded-lg border border-gray-700/60">
+                                        <div>
+                                            <p class="text-white font-semibold">RD$ {{ pago.monto|floatformat:2 }}</p>
+                                            <p class="text-gray-500">{{ pago.get_metodo_display }} · {{ pago.fecha_pago|date:"d M" }}</p>
+                                        </div>
+                                        {% if pago.referencia %}<span class="text-gray-600 text-[10px] font-mono">{{ pago.referencia }}</span>{% endif %}
                                     </div>
-                                </a>
-                            {% endif %}
-                            {% if pedido.solicitud.enlace_referencia %}
-                                <a href="{{ pedido.solicitud.enlace_referencia }}"
-                                   target="_blank"
-                                   class="flex items-center justify-center w-16 h-16 rounded-lg bg-gray-900 border border-gray-700 text-blue-400 hover:bg-blue-500/10 transition-colors">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                    </svg>
-                                </a>
-                            {% endif %}
+                                {% endfor %}
+                            </div>
                         </div>
-                    </div>
-                {% endif %}
-            </div>
-            <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                <h3 class="font-bold text-white mb-4">Resumen de Costos</h3>
-                <div class="space-y-3 text-sm">
-                    <div class="flex justify-between text-gray-400">
-                        <span>Costo Material Est.:</span>
-                        <span class="font-mono text-white">RD$ {{ pedido.costo_material }}</span>
-                    </div>
-                    <div class="flex justify-between text-gray-400">
-                        <span>Otros Costos (Envío/Extras):</span>
-                        <span class="font-mono text-white">RD$ {{ pedido.otros_costos }}</span>
-                    </div>
-                    <div class="border-t border-gray-700 pt-3 flex justify-between text-lg font-bold text-white">
-                        <span>Total:</span>
-                        <span class="text-green-400 font-mono">RD$ {{ pedido.precio_total }}</span>
-                    </div>
-                    <div class="mt-2 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                        <div class="flex justify-between text-blue-400 font-bold">
-                            <span>Ganancia Estimada:</span>
-                            <span class="font-mono">RD$ {{ pedido.ganancia }}</span>
-                        </div>
-                        <p class="text-[10px] text-blue-300 mt-1 uppercase tracking-wider">Margen: {{ pedido.margen_porcentaje }}%</p>
-                    </div>
+                    {% endif %}
                 </div>
-            </div>
-            <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                <h3 class="font-bold text-white mb-4">Estado de Cuenta</h3>
-                <div class="text-center py-4">
-                    <p class="text-3xl font-bold font-mono {% if pedido.esta_pagado %}text-green-400{% else %}text-red-400{% endif %}">
-                        RD$ {{ pedido.saldo_pendiente }}
-                    </p>
-                    <p class="text-xs text-gray-500 uppercase mt-1 font-bold tracking-widest">Saldo Pendiente</p>
-                </div>
-                <button class="w-full bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold uppercase py-3 rounded-xl transition-all mt-2 tracking-widest border border-gray-600">
-                    Registrar Pago
-                </button>
             </div>
         </div>
-        {# ── FIN GRID 2x2 ──────────────────────────────────────── #}
-        {% include "pedidos/modals/item_catalogo.html" with modal_id="modalItemCatalogo" title="Item del Catálogo" description=" Añade un producto del catálogo al pedido " max_width="max-w-3xl" %}
-        {% include "pedidos/modals/item_personalizado.html" with modal_id="modalItemPersonalizado" title="Item Personalizado" description=" Añade un producto personalizado al pedido " max_width="max-w-2xl" %}
-        {% include "pedidos/modals/editar_notas.html" with modal_id="modalNotasPedido" title="Notas del Pedido" description=" Añade notas al pedido " max_width="max-w-2xl" %}
-        <div id="modal-editar-item-wrapper"></div>
+        {# fin col derecha #}
     </div>
+    {# fin grid #}
+
+    {# ── MODALES ── #}
+    {% include "pedidos/modals/item_catalogo.html" with modal_id="modalItemCatalogo" title="Item del Catálogo" description=" Añade un producto del catálogo al pedido " max_width="max-w-3xl" %}
+    {% include "pedidos/modals/item_personalizado.html" with modal_id="modalItemPersonalizado" title="Item Personalizado" description=" Añade un producto personalizado al pedido " max_width="max-w-2xl" %}
+    {% include "pedidos/modals/editar_notas.html" with modal_id="modalNotasPedido" title="Notas del Pedido" description=" Añade notas al pedido " max_width="max-w-2xl" %}
+    {% include "pedidos/modals/comprobante_cliente.html" %}
+    {% include "pedidos/modals/registrar_pago.html" %}
+    <div id="modal-editar-item-wrapper"></div>
+</div>
 {% endblock %}
 {% block extra_js %}
     <script src="{% static 'pedidos/js/pedidos.js' %}"></script>

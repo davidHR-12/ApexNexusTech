@@ -6,7 +6,8 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 from django.contrib import messages
 from .forms import PedidoManualForm, ItemCatalogoForm, ItemPersonalizadoForm
-from .models import Pedido, ItemPedido, Impresora, SolicitudCotizacion, NotaPedido
+from .models import Pedido, ItemPedido, Impresora, SolicitudCotizacion, NotaPedido, Pago, ConfiguracionPago
+
 
 # ==========================================
 #  VISTAS DE LECTURA Y DASHBOARD
@@ -59,6 +60,8 @@ def _obtener_contexto_dashboard(request):
         "pendientes": Pedido.objects.filter(estado_pedido__in=["En_Espera", "Confirmado"]).count(),
         "produccion": Pedido.objects.filter(estado_pedido="En_Produccion").count(),
         "listos": Pedido.objects.filter(estado_pedido="Listo").count(),
+        "solicitudes_nuevas": SolicitudCotizacion.objects.filter(estado="Pendiente").count(),
+
     }
 
     return {
@@ -583,3 +586,80 @@ def guardar_notas(request, pedido_id):
     pedido.save()
     messages.success(request, "Información de seguimiento actualizada.")
     return redirect("pedidos:pedido_detalle", pedido_id=pedido.id)
+
+
+
+@require_POST
+@admin_required
+def revisar_comprobante(request, pedido_id):
+    """
+    El admin aprueba o rechaza el comprobante de pago subido por el cliente.
+    """
+    pedido = get_object_or_404(Pedido, pk=pedido_id)
+    decision = request.POST.get('decision', '')
+
+    if decision not in ['Aprobado', 'Rechazado']:
+        messages.error(request, "Decisión no válida.")
+        return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
+
+    if not pedido.comprobante_cliente:
+        messages.error(request, "Este pedido no tiene comprobante para revisar.")
+        return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
+
+    pedido.comprobante_estado = decision
+    pedido.save(update_fields=['comprobante_estado'])
+
+    if decision == 'Aprobado':
+        messages.success(request, f"✅ Comprobante del Pedido #{pedido.id} aprobado.")
+    else:
+        messages.warning(request, f"❌ Comprobante del Pedido #{pedido.id} rechazado. El cliente deberá subir uno nuevo.")
+
+    return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
+
+
+@require_POST
+@admin_required
+def registrar_pago(request, pedido_id):
+    """
+    El admin registra un pago recibido (efectivo, transferencia, etc.)
+    directamente desde el detalle del pedido.
+    """
+    pedido = get_object_or_404(Pedido, pk=pedido_id)
+
+    monto_str = request.POST.get('monto', '').strip()
+    metodo = request.POST.get('metodo', '').strip()
+    referencia = request.POST.get('referencia', '').strip()
+    notas = request.POST.get('notas', '').strip()
+
+    # Validaciones
+    if not monto_str or not metodo:
+        messages.error(request, "El monto y el método son obligatorios.")
+        return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
+
+    try:
+        from decimal import Decimal
+        monto = Decimal(monto_str)
+        if monto <= 0:
+            raise ValueError
+    except (ValueError, Exception):
+        messages.error(request, "El monto debe ser un número mayor a 0.")
+        return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
+
+    METODOS_VALIDOS = ['Efectivo', 'Transferencia', 'Tarjeta', 'PayPal', 'Otro']
+    if metodo not in METODOS_VALIDOS:
+        messages.error(request, "Método de pago no válido.")
+        return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
+
+    Pago.objects.create(
+        pedido=pedido,
+        monto=monto,
+        metodo=metodo,
+        referencia=referencia,
+        notas=notas,
+    )
+
+    messages.success(
+        request,
+        f"Pago de RD$ {monto:,.2f} ({metodo}) registrado correctamente en el Pedido #{pedido.id}."
+    )
+    return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)

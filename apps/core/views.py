@@ -5,13 +5,12 @@ from decimal import Decimal
 from apps.pedidos.models import Pago
 from apps.finanzas.models import Gasto
 from apps.materiales.models import Material
-from apps.pedidos.models import Pedido
+from apps.pedidos.models import Pedido, ConfiguracionPago
 from apps.usuarios.decorators import admin_required
 from django.contrib import messages
 import os
 from django.conf import settings
 from apps.productos.models import Categoria, Producto
-from apps.finanzas.models import Gasto
 from django.shortcuts import get_object_or_404
 from apps.core.forms import ImpresoraForm
 from .models import Impresora
@@ -210,3 +209,52 @@ def gestionar_impresora(request, accion, id_impresora=None):
             impresora.save()
 
     return redirect('core:lista_impresoras')
+
+@admin_required
+def configuracion_pago(request):
+    """
+    Gestión de datos bancarios y condiciones de cobro del negocio.
+    Accesible desde Configuración del sistema.
+    """
+    from apps.pedidos.models import ConfiguracionPago
+    config = ConfiguracionPago.objects.first()
+
+    if request.method == 'POST':
+        datos = {
+            'banco': request.POST.get('banco', '').strip(),
+            'titular': request.POST.get('titular', '').strip(),
+            'numero_cuenta': request.POST.get('numero_cuenta', '').strip(),
+            'tipo_cuenta': request.POST.get('tipo_cuenta', '').strip(),
+            'cedula': request.POST.get('cedula', '').strip(),
+            'telefono_pago': request.POST.get('telefono_pago', '').strip(),
+            'instrucciones_adicionales': request.POST.get('instrucciones_adicionales', '').strip(),
+            'porcentaje_anticipo': request.POST.get('porcentaje_anticipo', '50'),
+            'activo': 'activo' in request.POST,
+        }
+
+        if not datos['banco'] or not datos['titular'] or not datos['numero_cuenta']:
+            messages.error(request, "Banco, titular y número de cuenta son obligatorios.")
+            return render(request, 'core/configuraciones/config_pago.html', {'config': config, 'segment': 'configuracion'})
+
+        try:
+            datos['porcentaje_anticipo'] = float(datos['porcentaje_anticipo'])
+            if not (1 <= datos['porcentaje_anticipo'] <= 100):
+                raise ValueError
+        except (ValueError, TypeError):
+            messages.error(request, "El porcentaje de anticipo debe ser un número entre 1 y 100.")
+            return render(request, 'core/configuraciones/config_pago.html', {'config': config, 'segment': 'configuracion'})
+
+        if config:
+            for campo, valor in datos.items():
+                setattr(config, campo, valor)
+            config.save()
+        else:
+            ConfiguracionPago.objects.create(**datos)
+
+        messages.success(request, "Configuración de cobros guardada correctamente.")
+        return redirect('core:configuracion_pago')
+
+    return render(request, 'core/configuraciones/config_pago.html', {
+        'config': config,
+        'segment': 'configuracion',
+    })

@@ -5,7 +5,7 @@ from django.db import transaction
 
 # Importación de Modelos
 from apps.materiales.models import Material
-from apps.pedidos.models import SolicitudCotizacion, Pedido, ItemPedido
+from apps.pedidos.models import SolicitudCotizacion, Pedido, ItemPedido, ConfiguracionPago, Pago
 from apps.productos.models import Producto, VarianteProducto
 from apps.clientes.models import PerfilCliente
 from apps.usuarios.models import Usuario
@@ -77,23 +77,127 @@ def mis_pedidos(request):
         'pedidos': pedidos
     })
     
+
 @login_required
 def detalle_pedido_cliente(request, pedido_id):
-    # Obtenemos el pedido asegurando que pertenezca al cliente logueado
     pedido = get_object_or_404(Pedido, id=pedido_id, usuario=request.user)
-    
-    # Obtenemos solo las notas marcadas como públicas
-    # Usamos el related_name 'anotaciones' que definimos en el modelo NotaPedido
-    notas_publicas = pedido.anotaciones.filter(visible_para_cliente=True).order_by('-fecha_creacion')
-    
-    # Obtenemos los ítems
-    items = pedido.items.all() 
-    
+
+    # Notas públicas
+    notas_publicas = pedido.anotaciones.filter(
+        visible_para_cliente=True
+    ).order_by('-fecha_creacion')
+
+    # Ítems
+    items = pedido.items.all()
+
+    # Configuración de datos bancarios del negocio
+    from apps.pedidos.models import ConfiguracionPago
+    config_pago = ConfiguracionPago.obtener()
+
+    # Tipo de pedido
+    es_pedido_cotizacion = pedido.solicitud is not None
+    tiene_items_catalogo = pedido.items.filter(variante__isnull=False).exists()
+    tiene_items_personalizados = pedido.items.filter(variante__isnull=True).exists()
+
+    # Determinar si ya tiene comprobante o pago registrado
+    pago_existente = pedido.pagos.order_by('-fecha_pago').first()
+
+    # Anticipo calculado (para pedidos personalizados cotizados)
+    anticipo = None
+    if config_pago and es_pedido_cotizacion and pedido.precio_total > 0:
+        from decimal import Decimal
+        pct = config_pago.porcentaje_anticipo / Decimal('100')
+        anticipo = (pedido.precio_total * pct).quantize(Decimal('0.01'))
+
+    # Estados en los que el cliente puede interactuar con el pago
+    estados_pago_activos = ['En_Espera', 'Confirmado']
+    puede_seleccionar_pago = (
+        pedido.estado_pedido in estados_pago_activos
+        and pedido.precio_total > 0
+    )
+
     return render(request, 'clientes/detalle_pedido.html', {
         'pedido': pedido,
         'items': items,
-        'notas': notas_publicas  # Enviamos las notas filtradas
+        'notas': notas_publicas,
+        'config_pago': config_pago,
+        'pago_existente': pago_existente,
+        'es_pedido_cotizacion': es_pedido_cotizacion,
+        'tiene_items_catalogo': tiene_items_catalogo,
+        'tiene_items_personalizados': tiene_items_personalizados,
+        'anticipo': anticipo,
+        'puede_seleccionar_pago': puede_seleccionar_pago,
     })
+
+
+@login_required
+def seleccionar_metodo_pago(request, pedido_id):
+    """El cliente elige su método de pago preferido."""
+    pedido = get_object_or_404(Pedido, id=pedido_id, usuario=request.user)
+
+    if request.method != 'POST':
+        return redirect('clientes:detalle_pedido', pedido_id=pedido_id)
+
+    metodo = request.POST.get('metodo_pago', '')
+    metodos_validos = ['Efectivo', 'Transferencia', 'Contraentrega']
+
+    if metodo not in metodos_validos:
+        messages.error(request, "Método de pago no válido.")
+        return redirect('clientes:detalle_pedido', pedido_id=pedido_id)
+
+    estados_permitidos = ['En_Espera', 'Confirmado']
+    if pedido.estado_pedido not in estados_permitidos:
+        messages.error(request, "No es posible modificar el método de pago en este momento.")
+        return redirect('clientes:detalle_pedido', pedido_id=pedido_id)
+
+    pedido.metodo_pago_preferido = metodo
+    # Limpiamos el comprobante anterior si cambia de método
+    if metodo != 'Transferencia':
+        pedido.comprobante_cliente = None
+        pedido.comprobante_estado = ''
+    pedido.save(update_fields=['metodo_pago_preferido', 'comprobante_cliente', 'comprobante_estado'])
+
+    labels = {
+        'Efectivo': 'Efectivo en mano',
+        'Transferencia': 'Transferencia bancaria',
+        'Contraentrega': 'Pago contraentrega',
+    }
+    messages.success(request, f"Método de pago seleccionado: {labels[metodo]}.")
+    return redirect('clientes:detalle_pedido', pedido_id=pedido_id)
+
+
+@login_required
+def subir_comprobante(request, pedido_id):
+    """El cliente sube la captura de su transferencia."""
+    pedido = get_object_or_404(Pedido, id=pedido_id, usuario=request.user)
+
+    if request.method != 'POST':
+        return redirect('clientes:detalle_pedido', pedido_id=pedido_id)
+
+    comprobante = request.FILES.get('comprobante')
+    if not comprobante:
+        messages.error(request, "Debes seleccionar una imagen como comprobante.")
+        return redirect('clientes:detalle_pedido', pedido_id=pedido_id)
+
+    # Validar tipo de archivo
+    tipos_permitidos = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if comprobante.content_type not in tipos_permitidos:
+        messages.error(request, "Solo se aceptan imágenes (JPG, PNG, WEBP).")
+        return redirect('clientes:detalle_pedido', pedido_id=pedido_id)
+
+    # Guardar en el campo del pedido
+    pedido.comprobante_cliente = comprobante
+    pedido.comprobante_estado = 'Pendiente'
+    pedido.save(update_fields=['comprobante_cliente', 'comprobante_estado'])
+
+    messages.success(
+        request,
+        "Comprobante enviado correctamente. Lo revisaremos y confirmaremos tu pedido en breve."
+    )
+    return redirect('clientes:detalle_pedido', pedido_id=pedido_id)
+
+
+
 
 @login_required
 def home(request):
@@ -224,7 +328,7 @@ def checkout_paso_final(request):
     carrito = request.session.get('carrito', {})
     if not carrito:
         messages.warning(request, "Tu carrito está vacío.")
-        return redirect('clientes:productos')
+        
 
     if request.method == 'POST':
         if not request.user.is_authenticated:
@@ -272,7 +376,6 @@ def checkout_paso_final(request):
             request.session['ultimo_pedido_id'] = nuevo_pedido.id
             
             messages.success(request, "¡Pedido realizado con éxito!")
-            # Esta redirección ahora funcionará porque el name en urls.py es correcto
             return redirect('clientes:pedido_confirmado_invitado')
 
         except Exception as e:

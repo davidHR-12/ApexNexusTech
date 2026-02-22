@@ -6,6 +6,7 @@
       <p class="text-gray-400 text-sm">Gestiona la configuración del sistema.</p>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
       <a href="{% url 'core:config_media' %}"
          class="bg-gray-800 p-6 rounded-xl border border-gray-700 hover:border-emerald-500 transition-all group">
         <div class="w-12 h-12 bg-emerald-500/10 rounded-lg flex items-center justify-center mb-4 text-emerald-400 group-hover:scale-110 transition-transform">
@@ -16,6 +17,7 @@
         <h3 class="text-white font-bold text-lg">Limpieza de Media</h3>
         <p class="text-gray-400 text-sm">Gestiona imágenes huérfanas y optimiza el almacenamiento.</p>
       </a>
+
       <a href="{% url 'core:lista_impresoras' %}"
          class="bg-gray-800 p-6 rounded-xl border border-gray-700 hover:border-blue-500 transition-all group">
         <div class="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center mb-4 text-blue-400 group-hover:scale-110 transition-transform">
@@ -26,5 +28,19 @@
         <h3 class="text-white font-bold text-lg">Impresoras 3D</h3>
         <p class="text-gray-400 text-sm">Registra nuevas máquinas, dales mantenimiento o darlas de baja.</p>
       </a>
+
+      <a href="{% url 'core:configuracion_pago' %}"
+         class="bg-gray-800 p-6 rounded-xl border border-gray-700 hover:border-amber-500 transition-all group">
+        <div class="w-12 h-12 bg-amber-500/10 rounded-lg flex items-center justify-center mb-4 text-amber-400 group-hover:scale-110 transition-transform">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+        </div>
+        <h3 class="text-white font-bold text-lg">Configuración de Cobros</h3>
+        <p class="text-gray-400 text-sm">Datos bancarios, anticipo y métodos de pago offline.</p>
+      </a>
+
     </div>
-  {% endblock content %}
+  </div>
+{% endblock content %}

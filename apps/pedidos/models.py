@@ -42,6 +42,7 @@ class SolicitudCotizacion(models.Model):
     imagen_referencia = models.ImageField(
         upload_to="pedidos/referencias/",
         blank=True,
+        max_length=255,
         null=True,
         verbose_name="Imagen de referencia",
     )
@@ -182,7 +183,7 @@ class Pedido(models.Model):
     )
 
     # Costos
-    precio_kwh_usado = models.DecimalField(
+    precio_kwh_usado = models.DecimalField(  # posiblemente se pueda quitar
         max_digits=10,
         decimal_places=2,
         default=15.00,
@@ -192,7 +193,7 @@ class Pedido(models.Model):
     costo_material = models.DecimalField(
         max_digits=12, decimal_places=2, default=0, verbose_name="Costo de material"
     )
-    costo_energia = models.DecimalField(
+    costo_energia = models.DecimalField(  # posiblemente se pueda quitar
         max_digits=12, decimal_places=2, default=0, verbose_name="Costo de energía"
     )
     otros_costos = models.DecimalField(
@@ -226,12 +227,45 @@ class Pedido(models.Model):
     # Información adicional
     notas = models.TextField(blank=True, verbose_name="Notas")
 
+    metodo_pago_preferido = models.CharField(
+        max_length=20,
+        blank=True,
+        choices=[
+            ("Efectivo", "Efectivo"),
+            ("Transferencia", "Transferencia bancaria"),
+            ("Contraentrega", "Pago contraentrega"),
+        ],
+        verbose_name="Método de pago preferido",
+    )
 
-    guest_nombre = models.CharField(max_length=200, blank=True, verbose_name="Nombre (Invitado)")
+    comprobante_cliente = models.ImageField(
+        upload_to="pagos/comprobantes_cliente/",
+        blank=True,
+        null=True,
+        verbose_name="Comprobante del cliente",
+    )
+    comprobante_estado = models.CharField(
+        max_length=20,
+        blank=True,
+        choices=[
+            ("Pendiente", "Pendiente de revisión"),
+            ("Aprobado", "Aprobado"),
+            ("Rechazado", "Rechazado"),
+        ],
+        verbose_name="Estado del comprobante",
+    )
+
+    guest_nombre = models.CharField(
+        max_length=200, blank=True, verbose_name="Nombre (Invitado)"
+    )
     guest_email = models.EmailField(blank=True, verbose_name="Email (Invitado)")
-    guest_telefono = models.CharField(max_length=20, blank=True, verbose_name="Teléfono (Invitado)")
+    guest_telefono = models.CharField(
+        max_length=20, blank=True, verbose_name="Teléfono (Invitado)"
+    )
     guest_direccion = models.TextField(blank=True, verbose_name="Dirección (Invitado)")
-    guest_ciudad = models.CharField(max_length=100, blank=True, verbose_name="Ciudad (Invitado)")
+    guest_ciudad = models.CharField(
+        max_length=100, blank=True, verbose_name="Ciudad (Invitado)"
+    )
 
     @property
     def costo_total_produccion(self):
@@ -335,6 +369,54 @@ class Pedido(models.Model):
         verbose_name_plural = "Pedidos"
         ordering = ["-fecha_creacion"]
 
+
+
+
+class ConfiguracionPago(models.Model):
+    """
+    Datos bancarios y de pago del negocio.
+    Singleton: solo debe existir un registro activo.
+    El admin los gestiona desde el panel de Django Admin.
+    """
+    banco = models.CharField(max_length=100, verbose_name="Nombre del banco")
+    titular = models.CharField(max_length=200, verbose_name="Titular de la cuenta")
+    numero_cuenta = models.CharField(max_length=50, verbose_name="Número de cuenta")
+    tipo_cuenta = models.CharField(
+        max_length=50, blank=True,
+        verbose_name="Tipo de cuenta",
+        help_text="Ej: Ahorro, Corriente"
+    )
+    cedula = models.CharField(
+        max_length=20, blank=True,
+        verbose_name="Cédula del titular"
+    )
+    telefono_pago = models.CharField(
+        max_length=20, blank=True,
+        verbose_name="Teléfono para pagos móviles"
+    )
+    instrucciones_adicionales = models.TextField(
+        blank=True,
+        verbose_name="Instrucciones adicionales",
+        help_text="Texto extra que verá el cliente al seleccionar transferencia"
+    )
+    porcentaje_anticipo = models.DecimalField(
+        max_digits=5, decimal_places=2, default=50.00,
+        verbose_name="% de anticipo para pedidos personalizados",
+        help_text="Porcentaje del total que se pide como pago inicial (ej: 50)"
+    )
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Configuración de Pago"
+        verbose_name_plural = "Configuración de Pagos"
+
+    def __str__(self):
+        return f"{self.banco} — {self.titular}"
+
+    @classmethod
+    def obtener(cls):
+        """Retorna la configuración activa o None."""
+        return cls.objects.filter(activo=True).first()
 
 # =============================
 # NOTAS DE PEDIDO
@@ -469,6 +551,7 @@ class Pago(models.Model):
 
     METODOS = (
         ("Efectivo", "Efectivo"),
+        ("Contra_entrega", "Contra entrega"),
         ("Transferencia", "Transferencia bancaria"),
         ("Tarjeta", "Tarjeta de crédito/débito"),
         ("PayPal", "PayPal"),

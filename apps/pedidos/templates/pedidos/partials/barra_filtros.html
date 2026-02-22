@@ -1,4 +1,4 @@
-<div class="flex flex-col md:flex-row gap-4 mb-6 justify-between items-center bg-gray-900/50 p-4 rounded-xl border border-gray-800 shadow-sm">
+<div class="flex flex-col md:flex-row gap-4 mb-6 justify-between items-center bg-[#1e293b] p-4 rounded-xl border border-gray-800 shadow-sm">
     <form method="get" class="flex flex-wrap md:flex-nowrap flex-1 gap-3 w-full max-w-3xl">
         
         <div class="relative w-full md:w-64 lg:w-80"> 
@@ -8,7 +8,7 @@
                    value="{{ busqueda_actual|default:'' }}"
                    placeholder="Buscar..."
                    preserve-focus="true"
-                   class="w-full bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 pl-10 transition-all"
+                   class="w-full bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5 transition-all"
                    hx-get="{% url 'pedidos:pedidos_lista' %}"
                    hx-trigger="keyup changed delay:500ms, search"
                    hx-target="#pedidos-container"
@@ -27,7 +27,7 @@
                 hx-target="#pedidos-container"
                 hx-include="[name='q']"
                 hx-push-url="true"
-                class="w-full md:w-44 bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 outline-none">
+                class="w-full md:w-44 bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 p-2.5 outline-none">
             <option value="">Todos los estados</option>
             {% for codigo, nombre in estados_opciones %}
                 <option value="{{ codigo }}" {% if filtro_actual == codigo %}selected{% endif %}>{{ nombre }}</option>
