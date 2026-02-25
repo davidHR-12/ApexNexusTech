@@ -1,25 +1,64 @@
-from django.shortcuts import render, redirect
-from django.db.models import Sum
+from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Sum, Q, Count
 from django.utils import timezone
 from decimal import Decimal
-from apps.pedidos.models import Pago
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+from django.contrib import messages
+
+import os
+import json
+from django.conf import settings
+
+from apps.pedidos.models import Pago, Pedido, ConfiguracionPago
 from apps.finanzas.models import Gasto
 from apps.materiales.models import Material
-from apps.pedidos.models import Pedido, ConfiguracionPago
-from apps.usuarios.decorators import admin_required
-from django.contrib import messages
-import os
-from django.conf import settings
 from apps.productos.models import Categoria, Producto
-from django.shortcuts import get_object_or_404
-from apps.core.forms import ImpresoraForm
-from .models import Impresora
-from django.db.models import Q, Count
+from apps.usuarios.decorators import admin_required
+
+from .models import Impresora, ConfiguracionSitio, CardPublica
+from .forms import (
+    ImpresoraForm, CardPublicaForm, EstadisticasForm, MaterialesForm,
+    ProductosDestacadosForm, ProcesoForm, ContactoForm
+)
 
 
-@admin_required
-def gestionar_media_huerfana(request):
-    # Mapeo de carpetas -> (Modelo, campo_en_el_modelo)
+# ════════════════════════════════════════════════════════════════════
+# UTILIDADES PRIVADAS (Helper Functions)
+# ════════════════════════════════════════════════════════════════════
+
+def _cambiar_estado_impresora(impresora, nuevo_estado):
+    """
+    Cambia el estado de una impresora de forma segura.
+    
+    Args:
+        impresora: Instancia de Impresora
+        nuevo_estado: Estado nuevo ('Disponible', 'Imprimiendo', 'Mantenimiento', 'Offline')
+    
+    Returns:
+        tuple: (success: bool, message: str, message_type: str)
+    """
+    ESTADOS_VALIDOS = dict(Impresora.ESTADOS)
+    
+    if nuevo_estado not in ESTADOS_VALIDOS:
+        return False, f"Estado inválido: {nuevo_estado}", 'error'
+    
+    if impresora.estado == nuevo_estado:
+        return False, f"La impresora ya está en estado {nuevo_estado}", 'info'
+    
+    impresora.estado = nuevo_estado
+    impresora.save()
+    
+    return True, f"Estado de {impresora.nombre} actualizado a {nuevo_estado}", 'success'
+
+
+def _procesar_archivos_huerfanos():
+    """
+    Identifica archivos en /media que no están referenciados en la BD.
+    
+    Returns:
+        list: Lista de archivos huérfanos con sus metadatos
+    """
     mapeo_config = {
         'categorias': (Categoria, 'imagen'),
         'productos': (Producto, 'imagen'),
@@ -27,50 +66,83 @@ def gestionar_media_huerfana(request):
     }
     
     archivos_huerfanos = []
-    
-    # Archivos protegidos que NUNCA deben borrarse (Logo, .gitkeep, etc.)
     protegidos = ['.gitkeep', 'Logo.png', 'Log.png', 'Logo-figura.ico']
 
     for subcarpeta, (Modelo, campo_imagen) in mapeo_config.items():
         ruta_absoluta_carpeta = os.path.join(settings.MEDIA_ROOT, subcarpeta)
         
-        if os.path.exists(ruta_absoluta_carpeta):
-            # Obtener archivos en BD (solo el nombre del archivo)
-            archivos_en_bd = Modelo.objects.exclude(**{f"{campo_imagen}": ""}).values_list(campo_imagen, flat=True)
-            nombres_en_bd = [os.path.basename(str(path)) for path in archivos_en_bd]
+        if not os.path.exists(ruta_absoluta_carpeta):
+            continue
+        
+        # Obtener archivos en BD
+        archivos_en_bd = Modelo.objects.exclude(**{f"{campo_imagen}": ""}).values_list(campo_imagen, flat=True)
+        nombres_en_bd = {os.path.basename(str(path)) for path in archivos_en_bd}
 
-            # Listar contenido de la carpeta
-            for nombre_item in os.listdir(ruta_absoluta_carpeta):
-                ruta_completa_item = os.path.join(ruta_absoluta_carpeta, nombre_item)
-                
-                # REGLA DE ORO: Solo procesar si es ARCHIVO
-                if os.path.isfile(ruta_completa_item):
-                    if nombre_item not in protegidos and nombre_item not in nombres_en_bd:
-                        ruta_relativa = os.path.join(subcarpeta, nombre_item)
-                        archivos_huerfanos.append({
-                            'nombre': nombre_item,
-                            'ruta_relativa': ruta_relativa,
-                            'url': f"{settings.MEDIA_URL}{ruta_relativa}".replace('\\', '/'),
-                            'tipo': subcarpeta.split('/')[0] # 'productos' o 'categorias'
-                        })
+        # Listar contenido de la carpeta
+        for nombre_item in os.listdir(ruta_absoluta_carpeta):
+            ruta_completa_item = os.path.join(ruta_absoluta_carpeta, nombre_item)
+            
+            # Solo procesar archivos, no directorios
+            if not os.path.isfile(ruta_completa_item):
+                continue
+            
+            if nombre_item not in protegidos and nombre_item not in nombres_en_bd:
+                ruta_relativa = os.path.join(subcarpeta, nombre_item)
+                archivos_huerfanos.append({
+                    'nombre': nombre_item,
+                    'ruta_relativa': ruta_relativa,
+                    'url': f"{settings.MEDIA_URL}{ruta_relativa}".replace('\\', '/'),
+                    'tipo': subcarpeta.split('/')[0]
+                })
     
-    # Manejo del borrado (POST)
+    return archivos_huerfanos
+
+
+def _eliminar_archivos(rutas_relativas, protegidos):
+    """
+    Elimina archivos de forma segura validando rutas.
+    
+    Args:
+        rutas_relativas: Lista de rutas relativas a eliminar
+        protegidos: Lista de nombres de archivos protegidos
+    
+    Returns:
+        int: Cantidad de archivos eliminados
+    """
+    count = 0
+    for ruta_rel in rutas_relativas:
+        # Validación de seguridad
+        if '..' in ruta_rel or any(prot in ruta_rel for prot in protegidos):
+            continue
+        
+        ruta_final = os.path.join(settings.MEDIA_ROOT, ruta_rel)
+        
+        if os.path.exists(ruta_final) and os.path.isfile(ruta_final):
+            try:
+                os.remove(ruta_final)
+                count += 1
+            except Exception as e:
+                print(f"Error borrando {ruta_final}: {e}")
+    
+    return count
+
+
+# ════════════════════════════════════════════════════════════════════
+# VISTAS PÚBLICAS
+# ════════════════════════════════════════════════════════════════════
+
+@admin_required
+def gestionar_media_huerfana(request):
+    """
+    Gestiona archivos huérfanos en /media.
+    Identifica y permite eliminar archivos que no están en la BD.
+    """
+    archivos_huerfanos = _procesar_archivos_huerfanos()
+    
     if request.method == "POST":
         archivos_a_borrar = request.POST.getlist('archivos')
-        count = 0
-        for ruta_rel in archivos_a_borrar:
-            # Evitar que alguien intente borrar archivos fuera de media por seguridad
-            if '..' in ruta_rel or protegidos[0] in ruta_rel:
-                continue
-                
-            ruta_final = os.path.join(settings.MEDIA_ROOT, ruta_rel)
-            
-            if os.path.exists(ruta_final) and os.path.isfile(ruta_final):
-                try:
-                    os.remove(ruta_final)
-                    count += 1
-                except Exception as e:
-                    print(f"Error borrando {ruta_final}: {e}")
+        protegidos = ['.gitkeep', 'Logo.png', 'Log.png', 'Logo-figura.ico']
+        count = _eliminar_archivos(archivos_a_borrar, protegidos)
         
         messages.success(request, f"¡Limpieza completada! Se eliminaron {count} archivos.")
         return redirect('core:config_media')
@@ -84,21 +156,27 @@ def gestionar_media_huerfana(request):
 @admin_required
 def dashboard_admin(request):
     """
-    Vista principal del dashboard administrativo.
+    Dashboard principal del administrador.
     Muestra resumen de ingresos, gastos, utilidad y alertas de stock.
     """
     ahora = timezone.now()
+    
+    # Calcular métricas del mes
     ingresos_mes = Pago.objects.filter(
-        fecha_pago__month=ahora.month, fecha_pago__year=ahora.year
+        fecha_pago__month=ahora.month, 
+        fecha_pago__year=ahora.year
     ).aggregate(total=Sum("monto"))["total"] or Decimal("0.00")
 
     gastos_mes = Gasto.objects.filter(
-        fecha__month=ahora.month, fecha__year=ahora.year
+        fecha__month=ahora.month, 
+        fecha__year=ahora.year
     ).aggregate(total=Sum("monto"))["total"] or Decimal("0.00")
 
+    # Información de materiales
     materiales = Material.objects.all()
-    total_gramos = materiales.aggregate(Sum("stock_actual"))[
-        "stock_actual__sum"] or 0
+    total_gramos = materiales.aggregate(Sum("stock_actual"))["stock_actual__sum"] or 0
+    
+    # Alertas de stock
     alertas_stock = [m for m in materiales if m.stock_actual <= m.stock_minimo]
     materiales_ok = [m for m in materiales if m.stock_actual > m.stock_minimo]
 
@@ -116,32 +194,38 @@ def dashboard_admin(request):
     }
     return render(request, "core/dashboard_admin.html", context)
 
+
 @admin_required
 def calculadora(request):
+    """Vista de la calculadora de impresoras."""
     return render(request, "core/calculadora.html")
+
 
 @admin_required
 def configuracion(request):
     """
-    Vista principal de configuración.
+    Página principal de configuración del sistema.
+    Muestra menú de todas las opciones de configuración disponibles.
     """
     return render(request, "core/configuraciones/configuracion.html", {
         'segment': 'configuracion'
     })
 
+
 @admin_required
 def lista_impresoras(request):
+    """
+    Lista todas las impresoras 3D con sus estados.
+    Actualiza automáticamente el estado de impresoras sin trabajo activo.
+    """
     impresoras = Impresora.objects.all().order_by('estado', 'nombre')
-    rescatadas = 0
-
-    for imp in impresoras:
-        if imp.actualizar_estado_automatico():
-            rescatadas += 1
+    
+    # Actualizar estados automáticamente
+    rescatadas = sum(1 for imp in impresoras if imp.actualizar_estado_automatico())
     if rescatadas > 0:
         messages.info(request, f"Se han liberado {rescatadas} impresoras que no tenían trabajo activo.")
     
-    
-
+    # Estadísticas
     stats = Impresora.objects.aggregate(
         total=Count('id'),
         disponibles=Count('id', filter=Q(estado='Disponible')),
@@ -150,27 +234,37 @@ def lista_impresoras(request):
         mantenimiento=Count('id', filter=Q(estado='Mantenimiento'))
     )
     
-    form = ImpresoraForm()
     return render(request, "core/configuraciones/config_impresoras.html", {
         'impresoras': impresoras,
         'segment': 'configuracion',
-        'form': form,
+        'form': ImpresoraForm(),
         'stats': stats
     })
 
+
 @admin_required
 def gestionar_impresora(request, accion, id_impresora=None):
+    """
+    Gestiona impresoras: crear, eliminar, cambiar estado.
+    
+    Acciones:
+    - 'crear': Crea nueva impresora (POST)
+    - 'eliminar': Elimina impresora (POST)
+    - 'toggle': Alterna entre Disponible y Offline (POST)
+    - 'mantenimiento': Alterna entre Mantenimiento y Disponible (POST)
+    """
     if request.method == 'POST':
+        
         if accion == 'crear':
             form = ImpresoraForm(request.POST)
             if form.is_valid():
                 form.save()
                 messages.success(request, "Impresora agregada con éxito.")
-                return redirect('core:lista_impresoras') 
             else:
+                # Mostrar errores en formulario
                 impresoras = Impresora.objects.all().order_by('estado', 'nombre')
-                for errors in form.errors.values():
-                    for error in errors:
+                for field_errors in form.errors.values():
+                    for error in field_errors:
                         messages.error(request, error)
                 
                 return render(request, "core/configuraciones/config_impresoras.html", {
@@ -181,42 +275,30 @@ def gestionar_impresora(request, accion, id_impresora=None):
         
         elif accion == 'eliminar' and id_impresora:
             impresora = get_object_or_404(Impresora, id=id_impresora)
+            nombre = impresora.nombre
             impresora.delete()
-            messages.success(request, "Máquina eliminada del sistema.")
-            
+            messages.success(request, f"Impresora '{nombre}' eliminada del sistema.")
+        
         elif accion == 'toggle' and id_impresora:
             impresora = get_object_or_404(Impresora, id=id_impresora)
-            # Si está Offline la ponemos Disponible, y viceversa
-            # Nota: Si estaba en mantenimiento, esto también la saca de mantenimiento
-            if impresora.estado == "Offline":
-                impresora.estado = "Disponible"
-            else:
-                impresora.estado = "Offline"
-            impresora.save()
-            messages.success(request, f"Estado de {impresora.nombre} actualizado.")
-
-        # --- NUEVA ACCIÓN DE MANTENIMIENTO ---
+            nuevo_estado = "Disponible" if impresora.estado == "Offline" else "Offline"
+            success, msg, msg_type = _cambiar_estado_impresora(impresora, nuevo_estado)
+            getattr(messages, msg_type)(request, msg)
+        
         elif accion == 'mantenimiento' and id_impresora:
             impresora = get_object_or_404(Impresora, id=id_impresora)
-            
-            if impresora.estado == "Mantenimiento":
-                impresora.estado = "Disponible"
-                messages.success(request, f"{impresora.nombre} ya está operativa y disponible.")
-            else:
-                impresora.estado = "Mantenimiento"
-                messages.info(request, f"{impresora.nombre} se ha marcado en mantenimiento.")
-            
-            impresora.save()
+            nuevo_estado = "Disponible" if impresora.estado == "Mantenimiento" else "Mantenimiento"
+            success, msg, msg_type = _cambiar_estado_impresora(impresora, nuevo_estado)
+            getattr(messages, msg_type)(request, msg)
 
     return redirect('core:lista_impresoras')
+
 
 @admin_required
 def configuracion_pago(request):
     """
-    Gestión de datos bancarios y condiciones de cobro del negocio.
-    Accesible desde Configuración del sistema.
+    Gestión de datos bancarios y condiciones de cobro.
     """
-    from apps.pedidos.models import ConfiguracionPago
     config = ConfiguracionPago.objects.first()
 
     if request.method == 'POST':
@@ -232,18 +314,26 @@ def configuracion_pago(request):
             'activo': 'activo' in request.POST,
         }
 
+        # Validaciones
         if not datos['banco'] or not datos['titular'] or not datos['numero_cuenta']:
             messages.error(request, "Banco, titular y número de cuenta son obligatorios.")
-            return render(request, 'core/configuraciones/config_pago.html', {'config': config, 'segment': 'configuracion'})
+            return render(request, 'core/configuraciones/config_pago.html', {
+                'config': config, 
+                'segment': 'configuracion'
+            })
 
         try:
             datos['porcentaje_anticipo'] = float(datos['porcentaje_anticipo'])
             if not (1 <= datos['porcentaje_anticipo'] <= 100):
-                raise ValueError
+                raise ValueError("Rango inválido")
         except (ValueError, TypeError):
-            messages.error(request, "El porcentaje de anticipo debe ser un número entre 1 y 100.")
-            return render(request, 'core/configuraciones/config_pago.html', {'config': config, 'segment': 'configuracion'})
+            messages.error(request, "El porcentaje debe ser un número entre 1 y 100.")
+            return render(request, 'core/configuraciones/config_pago.html', {
+                'config': config, 
+                'segment': 'configuracion'
+            })
 
+        # Guardar o actualizar
         if config:
             for campo, valor in datos.items():
                 setattr(config, campo, valor)
@@ -258,3 +348,137 @@ def configuracion_pago(request):
         'config': config,
         'segment': 'configuracion',
     })
+
+@admin_required
+def configuracion_sitio_publico(request):
+    """
+    Configuración SIMPLIFICADA del sitio público.
+    
+    Solo permite editar:
+    - Estadísticas
+    - Dónde mostrar materiales
+    - Productos destacados
+    - Proceso
+    - Contacto
+    
+    Y gestionar cards de materiales y proceso.
+    """
+    config = ConfiguracionSitio.obtener()
+    cards_materiales = CardPublica.objects.filter(seccion='materiales').order_by('orden')
+    cards_proceso = CardPublica.objects.filter(seccion='proceso').order_by('orden')
+
+    if request.method == 'POST':
+        seccion = request.POST.get('seccion', 'estadisticas')
+        
+        form_map = {
+            'estadisticas': EstadisticasForm,
+            'materiales': MaterialesForm,
+            'productos': ProductosDestacadosForm,
+            'proceso': ProcesoForm,
+            'contacto': ContactoForm,
+        }
+        
+        FormClass = form_map.get(seccion, EstadisticasForm)
+        form = FormClass(request.POST, instance=config)
+        
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"{seccion.title()} actualizado.")
+            return redirect('core:configuracion_sitio_publico')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+
+    return render(request, 'core/configuraciones/config_sitio.html', {
+        'config': config,
+        'cards_materiales': cards_materiales,
+        'cards_proceso': cards_proceso,
+        'badge_colores': CardPublica.BADGE_COLOR_CHOICES,
+        'segment': 'configuracion',
+        # Forms
+        'stats_form': EstadisticasForm(instance=config),
+        'materiales_form': MaterialesForm(instance=config),
+        'prod_dest_form': ProductosDestacadosForm(instance=config),
+        'proceso_form': ProcesoForm(instance=config),
+        'contacto_form': ContactoForm(instance=config),
+    })
+
+
+@admin_required
+def crear_card(request):
+    """Crea un nuevo card (material o proceso)."""
+    if request.method == 'POST':
+        form = CardPublicaForm(request.POST, request.FILES)
+        if form.is_valid():
+            card = form.save(commit=False)
+            if not card.orden:
+                last_orden = CardPublica.objects.filter(
+                    seccion=card.seccion
+                ).aggregate(max_orden=Count('id'))['max_orden'] or 0
+                card.orden = last_orden
+            card.save()
+            messages.success(request, f"Card '{card.titulo}' creado.")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    
+    return redirect('core:configuracion_sitio_publico')
+
+
+@admin_required
+def editar_card(request, card_id):
+    """Edita un card existente."""
+    card = get_object_or_404(CardPublica, pk=card_id)
+    
+    if request.method == 'POST':
+        form = CardPublicaForm(request.POST, request.FILES, instance=card)
+        if form.is_valid():
+            card = form.save(commit=False)
+            if 'limpiar_imagen' in request.POST:
+                if card.imagen:
+                    card.imagen.delete(save=False)
+                card.imagen = None
+            card.save()
+            messages.success(request, f"Card '{card.titulo}' actualizado.")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    
+    return redirect('core:configuracion_sitio_publico')
+
+
+@admin_required
+@require_POST
+def eliminar_card(request, card_id):
+    """Elimina un card."""
+    card = get_object_or_404(CardPublica, pk=card_id)
+    titulo = card.titulo
+    card.delete()
+    messages.success(request, f"Card '{titulo}' eliminado.")
+    return redirect('core:configuracion_sitio_publico')
+
+
+@admin_required
+@require_POST
+def reordenar_cards(request):
+    """Reordena cards mediante AJAX."""
+    try:
+        data = json.loads(request.body)
+        
+        if not isinstance(data, list):
+            return JsonResponse({'ok': False, 'error': 'Formato inválido'}, status=400)
+        
+        for item in data:
+            if 'id' not in item or 'orden' not in item:
+                return JsonResponse({'ok': False, 'error': 'Campos requeridos'}, status=400)
+            CardPublica.objects.filter(pk=item['id']).update(orden=item['orden'])
+        
+        return JsonResponse({'ok': True})
+    
+    except json.JSONDecodeError:
+        return JsonResponse({'ok': False, 'error': 'JSON inválido'}, status=400)
+    except Exception as e:
+        return JsonResponse({'ok': False, 'error': str(e)}, status=500)

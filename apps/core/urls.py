@@ -18,4 +18,10 @@ urlpatterns = [
     path("configuracion/impresora/<str:accion>/", views.gestionar_impresora, name="gestionar_impresora_crear"),
     path("configuracion/impresora/<str:accion>/<int:id_impresora>/", views.gestionar_impresora, name="gestionar_impresora_accion"),
     path("configuracion/cobros/", views.configuracion_pago, name="configuracion_pago"),
+    path('configuracion/sitio-publico/', views.configuracion_sitio_publico, name='configuracion_sitio_publico'),
+    path('configuracion/cards/crear/', views.crear_card, name='crear_card'),
+    path('configuracion/cards/<int:card_id>/editar/', views.editar_card, name='editar_card'),
+    path('configuracion/cards/<int:card_id>/eliminar/', views.eliminar_card, name='eliminar_card'),
+    path('configuracion/cards/reordenar/', views.reordenar_cards, name='reordenar_cards'),
+
 ]

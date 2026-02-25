@@ -1,0 +1,273 @@
+{% extends "clientes/base_cliente.html" %}
+{% load static %}
+
+{% block content %}
+    <div class="pace-y-6">
+        {% if carrito %}
+            {# ══════════════════════════════════════════════════════════ #}
+            {# CARRITO CON PRODUCTOS                                      #}
+            {# ══════════════════════════════════════════════════════════ #}
+            <div class="flex justify-between p-2 items-end">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Confirmar Pedido</h1>
+                    <p class="text-gray-400 text-sm mt-1">
+                        Hola, <span class="text-[#10b981] font-semibold">{{ request.user.first_name|default:request.user.email }}</span> —
+                        revisa tu carrito antes de finalizar.
+                    </p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {# ══ COLUMNA IZQUIERDA ══ #}
+                <div class="lg:col-span-2 space-y-4">
+                    {# ── Items del carrito ── #}
+                    <div class="bg-[#1e293b] border border-gray-700 rounded-2xl overflow-hidden">
+                        <div class="px-5 py-4 border-b border-gray-700 bg-gray-800/30 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-[#10b981]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <h2 class="text-white font-bold">Productos en el carrito</h2>
+                        </div>
+                        <div class="divide-y divide-gray-800">
+                            {% for id, item in carrito.items %}
+                                <div class="flex items-center gap-4 p-4 hover:bg-gray-800/20 transition-colors">
+                                    <div class="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-gray-900 border border-gray-700">
+                                        {% if item.imagen %}
+                                            <img src="{{ item.imagen }}"
+                                                 class="w-full h-full object-contain p-1"
+                                                 alt="{{ item.nombre }}">
+                                        {% else %}
+                                            <div class="w-full h-full flex items-center justify-center">
+                                                <svg class="w-7 h-7 text-gray-700"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                                </svg>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow min-w-0">
+                                        <p class="text-white font-bold text-sm truncate">{{ item.nombre }}</p>
+                                        <p class="text-gray-500 text-xs mt-0.5">RD$ {{ item.precio|floatformat:2 }} / unidad</p>
+                                        <div class="flex items-center gap-2 mt-2">
+                                            <div class="flex items-center gap-1.5 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1">
+                                                <a href="{% url 'clientes:actualizar_carrito' id 'restar' %}"
+                                                   class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-400 transition-colors font-bold text-lg leading-none">−</a>
+                                                <span class="text-[#10b981] font-mono font-bold text-sm w-5 text-center">{{ item.cantidad }}</span>
+                                                <a href="{% url 'clientes:actualizar_carrito' id 'sumar' %}"
+                                                   class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-[#10b981] transition-colors font-bold text-lg leading-none">+</a>
+                                            </div>
+                                            <a href="{% url 'clientes:actualizar_carrito' id 'eliminar' %}"
+                                               class="text-gray-600 hover:text-red-400 transition-colors"
+                                               title="Eliminar">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="text-right flex-shrink-0">
+                                        <p class="text-white font-mono font-bold text-sm">
+                                            RD$ <span class="subtotal-item"
+       data-precio="{{ item.precio }}"
+       data-cantidad="{{ item.cantidad }}">—</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="px-5 py-4 border-t border-gray-700 bg-gray-800/20 flex justify-between items-center">
+                            <span class="text-gray-400 text-xs font-bold uppercase tracking-wider">Total estimado</span>
+                            <span class="text-2xl font-black text-[#10b981] font-mono"
+                                  id="totalCarrito">—</span>
+                        </div>
+                    </div>
+                    {# ── Datos de entrega (readonly, del perfil) ── #}
+                    <div class="bg-[#1e293b] border border-gray-700 rounded-2xl p-5">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-white font-bold flex items-center gap-2 text-sm">
+                                <svg class="w-4 h-4 text-blue-400"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                Datos de Entrega
+                            </h3>
+                            <a href="{% url 'clientes:configuracion' %}"
+                               class="flex items-center gap-1 text-xs text-[#10b981] hover:underline font-semibold">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                Editar
+                            </a>
+                        </div>
+                        {% if perfil and perfil.get_direccion_completa %}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="bg-gray-900/40 rounded-xl p-3 border border-gray-700/50">
+                                    <p class="text-gray-500 text-[10px] uppercase font-bold tracking-wider mb-1">Nombre</p>
+                                    <p class="text-white text-sm">{{ request.user.get_full_name|default:request.user.email }}</p>
+                                </div>
+                                <div class="bg-gray-900/40 rounded-xl p-3 border border-gray-700/50">
+                                    <p class="text-gray-500 text-[10px] uppercase font-bold tracking-wider mb-1">Teléfono</p>
+                                    <p class="text-white text-sm">{{ request.user.telefono|default:"—" }}</p>
+                                </div>
+                                <div class="bg-gray-900/40 rounded-xl p-3 border border-gray-700/50 sm:col-span-2">
+                                    <p class="text-gray-500 text-[10px] uppercase font-bold tracking-wider mb-1">Dirección</p>
+                                    <p class="text-white text-sm">{{ perfil.get_direccion_completa }}</p>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="flex items-start gap-3 p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+                                <svg class="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <div>
+                                    <p class="text-amber-400 text-sm font-semibold">Sin dirección guardada</p>
+                                    <p class="text-amber-400/70 text-xs mt-0.5">
+                                        <a href="{% url 'clientes:configuracion' %}"
+                                           class="underline hover:text-amber-300">
+                                            Completa tu dirección en Configuración
+                                        </a>
+                                        para agilizar futuras compras.
+                                    </p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {# ══ COLUMNA DERECHA ══ #}
+                <div>
+                    <div class="bg-[#1e293b] border border-gray-700 rounded-2xl p-6 sticky top-24 space-y-5">
+                        <h3 class="text-white font-bold flex items-center gap-2 text-sm">
+                            <svg class="w-4 h-4 text-[#10b981]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            Resumen del Pedido
+                        </h3>
+                        <div class="space-y-2 text-sm">
+                            {% for id, item in carrito.items %}
+                                <div class="flex justify-between text-gray-400">
+                                    <span class="truncate max-w-[150px]">{{ item.nombre }} ×{{ item.cantidad }}</span>
+                                    <span class="font-mono text-white ml-2 flex-shrink-0">
+                                        RD$ <span class="subtotal-resumen"
+       data-precio="{{ item.precio }}"
+       data-cantidad="{{ item.cantidad }}">—</span>
+                                    </span>
+                                </div>
+                            {% endfor %}
+                            <div class="border-t border-gray-700 pt-3 flex justify-between font-bold text-white">
+                                <span>Total</span>
+                                <span class="text-[#10b981] font-mono" id="totalResumen">—</span>
+                            </div>
+                        </div>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="w-full bg-[#10b981] hover:bg-emerald-400 text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-[#10b981]/20 text-lg">
+                                Confirmar Pedido
+                            </button>
+                        </form>
+                        <div class="flex items-start gap-2 p-3 bg-gray-900/50 rounded-xl border border-gray-700/50">
+                            <svg class="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p class="text-gray-500 text-[11px] leading-relaxed">
+                                Al confirmar crearemos tu pedido y nos pondremos en contacto para coordinar el pago y la entrega.
+                            </p>
+                        </div>
+                        <a href="{% url 'clientes:productos' %}"
+                           class="flex items-center justify-center gap-1.5 text-gray-500 hover:text-gray-300 text-xs transition-colors">
+                            <svg class="w-3.5 h-3.5"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            Seguir comprando
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            {# ══════════════════════════════════════════════════════════ #}
+            {# CARRITO VACÍO                                              #}
+            {# ══════════════════════════════════════════════════════════ #}
+            <div class="flex flex-col items-center justify-center py-24 text-center">
+                <div class="relative mb-8">
+                    <div class="w-28 h-28 rounded-3xl bg-gray-800/60 border border-gray-700 flex items-center justify-center">
+                        <svg class="w-14 h-14 text-gray-600"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                    <div class="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gray-900 border-2 border-gray-700 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-gray-500"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </div>
+                </div>
+                <h1 class="text-2xl font-bold text-white mb-2">Tu carrito está vacío</h1>
+                <p class="text-gray-400 text-sm max-w-sm mb-8 leading-relaxed">
+                    Aún no has añadido ningún producto. Explora el catálogo y encuentra algo que te guste.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="{% url 'clientes:productos' %}"
+                       class="px-8 py-3.5 rounded-2xl bg-[#10b981] hover:bg-emerald-400 text-white font-black transition-all shadow-lg shadow-[#10b981]/20 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        Ver Catálogo
+                    </a>
+                    <a href="{% url 'clientes:solicitar_cotizacion' %}"
+                       class="px-8 py-3.5 rounded-2xl border border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white font-bold transition-all flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Pedir Pieza Personalizada
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    {% if carrito %}
+        <script>
+document.addEventListener('DOMContentLoaded', () => {
+    const fmt  = n => `RD$ ${parseFloat(n).toLocaleString('es-DO', {minimumFractionDigits: 2})}`;
+    const fmt2 = n => parseFloat(n).toLocaleString('es-DO', {minimumFractionDigits: 2});
+    let total = 0;
+
+    document.querySelectorAll('.subtotal-item').forEach(el => {
+        const sub = parseFloat(el.dataset.precio) * parseInt(el.dataset.cantidad);
+        el.textContent = fmt2(sub);
+        total += sub;
+    });
+    document.querySelectorAll('.subtotal-resumen').forEach(el => {
+        const sub = parseFloat(el.dataset.precio) * parseInt(el.dataset.cantidad);
+        el.textContent = fmt2(sub);
+    });
+
+    document.getElementById('totalCarrito').textContent = fmt(total);
+    document.getElementById('totalResumen').textContent = fmt(total);
+});
+        </script>
+    {% endif %}
+{% endblock %}

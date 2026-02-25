@@ -185,7 +185,6 @@ def editar_gasto(request, gasto_id):
     if request.method == "POST":
         data = request.POST.copy()
         files = request.FILES.copy() if request.FILES else {}
-        
         # Validación de campos protegidos para gastos automáticos
         if gasto.es_automatico:
             data['monto'] = gasto.monto
@@ -202,13 +201,16 @@ def editar_gasto(request, gasto_id):
 
         # Verificar uso de formulario extendido
         usar_extendido = (
+            gasto.es_recurrente or  # Si ya era recurrente, necesitamos el form que ve ese campo
+            bool(gasto.comprobante) or
+            bool(data.get("es_recurrente")) or 
             bool(files.get("comprobante")) or 
             bool(data.get("proveedor")) or 
             bool(data.get("numero_factura")) or
-            bool(data.get("es_recurrente")) or
             data.get("eliminar_comprobante") == "true"
         )
-        
+        if "es_recurrente" not in data and usar_extendido:
+            data["es_recurrente"] = False
         FormClass = GastoFormExtendido if usar_extendido else GastoForm
         form = FormClass(data, files, instance=gasto) if usar_extendido else FormClass(data, instance=gasto)
         

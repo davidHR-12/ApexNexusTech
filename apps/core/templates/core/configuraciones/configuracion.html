@@ -1,46 +1,71 @@
 {% extends "core/base_admin.html" %}
+
 {% block content %}
-  <div class="max-w-2xl space-y-8">
-    <div>
-      <h1 class="text-3xl font-bold text-white">Configuración del Sistema</h1>
-      <p class="text-gray-400 text-sm">Gestiona la configuración del sistema.</p>
+<div class="max-w-4xl mx-auto">
+    {# Cabecera #}
+    <div class="mb-8">
+        <h1 class="text-3xl font-black text-white tracking-tight">Ajustes del Sistema</h1>
+        <p class="text-gray-400 mt-1">Configura los parámetros globales de A.N.T Studio</p>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-      <a href="{% url 'core:config_media' %}"
-         class="bg-gray-800 p-6 rounded-xl border border-gray-700 hover:border-emerald-500 transition-all group">
-        <div class="w-12 h-12 bg-emerald-500/10 rounded-lg flex items-center justify-center mb-4 text-emerald-400 group-hover:scale-110 transition-transform">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        </div>
-        <h3 class="text-white font-bold text-lg">Limpieza de Media</h3>
-        <p class="text-gray-400 text-sm">Gestiona imágenes huérfanas y optimiza el almacenamiento.</p>
-      </a>
+    {# Contenedor de Opciones #}
+    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl overflow-hidden divide-y divide-gray-700/50">
+        
+        {# Opción: Limpieza de Media #}
+        <a href="{% url 'core:config_media' %}" class="flex items-center p-5 hover:bg-gray-700/30 transition-all group">
+            <div class="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 mr-4 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="2"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-white font-bold text-base">Limpieza de Media</h3>
+                <p class="text-gray-400 text-xs">Optimización de archivos y almacenamiento</p>
+            </div>
+            <svg class="w-5 h-5 text-gray-600 group-hover:text-gray-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2.5"/></svg>
+        </a>
 
-      <a href="{% url 'core:lista_impresoras' %}"
-         class="bg-gray-800 p-6 rounded-xl border border-gray-700 hover:border-blue-500 transition-all group">
-        <div class="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center mb-4 text-blue-400 group-hover:scale-110 transition-transform">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-          </svg>
-        </div>
-        <h3 class="text-white font-bold text-lg">Impresoras 3D</h3>
-        <p class="text-gray-400 text-sm">Registra nuevas máquinas, dales mantenimiento o darlas de baja.</p>
-      </a>
+        {# Opción: Impresoras 3D #}
+        <a href="{% url 'core:lista_impresoras' %}" class="flex items-center p-5 hover:bg-gray-700/30 transition-all group">
+            <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 mr-4 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" stroke-width="2"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-white font-bold text-base">Maquinaria / Impresoras</h3>
+                <p class="text-gray-400 text-xs">Mantenimiento y registro de flota 3D</p>
+            </div>
+            <svg class="w-5 h-5 text-gray-600 group-hover:text-gray-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2.5"/></svg>
+        </a>
 
-      <a href="{% url 'core:configuracion_pago' %}"
-         class="bg-gray-800 p-6 rounded-xl border border-gray-700 hover:border-amber-500 transition-all group">
-        <div class="w-12 h-12 bg-amber-500/10 rounded-lg flex items-center justify-center mb-4 text-amber-400 group-hover:scale-110 transition-transform">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-          </svg>
-        </div>
-        <h3 class="text-white font-bold text-lg">Configuración de Cobros</h3>
-        <p class="text-gray-400 text-sm">Datos bancarios, anticipo y métodos de pago offline.</p>
-      </a>
+        {# Opción: Cobros #}
+        <a href="{% url 'core:configuracion_pago' %}" class="flex items-center p-5 hover:bg-gray-700/30 transition-all group">
+            <div class="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-400 mr-4 group-hover:bg-amber-500 group-hover:text-white transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" stroke-width="2"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-white font-bold text-base">Finanzas y Pagos</h3>
+                <p class="text-gray-400 text-xs">Métodos de cobro y datos bancarios</p>
+            </div>
+            <svg class="w-5 h-5 text-gray-600 group-hover:text-gray-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2.5"/></svg>
+        </a>
 
+        {# Opción: Sitio Público #}
+        <a href="{% url 'core:configuracion_sitio_publico' %}" class="flex items-center p-5 hover:bg-gray-700/30 transition-all group">
+            <div class="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-400 mr-4 group-hover:bg-purple-500 group-hover:text-white transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-width="2"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-white font-bold text-base">Identidad del Sitio</h3>
+                <p class="text-gray-400 text-xs">Datos del sitio público.</p>
+            </div>
+            <svg class="w-5 h-5 text-gray-600 group-hover:text-gray-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2.5"/></svg>
+        </a>
     </div>
-  </div>
+</div>
 {% endblock content %}

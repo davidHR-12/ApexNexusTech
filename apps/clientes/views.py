@@ -9,6 +9,8 @@ from apps.pedidos.models import SolicitudCotizacion, Pedido, ItemPedido, Configu
 from apps.productos.models import Producto, VarianteProducto
 from apps.clientes.models import PerfilCliente
 from apps.usuarios.models import Usuario
+from apps.core.models import CardPublica
+from apps.usuarios.decorators import cliente_required
 
 
 # Importación de Formularios
@@ -19,35 +21,53 @@ from .forms import SolicitudCotizacionForm, GuestCheckoutForm,PerfilClienteForm
 # ==========================================
 
 def index(request):
-    """Vista principal pública (landing page)."""
-    total_materiales = Material.objects.count()
-    piezas_reales = Pedido.objects.filter(estado_pedido="Entregado").count()
-    piezas_mostrar = 50 + piezas_reales
+    from apps.productos.models import Producto
+    from apps.core.models import ConfiguracionSitio, CardPublica
 
-    materiales = Material.objects.all()
-    productos = Producto.objects.all()[:6] # Mostramos solo los primeros 6 productos destacados
+    config = ConfiguracionSitio.obtener()
+    cards_materiales = CardPublica.objects.filter(
+        seccion='materiales',
+        activo=True
+    ).order_by('orden')
 
-    context = {
-        "n_materiales": total_materiales,
-        "n_piezas": piezas_mostrar,
-        "materiales": materiales,
-        "productos": productos,
-    }
-    return render(request, "index.html", context)
+    productos_destacados = []
+    if config.mostrar_seccion_productos_destacados:
+        productos_destacados = Producto.objects.filter(
+            activo=True,
+            mostrar_en_web=True
+        )[:config.max_productos_destacados]
 
-def guia_materiales(request):
-    """Catálogo de materiales disponibles"""
-    materiales_disponibles = Material.objects.filter(stock_actual__gt=0) # Solo lo que tiene stock
-    return render(request, "materiales.html", {"materiales": materiales_disponibles})
+    return render(request, 'publico/index.html', {
+        'productos_destacados': productos_destacados,
+        'cards_materiales': cards_materiales,
+    })
 
-def proceso(request):
-    """Vista estática del proceso"""
-    return render(request, "proceso.html")
+def materiales_view(request):
+    from apps.materiales.models import Material
+    from apps.core.models import CardPublica
+
+    materiales = Material.objects.select_related('marca', 'tipo', 'color').order_by('tipo__nombre')
+    cards_materiales = CardPublica.objects.filter(
+        seccion='materiales',
+        activo=True
+    ).order_by('orden')
+
+    return render(request, 'publico/materiales.html', {
+        'materiales': materiales,
+        'cards_materiales': cards_materiales,
+    })
+
+def proceso_view(request):
+    from apps.core.models import ConfiguracionSitio
+
+    config = ConfiguracionSitio.obtener()
+    cards_proceso    = CardPublica.objects.filter(seccion='proceso', activo=True).order_by('orden')
+    return render(request, 'publico/proceso.html', {'config': config, 'cards_proceso': cards_proceso})
 
 def productos(request):
     """Catálogo completo de productos"""
     productos = Producto.objects.filter(mostrar_en_web=True)
-    return render(request, "productos.html", {"productos": productos})
+    return render(request, "publico/productos.html", {"productos": productos})
 
 def detalle_producto(request, pk):
     producto = get_object_or_404(Producto, pk=pk, mostrar_en_web=True)
@@ -57,7 +77,7 @@ def detalle_producto(request, pk):
     # Si no hay variantes activas, podrías querer manejar ese error o mostrar un mensaje
     variante_default = variantes.filter(es_default=True).first() or variantes.first()
     
-    return render(request, "detalle_producto.html", {
+    return render(request, "publico/detalle_producto.html", {
         "producto": producto,
         "galeria": producto.imagenes.all(),
         "variantes": variantes,
@@ -217,21 +237,40 @@ def home(request):
     }
     return render(request, "clientes/home.html", context)
 
+
 @login_required
-def mi_perfil(request):
-    """Vista para que el cliente actualice sus datos de envío/contacto"""
-    perfil, created = PerfilCliente.objects.get_or_create(usuario=request.user)
-    
+def configuracion_cliente(request):
+    """
+    Página de configuración del cliente.
+    Edita datos del Usuario (nombre, apellido, teléfono)
+    y del PerfilCliente (dirección, ciudad, empresa, etc.)
+    """
+    perfil, _ = PerfilCliente.objects.get_or_create(usuario=request.user)
+
     if request.method == 'POST':
-        form = PerfilClienteForm(request.POST, instance=perfil)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Datos actualizados correctamente.")
-            return redirect('clientes:home')
-    else:
-        form = PerfilClienteForm(instance=perfil)
-    
-    return render(request, "clientes/perfil.html", {"form": form})
+        usuario = request.user
+
+        # ── Actualizar campos del Usuario ──
+        usuario.first_name = request.POST.get('first_name', '').strip()
+        usuario.last_name  = request.POST.get('last_name', '').strip()
+        usuario.telefono   = request.POST.get('telefono', '').strip()
+        usuario.save(update_fields=['first_name', 'last_name', 'telefono'])
+
+        # ── Actualizar campos del Perfil ──
+        perfil.direccion              = request.POST.get('direccion', '').strip()
+        perfil.ciudad                 = request.POST.get('ciudad', '').strip()
+        perfil.codigo_postal          = request.POST.get('codigo_postal', '').strip()
+        perfil.empresa                = request.POST.get('empresa', '').strip()
+        perfil.recibir_notificaciones = 'recibir_notificaciones' in request.POST
+        perfil.save()
+
+        messages.success(request, "Datos actualizados correctamente.")
+        return redirect('clientes:configuracion')
+
+    return render(request, 'clientes/config_cliente.html', {
+        'perfil': perfil,
+    })
+
 
 @login_required
 def solicitar_cotizacion(request):
@@ -322,24 +361,38 @@ def _procesar_pedido_desde_carrito(usuario, carrito):
 @transaction.atomic
 def checkout_paso_final(request):
     """
-    Procesa el pedido final. 
-    Soporta clientes autenticados y compras como invitado real.
+    Checkpoint que decide qué template mostrar:
+    - Usuario autenticado  → checkout_usuario.html    (sin formulario)
+    - Invitado             → checkout_invitado.html   (con formulario)
     """
     carrito = request.session.get('carrito', {})
-    if not carrito:
-        messages.warning(request, "Tu carrito está vacío.")
-        
 
+    # ── POST: procesar pedido ──
     if request.method == 'POST':
-        if not request.user.is_authenticated:
+
+        if request.user.is_authenticated:
+            # Cliente con cuenta: usamos sus datos directamente
+            datos_cliente = {
+                'usuario': request.user,
+                'descripcion': f"Pedido de {request.user.get_full_name() or request.user.username}",
+            }
+            try:
+                nuevo_pedido = _crear_pedido_con_items(datos_cliente, carrito)
+                request.session['carrito'] = {}
+                messages.success(request, f"¡Pedido #{nuevo_pedido.id} creado con éxito!")
+                return redirect('clientes:detalle_pedido', pedido_id=nuevo_pedido.id)
+            except Exception as e:
+                messages.error(request, f"Hubo un error al procesar tu pedido: {str(e)}")
+                return redirect('clientes:checkout_express')
+
+        else:
+            # Invitado: validar formulario
             form = GuestCheckoutForm(request.POST)
             if not form.is_valid():
                 return render(request, 'clientes/checkout_invitado.html', {
-                    'form': form, 
-                    'carrito': carrito
+                    'form': form,
+                    'carrito': carrito,
                 })
-            
-            # Datos para pedido de invitado
             datos_cliente = {
                 'usuario': None,
                 'guest_nombre': f"{form.cleaned_data['nombre']} {form.cleaned_data['apellido']}",
@@ -347,44 +400,55 @@ def checkout_paso_final(request):
                 'guest_telefono': form.cleaned_data['telefono'],
                 'guest_direccion': form.cleaned_data['direccion'],
                 'guest_ciudad': form.cleaned_data['ciudad'],
-                'descripcion': f"Pedido invitado: {form.cleaned_data['nombre']}"
+                'descripcion': f"Pedido invitado: {form.cleaned_data['nombre']}",
             }
-        else:
-            # Datos para usuario logueado
-            datos_cliente = {
-                'usuario': request.user,
-                'descripcion': f"Pedido de {request.user.get_full_name() or request.user.username}"
-            }
+            try:
+                nuevo_pedido = _crear_pedido_con_items(datos_cliente, carrito)
+                request.session['carrito'] = {}
+                request.session['ultimo_pedido_id'] = nuevo_pedido.id
+                messages.success(request, "¡Pedido realizado con éxito!")
+                return redirect('clientes:pedido_confirmado_invitado')
+            except Exception as e:
+                messages.error(request, f"Hubo un error al procesar tu pedido: {str(e)}")
+                return redirect('clientes:checkout_express')
 
-        try:
-            # 1. Crear el Pedido
-            nuevo_pedido = Pedido.objects.create(**datos_cliente)
+    # ── GET: mostrar el template correcto ──
+    if request.user.is_authenticated:
+        perfil, _ = PerfilCliente.objects.get_or_create(usuario=request.user)
+        return render(request, 'clientes/checkout_usuario.html', {
+            'carrito': carrito,
+            'perfil': perfil,
+        })
+    else:
+        return render(request, 'clientes/checkout_invitado.html', {
+            'form': GuestCheckoutForm(),
+            'carrito': carrito,
+        })
 
-            # 2. Crear los ítems
-            for v_id, item_data in carrito.items():
-                variante = get_object_or_404(VarianteProducto, id=v_id)
-                ItemPedido.objects.create(
-                    pedido=nuevo_pedido,
-                    variante=variante,
-                    cantidad=item_data['cantidad'],
-                    precio_unitario=variante.precio_final,
-                    gramos_por_unidad=variante.peso_total or 0
-                )
 
-            # 3. Limpiar sesión y redirigir
-            request.session['carrito'] = {}
-            request.session['ultimo_pedido_id'] = nuevo_pedido.id
-            
-            messages.success(request, "¡Pedido realizado con éxito!")
-            return redirect('clientes:pedido_confirmado_invitado')
+def _crear_pedido_con_items(datos_cliente, carrito):
+    """
+    Helper unificado. Crea Pedido + Items desde el carrito de sesión.
+    """
+    with transaction.atomic():
+        pedido = Pedido.objects.create(
+            estado_pedido='En_Espera',
+            peso_estimado_g=0,
+            tiempo_estimado_h=0,
+            precio_total=0,
+            **datos_cliente,
+        )
+        for v_id, item_data in carrito.items():
+            variante = get_object_or_404(VarianteProducto, id=v_id)
+            ItemPedido.objects.create(
+                pedido=pedido,
+                variante=variante,
+                cantidad=item_data['cantidad'],
+                precio_unitario=variante.precio_final,
+                gramos_por_unidad=variante.peso_total or 0,
+            )
+        return pedido
 
-        except Exception as e:
-            # Si algo falla aquí, redirige al checkout para intentar de nuevo
-            messages.error(request, f"Hubo un error al procesar tu pedido: {str(e)}")
-            return redirect('clientes:checkout_express')
-
-    form = GuestCheckoutForm() if not request.user.is_authenticated else None
-    return render(request, 'clientes/checkout_invitado.html', {'form': form, 'carrito': carrito})
 
 def pedido_confirmado_invitado(request):
     """Vista de éxito que muestra los detalles del pedido recién creado."""

@@ -1,488 +1,404 @@
 {% extends 'clientes/base_cliente.html' %}
 {% block content %}
-    <div class="space-y-6">
+    <div class="space-y-4">
 
-        {# ── CABECERA ── #}
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {# ── CABECERA COMPACTA ── #}
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
                 <a href="{% url 'clientes:mis_pedidos' %}"
-                   class="text-[#10b981] text-sm font-bold flex items-center gap-2 mb-2 hover:underline">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M15 19l-7-7 7-7" />
+                   class="text-[#10b981] text-xs font-bold flex items-center gap-1.5 mb-1.5 hover:underline">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
                     </svg>
                     Volver a mis pedidos
                 </a>
-                <h1 class="text-3xl font-bold text-white">Detalle de Pedido #{{ pedido.id }}</h1>
-                <p class="text-gray-400">Realizado el {{ pedido.fecha_creacion|date:"d \d\e F, Y" }}</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <span class="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest border
-                    {% if pedido.estado_pedido == 'En_Espera' %}
-                        border-amber-500/50 text-amber-500 bg-amber-500/10
-                    {% elif pedido.estado_pedido == 'Entregado' or pedido.estado_pedido == 'Listo' %}
-                        border-emerald-500/50 text-emerald-500 bg-emerald-500/10
-                    {% elif pedido.estado_pedido == 'Cancelado' or pedido.estado_pedido == 'Fallido' %}
-                        border-red-500/50 text-red-500 bg-red-500/10
-                    {% else %}
-                        border-blue-500/50 text-blue-500 bg-blue-500/10
-                    {% endif %}">
-                    {{ pedido.get_estado_pedido_display }}
-                </span>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <h1 class="text-xl font-bold text-white">Pedido #{{ pedido.id }}</h1>
+                    <span class="px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-widest border
+                        {% if pedido.estado_pedido == 'En_Espera' %}border-amber-500/50 text-amber-400 bg-amber-500/10
+                        {% elif pedido.estado_pedido == 'Entregado' or pedido.estado_pedido == 'Listo' %}border-emerald-500/50 text-emerald-400 bg-emerald-500/10
+                        {% elif pedido.estado_pedido == 'Cancelado' or pedido.estado_pedido == 'Fallido' %}border-red-500/50 text-red-400 bg-red-500/10
+                        {% else %}border-blue-500/50 text-blue-400 bg-blue-500/10{% endif %}">
+                        {{ pedido.get_estado_pedido_display }}
+                    </span>
+                    <span class="text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d \d\e F, Y" }}</span>
+                </div>
             </div>
         </div>
 
         {# ── GRID PRINCIPAL ── #}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
 
-            {# ──────────── COLUMNA IZQUIERDA: Productos ──────────── #}
+            {# ──────────── COLUMNA IZQUIERDA ──────────── #}
             <div class="lg:col-span-2 space-y-4">
+
+                {# Productos #}
                 <div class="bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
-                    <div class="p-4 border-b border-gray-800 bg-gray-800/30">
-                        <h2 class="text-white font-bold">Productos en este pedido</h2>
+                    <div class="px-4 py-3 border-b border-gray-800 bg-gray-800/30 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                        <h2 class="text-white font-bold text-sm">Productos</h2>
                     </div>
-                    <div class="divide-y divide-gray-800">
+                    <div class="divide-y divide-gray-800/60">
                         {% for item in items %}
-                            <div class="p-4 flex items-center justify-between hover:bg-gray-800/20 transition-colors">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 bg-[#334155] rounded-lg flex items-center justify-center text-[#10b981]">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            <div class="px-4 py-3 flex items-center justify-between hover:bg-gray-800/20 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 bg-[#334155] rounded-lg flex items-center justify-center text-[#10b981] flex-shrink-0">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
                                         </svg>
                                     </div>
                                     <div>
-                                        <p class="text-white font-bold">
-                                            {% if item.descripcion %}
-                                                {{ item.descripcion }}
-                                            {% elif item.variante %}
-                                                {{ item.variante.producto.nombre }}
-                                            {% else %}
-                                                Producto Personalizado
-                                            {% endif %}
+                                        <p class="text-white font-semibold text-sm">
+                                            {% if item.descripcion %}{{ item.descripcion }}
+                                            {% elif item.variante %}{{ item.variante.producto.nombre }}
+                                            {% else %}Producto Personalizado{% endif %}
                                         </p>
-                                        <p class="text-gray-500 text-xs italic">
-                                            {{ item.cantidad }} unidad(es) × RD$ {{ item.precio_unitario|floatformat:2 }}
-                                        </p>
+                                        <p class="text-gray-500 text-xs">{{ item.cantidad }} ud × RD$ {{ item.precio_unitario|floatformat:2 }}</p>
                                     </div>
                                 </div>
-                                <div class="text-right">
-                                    <p class="text-white font-mono font-bold">RD$ {{ item.subtotal|floatformat:2 }}</p>
-                                </div>
+                                <span class="text-white font-mono font-bold text-sm">RD$ {{ item.subtotal|floatformat:2 }}</span>
                             </div>
                         {% endfor %}
                     </div>
                 </div>
-            </div>
 
-            {# ──────────── COLUMNA DERECHA: Sidebar ──────────── #}
-            <div class="space-y-4">
-
-                {# 1. DESCRIPCIÓN ORIGINAL DEL CLIENTE #}
+                {# Solicitud del cliente #}
                 {% if pedido.descripcion %}
-                    <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-6">
-                        <div class="flex items-center gap-2 mb-4">
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <h2 class="text-white font-bold">Mi Solicitud</h2>
-                        </div>
-                        <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                            <p class="text-gray-300 text-sm leading-relaxed italic">"{{ pedido.descripcion }}"</p>
-                        </div>
+                <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <h2 class="text-white font-bold text-sm">Mi Solicitud</h2>
                     </div>
+                    <div class="bg-gray-800/50 rounded-xl p-3 border border-gray-700/50">
+                        <p class="text-gray-300 text-sm leading-relaxed italic">"{{ pedido.descripcion }}"</p>
+                    </div>
+                </div>
                 {% endif %}
 
-                {# 2. HISTORIAL DE ANOTACIONES PÚBLICAS #}
-                <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6">
-                    <div class="flex items-center gap-2 mb-4">
-                        <svg class="w-5 h-5 text-[#10b981]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                {# Seguimiento / anotaciones — movido a columna izquierda para reducir scroll del sidebar #}
+                <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <svg class="w-4 h-4 text-[#10b981]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
                         </svg>
-                        <h2 class="text-white font-bold">Seguimiento de la Tienda</h2>
+                        <h2 class="text-white font-bold text-sm">Seguimiento de la Tienda</h2>
                     </div>
-                    <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
+                    <div class="space-y-3 max-h-64 overflow-y-auto pr-1">
                         {% for nota in notas %}
-                            <div class="bg-gray-800/40 rounded-xl p-4 border border-gray-700/30">
-                                <div class="flex justify-between items-center mb-2">
+                            <div class="bg-gray-800/40 rounded-xl p-3 border border-gray-700/30">
+                                <div class="flex justify-between items-center mb-1.5">
                                     <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Actualización</span>
                                     <span class="text-[10px] text-gray-500 font-mono">{{ nota.fecha_creacion|date:"d M, H:i" }}</span>
                                 </div>
                                 <p class="text-gray-300 text-sm leading-relaxed">{{ nota.contenido|linebreaksbr }}</p>
                             </div>
                         {% empty %}
-                            <p class="text-gray-500 text-xs italic text-center py-4">No hay actualizaciones públicas todavía.</p>
+                            <p class="text-gray-500 text-xs italic text-center py-6">No hay actualizaciones públicas todavía.</p>
                         {% endfor %}
                     </div>
                 </div>
 
-                {# 3. RESUMEN DE PAGO #}
-                <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-6">
-                    <h2 class="text-white font-bold mb-4">Resumen de Pago</h2>
-                    <div class="space-y-3">
+            </div>
+
+            {# ──────────── SIDEBAR STICKY ──────────── #}
+            <div class="lg:sticky lg:top-6 space-y-4 max-h-[calc(100vh-5rem)] overflow-y-auto pr-0.5">
+
+                {# Resumen de pago — compacto #}
+                <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-4">
+                    <h2 class="text-white font-bold text-sm mb-3">Resumen de Pago</h2>
+                    <div class="space-y-2">
                         <div class="flex justify-between text-gray-400 text-sm">
                             <span>Subtotal</span>
                             <span>RD$ {{ pedido.precio_total|floatformat:2 }}</span>
                         </div>
                         {% if anticipo %}
-                            <div class="flex justify-between text-amber-400 text-sm">
-                                <span>Anticipo requerido ({{ config_pago.porcentaje_anticipo }}%)</span>
-                                <span>RD$ {{ anticipo|floatformat:2 }}</span>
-                            </div>
+                        <div class="flex justify-between text-amber-400 text-sm">
+                            <span>Anticipo ({{ config_pago.porcentaje_anticipo }}%)</span>
+                            <span>RD$ {{ anticipo|floatformat:2 }}</span>
+                        </div>
                         {% endif %}
-                        <div class="border-t border-gray-800 pt-3 flex justify-between text-white font-bold text-xl">
+                        <div class="border-t border-gray-800 pt-2 flex justify-between text-white font-bold">
                             <span>Total</span>
-                            <span class="text-[#10b981]">RD$ {{ pedido.precio_total|floatformat:2 }}</span>
+                            <span class="text-[#10b981] text-lg font-mono">RD$ {{ pedido.precio_total|floatformat:2 }}</span>
                         </div>
                     </div>
                 </div>
 
-                {# ══════════════════════════════════════════════ #}
-                {#  4. SECCIÓN DE PAGO                           #}
-                {# ══════════════════════════════════════════════ #}
+                {# ── SECCIÓN DE PAGO ── #}
                 {% if puede_seleccionar_pago %}
 
-                    {# ── Aviso para pedidos personalizados aún sin precio ── #}
                     {% if es_pedido_cotizacion and pedido.precio_total == 0 %}
-                        <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5">
+                        <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4">
                             <div class="flex gap-3 items-start">
-                                <svg class="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <svg class="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
                                 <div>
-                                    <p class="text-amber-300 font-bold text-sm mb-1">Pendiente de cotización</p>
-                                    <p class="text-amber-200/70 text-xs leading-relaxed">
-                                        Tu solicitud está siendo revisada. Te notificaremos cuando tengamos el precio listo.
-                                    </p>
+                                    <p class="text-amber-300 font-bold text-sm mb-0.5">Pendiente de cotización</p>
+                                    <p class="text-amber-200/70 text-xs leading-relaxed">Tu solicitud está siendo revisada. Te notificaremos cuando tengamos el precio listo.</p>
                                 </div>
                             </div>
                         </div>
 
                     {% else %}
 
-                        {# ── SELECTOR DE MÉTODO DE PAGO ── #}
-                        <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-6">
-                            <div class="flex items-center gap-2 mb-5">
-                                <svg class="w-5 h-5 text-[#10b981]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        {# Selector método de pago #}
+                        <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-4">
+                            <div class="flex items-center gap-2 mb-4">
+                                <svg class="w-4 h-4 text-[#10b981]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                                 </svg>
-                                <h2 class="text-white font-bold">Método de Pago</h2>
+                                <h2 class="text-white font-bold text-sm">Método de Pago</h2>
                             </div>
 
-                            {# Aviso anticipo para pedidos personalizados #}
                             {% if es_pedido_cotizacion and anticipo %}
-                                <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-5">
-                                    <p class="text-amber-300 text-xs font-bold mb-1">⚠ Pago inicial requerido</p>
-                                    <p class="text-amber-200/70 text-xs leading-relaxed">
-                                        Para confirmar tu pedido personalizado, deberás abonar un anticipo de
-                                        <span class="font-bold text-amber-300">RD$ {{ anticipo|floatformat:2 }}</span>
-                                        ({{ config_pago.porcentaje_anticipo }}% del total).
-                                        El saldo restante se paga al retirar.
-                                    </p>
-                                </div>
+                            <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-4 text-xs text-amber-200/70 leading-relaxed">
+                                <span class="font-bold text-amber-300">⚠ Anticipo requerido: RD$ {{ anticipo|floatformat:2 }}</span>
+                                ({{ config_pago.porcentaje_anticipo }}%). Saldo al retirar.
+                            </div>
                             {% endif %}
 
                             <form method="POST" action="{% url 'clientes:seleccionar_metodo_pago' pedido.id %}">
                                 {% csrf_token %}
-                                <div class="space-y-3 mb-5">
+                                <div class="space-y-2 mb-4">
 
-                                    {# ── Efectivo ── #}
-                                    <label class="flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all
-                                        {% if pedido.metodo_pago_preferido == 'Efectivo' %}
-                                            border-emerald-500/60 bg-emerald-500/10
-                                        {% else %}
-                                            border-gray-700 hover:border-gray-600 bg-gray-800/30
-                                        {% endif %}">
+                                    {# Efectivo #}
+                                    <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all
+                                        {% if pedido.metodo_pago_preferido == 'Efectivo' %}border-emerald-500/60 bg-emerald-500/10{% else %}border-gray-700 hover:border-gray-600 bg-gray-800/30{% endif %}">
                                         <input type="radio" name="metodo_pago" value="Efectivo"
                                                {% if pedido.metodo_pago_preferido == 'Efectivo' %}checked{% endif %}
                                                class="accent-emerald-500 w-4 h-4 flex-shrink-0">
-                                        <div class="flex items-center gap-3 flex-1">
-                                            <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                                                <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                                                 </svg>
                                             </div>
                                             <div>
-                                                <p class="text-white text-sm font-semibold">Efectivo</p>
-                                                <p class="text-gray-500 text-xs">Pago en mano al entregar</p>
+                                                <p class="text-white text-xs font-semibold">Efectivo</p>
+                                                <p class="text-gray-500 text-[11px]">Al entregar</p>
                                             </div>
                                         </div>
                                     </label>
 
-                                    {# ── Transferencia ── #}
-                                    <label class="flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all
-                                        {% if pedido.metodo_pago_preferido == 'Transferencia' %}
-                                            border-blue-500/60 bg-blue-500/10
-                                        {% else %}
-                                            border-gray-700 hover:border-gray-600 bg-gray-800/30
-                                        {% endif %}">
+                                    {# Transferencia #}
+                                    <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all
+                                        {% if pedido.metodo_pago_preferido == 'Transferencia' %}border-blue-500/60 bg-blue-500/10{% else %}border-gray-700 hover:border-gray-600 bg-gray-800/30{% endif %}">
                                         <input type="radio" name="metodo_pago" value="Transferencia"
                                                {% if pedido.metodo_pago_preferido == 'Transferencia' %}checked{% endif %}
                                                class="accent-blue-500 w-4 h-4 flex-shrink-0">
-                                        <div class="flex items-center gap-3 flex-1">
-                                            <div class="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
-                                                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                          d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/>
                                                 </svg>
                                             </div>
                                             <div>
-                                                <p class="text-white text-sm font-semibold">Transferencia bancaria</p>
-                                                <p class="text-gray-500 text-xs">Transfiere y sube tu comprobante</p>
+                                                <p class="text-white text-xs font-semibold">Transferencia</p>
+                                                <p class="text-gray-500 text-[11px]">Sube tu comprobante</p>
                                             </div>
                                         </div>
                                     </label>
 
-                                    {# ── Contraentrega (solo catálogo) ── #}
+                                    {# Contraentrega #}
                                     {% if not es_pedido_cotizacion %}
-                                        <label class="flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all
-                                            {% if pedido.metodo_pago_preferido == 'Contraentrega' %}
-                                                border-purple-500/60 bg-purple-500/10
-                                            {% else %}
-                                                border-gray-700 hover:border-gray-600 bg-gray-800/30
-                                            {% endif %}">
-                                            <input type="radio" name="metodo_pago" value="Contraentrega"
-                                                   {% if pedido.metodo_pago_preferido == 'Contraentrega' %}checked{% endif %}
-                                                   class="accent-purple-500 w-4 h-4 flex-shrink-0">
-                                            <div class="flex items-center gap-3 flex-1">
-                                                <div class="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center flex-shrink-0">
-                                                    <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <p class="text-white text-sm font-semibold">Pago contraentrega</p>
-                                                    <p class="text-gray-500 text-xs">Pagas cuando recibes el pedido</p>
-                                                </div>
+                                    <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all
+                                        {% if pedido.metodo_pago_preferido == 'Contraentrega' %}border-purple-500/60 bg-purple-500/10{% else %}border-gray-700 hover:border-gray-600 bg-gray-800/30{% endif %}">
+                                        <input type="radio" name="metodo_pago" value="Contraentrega"
+                                               {% if pedido.metodo_pago_preferido == 'Contraentrega' %}checked{% endif %}
+                                               class="accent-purple-500 w-4 h-4 flex-shrink-0">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                                                </svg>
                                             </div>
-                                        </label>
+                                            <div>
+                                                <p class="text-white text-xs font-semibold">Contraentrega</p>
+                                                <p class="text-gray-500 text-[11px]">Pagas al recibir</p>
+                                            </div>
+                                        </div>
+                                    </label>
                                     {% endif %}
 
                                 </div>
                                 <button type="submit"
-                                        class="w-full py-3 rounded-xl bg-[#10b981] hover:bg-emerald-400 text-white font-bold text-sm transition-colors">
-                                    Confirmar método de pago
+                                        class="w-full py-2.5 rounded-xl bg-[#10b981] hover:bg-emerald-400 text-white font-bold text-sm transition-colors">
+                                    Confirmar método
                                 </button>
                             </form>
                         </div>
 
-                        {# ── DATOS BANCARIOS (visible si seleccionó Transferencia) ── #}
+                        {# Datos bancarios si seleccionó Transferencia #}
                         {% if pedido.metodo_pago_preferido == 'Transferencia' and config_pago %}
-                            <div class="bg-blue-900/10 border border-blue-500/30 rounded-2xl p-6" id="datosTransferencia">
-                                <div class="flex items-center gap-2 mb-4">
-                                    <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-                                    </svg>
-                                    <h2 class="text-white font-bold">Datos para transferencia</h2>
-                                </div>
+                        <div class="bg-blue-900/10 border border-blue-500/30 rounded-2xl p-4">
+                            <div class="flex items-center gap-2 mb-3">
+                                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/>
+                                </svg>
+                                <h2 class="text-white font-bold text-sm">Datos para transferencia</h2>
+                            </div>
 
-                                <div class="space-y-3 mb-5">
-                                    <div class="flex justify-between items-center py-2 border-b border-gray-800/60">
-                                        <span class="text-gray-400 text-xs uppercase tracking-wider">Banco</span>
-                                        <span class="text-white text-sm font-semibold">{{ config_pago.banco }}</span>
-                                    </div>
-                                    <div class="flex justify-between items-center py-2 border-b border-gray-800/60">
-                                        <span class="text-gray-400 text-xs uppercase tracking-wider">Titular</span>
-                                        <span class="text-white text-sm font-semibold">{{ config_pago.titular }}</span>
-                                    </div>
-                                    <div class="flex justify-between items-center py-2 border-b border-gray-800/60">
-                                        <span class="text-gray-400 text-xs uppercase tracking-wider">Cuenta</span>
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-white text-sm font-mono font-semibold" id="numeroCuenta">{{ config_pago.numero_cuenta }}</span>
-                                            <button onclick="copiarTexto('{{ config_pago.numero_cuenta }}', this)"
-                                                    class="text-gray-500 hover:text-emerald-400 transition-colors" title="Copiar">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                          d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    {% if config_pago.tipo_cuenta %}
-                                        <div class="flex justify-between items-center py-2 border-b border-gray-800/60">
-                                            <span class="text-gray-400 text-xs uppercase tracking-wider">Tipo</span>
-                                            <span class="text-white text-sm">{{ config_pago.tipo_cuenta }}</span>
-                                        </div>
-                                    {% endif %}
-                                    {% if config_pago.cedula %}
-                                        <div class="flex justify-between items-center py-2 border-b border-gray-800/60">
-                                            <span class="text-gray-400 text-xs uppercase tracking-wider">Cédula</span>
-                                            <span class="text-white text-sm font-mono">{{ config_pago.cedula }}</span>
-                                        </div>
-                                    {% endif %}
-                                    {% if config_pago.telefono_pago %}
-                                        <div class="flex justify-between items-center py-2 border-b border-gray-800/60">
-                                            <span class="text-gray-400 text-xs uppercase tracking-wider">Tel. pagos</span>
-                                            <span class="text-white text-sm font-mono">{{ config_pago.telefono_pago }}</span>
-                                        </div>
-                                    {% endif %}
-                                    {% if anticipo %}
-                                        <div class="flex justify-between items-center py-2">
-                                            <span class="text-gray-400 text-xs uppercase tracking-wider">Monto a transferir</span>
-                                            <span class="text-emerald-400 text-sm font-bold font-mono">
-                                                RD$ {% if es_pedido_cotizacion %}{{ anticipo|floatformat:2 }}{% else %}{{ pedido.precio_total|floatformat:2 }}{% endif %}
-                                            </span>
-                                        </div>
-                                    {% else %}
-                                        <div class="flex justify-between items-center py-2">
-                                            <span class="text-gray-400 text-xs uppercase tracking-wider">Monto a transferir</span>
-                                            <span class="text-emerald-400 text-sm font-bold font-mono">RD$ {{ pedido.precio_total|floatformat:2 }}</span>
-                                        </div>
-                                    {% endif %}
+                            <div class="space-y-1.5 mb-4 text-sm">
+                                <div class="flex justify-between py-1.5 border-b border-gray-800/60">
+                                    <span class="text-gray-400 text-xs">Banco</span>
+                                    <span class="text-white font-semibold text-xs">{{ config_pago.banco }}</span>
                                 </div>
-
-                                {% if config_pago.instrucciones_adicionales %}
-                                    <div class="bg-gray-800/40 rounded-xl p-3 mb-5 border border-gray-700/40">
-                                        <p class="text-gray-400 text-xs leading-relaxed">{{ config_pago.instrucciones_adicionales }}</p>
+                                <div class="flex justify-between py-1.5 border-b border-gray-800/60">
+                                    <span class="text-gray-400 text-xs">Titular</span>
+                                    <span class="text-white font-semibold text-xs">{{ config_pago.titular }}</span>
+                                </div>
+                                <div class="flex justify-between items-center py-1.5 border-b border-gray-800/60">
+                                    <span class="text-gray-400 text-xs">Cuenta</span>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-white text-xs font-mono">{{ config_pago.numero_cuenta }}</span>
+                                        <button onclick="copiarTexto('{{ config_pago.numero_cuenta }}', this)"
+                                                class="text-gray-500 hover:text-emerald-400 transition-colors" title="Copiar">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                                            </svg>
+                                        </button>
                                     </div>
+                                </div>
+                                {% if config_pago.tipo_cuenta %}
+                                <div class="flex justify-between py-1.5 border-b border-gray-800/60">
+                                    <span class="text-gray-400 text-xs">Tipo</span>
+                                    <span class="text-white text-xs">{{ config_pago.tipo_cuenta }}</span>
+                                </div>
+                                {% endif %}
+                                {% if config_pago.cedula %}
+                                <div class="flex justify-between py-1.5 border-b border-gray-800/60">
+                                    <span class="text-gray-400 text-xs">Cédula</span>
+                                    <span class="text-white text-xs font-mono">{{ config_pago.cedula }}</span>
+                                </div>
+                                {% endif %}
+                                {% if config_pago.telefono_pago %}
+                                <div class="flex justify-between py-1.5 border-b border-gray-800/60">
+                                    <span class="text-gray-400 text-xs">Tel. pagos</span>
+                                    <span class="text-white text-xs font-mono">{{ config_pago.telefono_pago }}</span>
+                                </div>
+                                {% endif %}
+                                <div class="flex justify-between py-1.5">
+                                    <span class="text-gray-400 text-xs">Monto</span>
+                                    <span class="text-emerald-400 text-sm font-bold font-mono">
+                                        RD$ {% if es_pedido_cotizacion and anticipo %}{{ anticipo|floatformat:2 }}{% else %}{{ pedido.precio_total|floatformat:2 }}{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {% if config_pago.instrucciones_adicionales %}
+                            <div class="bg-gray-800/40 rounded-xl p-3 mb-4 border border-gray-700/40">
+                                <p class="text-gray-400 text-xs leading-relaxed">{{ config_pago.instrucciones_adicionales }}</p>
+                            </div>
+                            {% endif %}
+
+                            {# Subir comprobante #}
+                            <div class="border-t border-gray-800 pt-4">
+                                <p class="text-white text-xs font-semibold mb-3">Sube tu comprobante</p>
+
+                                {% if pedido.comprobante_cliente %}
+                                <div class="mb-3 rounded-xl overflow-hidden border border-gray-700">
+                                    <img src="{{ pedido.comprobante_cliente.url }}" alt="Comprobante"
+                                         class="w-full max-h-36 object-cover">
+                                </div>
+                                <div class="flex items-center gap-2 mb-3 p-2.5 rounded-xl
+                                    {% if pedido.comprobante_estado == 'Aprobado' %}bg-emerald-500/10 border border-emerald-500/30
+                                    {% elif pedido.comprobante_estado == 'Rechazado' %}bg-red-500/10 border border-red-500/30
+                                    {% else %}bg-amber-500/10 border border-amber-500/30{% endif %}">
+                                    <div class="w-1.5 h-1.5 rounded-full flex-shrink-0
+                                        {% if pedido.comprobante_estado == 'Aprobado' %}bg-emerald-400
+                                        {% elif pedido.comprobante_estado == 'Rechazado' %}bg-red-400
+                                        {% else %}bg-amber-400{% endif %}"></div>
+                                    <p class="text-xs font-semibold
+                                        {% if pedido.comprobante_estado == 'Aprobado' %}text-emerald-400
+                                        {% elif pedido.comprobante_estado == 'Rechazado' %}text-red-400
+                                        {% else %}text-amber-400{% endif %}">
+                                        {% if pedido.comprobante_estado == 'Aprobado' %}Comprobante aprobado
+                                        {% elif pedido.comprobante_estado == 'Rechazado' %}Rechazado — sube uno nuevo
+                                        {% else %}Pendiente de revisión{% endif %}
+                                    </p>
+                                </div>
                                 {% endif %}
 
-                                {# ── SUBIR COMPROBANTE ── #}
-                                <div class="border-t border-gray-800 pt-5">
-                                    <p class="text-white text-sm font-semibold mb-3">Sube tu comprobante</p>
-
-                                    {# Estado del comprobante actual #}
-                                    {% if pedido.comprobante_cliente %}
-                                        <div class="mb-4 rounded-xl overflow-hidden border border-gray-700">
-                                            <img src="{{ pedido.comprobante_cliente.url }}"
-                                                 alt="Comprobante enviado"
-                                                 class="w-full max-h-48 object-cover">
-                                        </div>
-                                        <div class="flex items-center gap-2 mb-4 p-3 rounded-xl
-                                            {% if pedido.comprobante_estado == 'Aprobado' %}
-                                                bg-emerald-500/10 border border-emerald-500/30
-                                            {% elif pedido.comprobante_estado == 'Rechazado' %}
-                                                bg-red-500/10 border border-red-500/30
-                                            {% else %}
-                                                bg-amber-500/10 border border-amber-500/30
-                                            {% endif %}">
-                                            <div class="w-2 h-2 rounded-full flex-shrink-0
-                                                {% if pedido.comprobante_estado == 'Aprobado' %}bg-emerald-400
-                                                {% elif pedido.comprobante_estado == 'Rechazado' %}bg-red-400
-                                                {% else %}bg-amber-400{% endif %}">
-                                            </div>
-                                            <p class="text-xs font-semibold
-                                                {% if pedido.comprobante_estado == 'Aprobado' %}text-emerald-400
-                                                {% elif pedido.comprobante_estado == 'Rechazado' %}text-red-400
-                                                {% else %}text-amber-400{% endif %}">
-                                                {% if pedido.comprobante_estado == 'Aprobado' %}
-                                                    Comprobante aprobado
-                                                {% elif pedido.comprobante_estado == 'Rechazado' %}
-                                                    Comprobante rechazado — sube uno nuevo
-                                                {% else %}
-                                                    Comprobante pendiente de revisión
-                                                {% endif %}
-                                            </p>
-                                        </div>
-                                    {% endif %}
-
-                                    {# Solo mostrar formulario de subida si no está aprobado #}
-                                    {% if pedido.comprobante_estado != 'Aprobado' %}
-                                        <form method="POST"
-                                              action="{% url 'clientes:subir_comprobante' pedido.id %}"
-                                              enctype="multipart/form-data">
-                                            {% csrf_token %}
-                                            <label for="comprobanteInput"
-                                                   class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-600 rounded-xl cursor-pointer hover:border-blue-500/60 hover:bg-blue-500/5 transition-all group">
-                                                <div class="flex flex-col items-center gap-2 text-center px-4">
-                                                    <svg class="w-8 h-8 text-gray-500 group-hover:text-blue-400 transition-colors"
-                                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                    <p class="text-gray-500 text-xs group-hover:text-blue-300 transition-colors">
-                                                        <span class="font-semibold">Haz clic</span> o arrastra tu captura aquí
-                                                    </p>
-                                                    <p class="text-gray-600 text-[10px]">JPG, PNG o WEBP</p>
-                                                </div>
-                                                <input id="comprobanteInput" type="file" name="comprobante"
-                                                       accept="image/*" class="hidden"
-                                                       onchange="mostrarNombreArchivo(this)">
-                                            </label>
-                                            <p id="nombreArchivo" class="text-xs text-gray-500 mt-2 text-center hidden"></p>
-                                            <button type="submit"
-                                                    class="mt-3 w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                </svg>
-                                                Enviar comprobante
-                                            </button>
-                                        </form>
-                                    {% endif %}
-                                </div>
+                                {% if pedido.comprobante_estado != 'Aprobado' %}
+                                <form method="POST" action="{% url 'clientes:subir_comprobante' pedido.id %}" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <label for="comprobanteInput"
+                                           class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-600 rounded-xl cursor-pointer hover:border-blue-500/60 hover:bg-blue-500/5 transition-all group">
+                                        <svg class="w-6 h-6 text-gray-500 group-hover:text-blue-400 transition-colors mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                        </svg>
+                                        <p class="text-gray-500 text-xs group-hover:text-blue-300 transition-colors">
+                                            <span class="font-semibold">Clic</span> o arrastra aquí
+                                        </p>
+                                        <p class="text-gray-600 text-[10px]">JPG, PNG, WEBP</p>
+                                        <input id="comprobanteInput" type="file" name="comprobante" accept="image/*" class="hidden" onchange="mostrarNombreArchivo(this)">
+                                    </label>
+                                    <p id="nombreArchivo" class="text-xs text-gray-500 mt-1.5 text-center hidden"></p>
+                                    <button type="submit"
+                                            class="mt-2.5 w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                        </svg>
+                                        Enviar comprobante
+                                    </button>
+                                </form>
+                                {% endif %}
                             </div>
+                        </div>
                         {% endif %}
 
-                        {# ── ESTADO DE PAGO SELECCIONADO (Efectivo / Contraentrega) ── #}
+                        {# Confirmación efectivo / contraentrega #}
                         {% if pedido.metodo_pago_preferido and pedido.metodo_pago_preferido != 'Transferencia' %}
-                            <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5">
-                                <div class="flex gap-3 items-start">
-                                    <svg class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <div>
-                                        <p class="text-emerald-300 font-bold text-sm mb-1">
-                                            {% if pedido.metodo_pago_preferido == 'Efectivo' %}
-                                                Pagarás en efectivo
-                                            {% else %}
-                                                Pago contraentrega
-                                            {% endif %}
-                                        </p>
-                                        <p class="text-gray-400 text-xs leading-relaxed">
-                                            {% if pedido.metodo_pago_preferido == 'Efectivo' %}
-                                                Tendrás el monto listo al momento de la entrega. Cualquier duda contáctanos con el número <b class="text-white">#{{ pedido.id }}</b>.
-                                            {% else %}
-                                                Pagarás cuando recibas tu pedido. Nos pondremos en contacto para coordinar la entrega.
-                                            {% endif %}
-                                        </p>
-                                    </div>
+                        <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4">
+                            <div class="flex gap-3 items-start">
+                                <svg class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <div>
+                                    <p class="text-emerald-300 font-bold text-sm mb-0.5">
+                                        {% if pedido.metodo_pago_preferido == 'Efectivo' %}Pagarás en efectivo{% else %}Pago contraentrega{% endif %}
+                                    </p>
+                                    <p class="text-gray-400 text-xs leading-relaxed">
+                                        {% if pedido.metodo_pago_preferido == 'Efectivo' %}Tendrás el monto listo al momento de la entrega. Referencia <b class="text-white">#{{ pedido.id }}</b>.
+                                        {% else %}Pagarás cuando recibas tu pedido. Nos pondremos en contacto para coordinar.{% endif %}
+                                    </p>
                                 </div>
                             </div>
+                        </div>
                         {% endif %}
 
-                    {% endif %}{# fin else (pedido con precio) #}
+                    {% endif %}
+                {% endif %}
 
-                {% endif %}{# fin puede_seleccionar_pago #}
-
-                {# ── INFO DE REFERENCIA ── #}
-                <div class="bg-blue-900/10 border border-blue-500/20 rounded-2xl p-4">
-                    <div class="flex gap-3">
-                        <svg class="w-5 h-5 text-blue-400 flex-shrink-0"
-                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                {# Referencia #}
+                <div class="bg-blue-900/10 border border-blue-500/20 rounded-2xl p-3">
+                    <div class="flex gap-2.5">
+                        <svg class="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        <p class="text-blue-400 text-xs">
-                            Si tienes alguna duda sobre tu pedido, por favor contáctanos con el número de referencia
-                            <b>#{{ pedido.id }}</b>.
+                        <p class="text-blue-400 text-xs leading-relaxed">
+                            ¿Dudas? Contáctanos con el número <b>#{{ pedido.id }}</b>.
                         </p>
                     </div>
                 </div>
 
-            </div>{# fin columna derecha #}
+            </div>{# fin sidebar sticky #}
         </div>
     </div>
 
-    {# ══ SCRIPTS DE UTILIDAD ══ #}
     <script>
         function copiarTexto(texto, boton) {
             navigator.clipboard.writeText(texto).then(() => {
-                const svg = boton.querySelector('svg');
                 boton.classList.add('text-emerald-400');
                 boton.title = '¡Copiado!';
-                setTimeout(() => {
-                    boton.classList.remove('text-emerald-400');
-                    boton.title = 'Copiar';
-                }, 2000);
+                setTimeout(() => { boton.classList.remove('text-emerald-400'); boton.title = 'Copiar'; }, 2000);
             });
         }
-
         function mostrarNombreArchivo(input) {
             const label = document.getElementById('nombreArchivo');
             if (input.files && input.files[0]) {

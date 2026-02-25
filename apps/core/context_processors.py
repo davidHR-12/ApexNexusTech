@@ -1,5 +1,8 @@
 from apps.pedidos.models import SolicitudCotizacion
+from .models import ConfiguracionSitio
 
+def sitio_config(request):
+    return {'config': ConfiguracionSitio.obtener()}
 
 def solicitudes_kpi(request):
     """

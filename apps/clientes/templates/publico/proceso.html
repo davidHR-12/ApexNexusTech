@@ -1,0 +1,154 @@
+{% extends "base_publica.html" %}
+{% block title %}Procesos - A.N.T{% endblock title %}
+{% block content %}
+  <section class="max-w-4xl mx-auto px-4 py-20">
+    <div class="text-center mb-16">
+      <h2 class="text-4xl font-bold mb-4 uppercase tracking-tighter">{{ config.proceso_titulo }}</h2>
+      <p class="text-gray-400">{{ config.proceso_subtitulo }}</p>
+    </div>
+
+    {% if cards_proceso %}
+      {# ── Carrusel de pasos si hay más de 4, lista si ≤ 4 ── #}
+      {% if cards_proceso|length > 4 %}
+      {# MODO CARRUSEL #}
+      <div class="relative">
+        <div class="relative overflow-hidden">
+          <div id="proc-carousel" class="flex gap-0 transition-transform duration-500 ease-in-out" style="will-change:transform;">
+            {% for card in cards_proceso %}
+            <div class="flex-shrink-0 w-full flex gap-6 items-start py-4">
+              <div class="{% if card.es_paso_destacado %}bg-[#10b981] text-black shadow-[0_0_15px_rgba(16,185,129,0.4)]{% else %}bg-gray-800 text-white border border-gray-700{% endif %} w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center font-black text-xl">
+                {{ card.paso_numero|default:forloop.counter }}
+              </div>
+              <div>
+                <h3 class="text-xl font-bold text-white mb-2">{{ card.titulo }}</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">{{ card.descripcion }}</p>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {# Controles #}
+        <div class="flex items-center justify-between mt-8">
+          <button id="proc-prev" class="p-2 rounded-xl bg-gray-800 border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-all opacity-30" disabled>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <div id="proc-dots" class="flex gap-2">
+            {% for card in cards_proceso %}
+              <button class="proc-dot w-2 h-2 rounded-full transition-colors {% if forloop.first %}bg-[#10b981]{% else %}bg-gray-700{% endif %}" data-index="{{ forloop.counter0 }}"></button>
+            {% endfor %}
+          </div>
+          <button id="proc-next" class="p-2 rounded-xl bg-gray-800 border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7"/></svg>
+          </button>
+        </div>
+      </div>
+
+      {% else %}
+      {# MODO LISTA — ≤ 4 pasos, layout vertical normal #}
+      <div class="space-y-12">
+        {% for card in cards_proceso %}
+        <div class="flex gap-6 items-start">
+          <div class="{% if card.es_paso_destacado %}bg-[#10b981] text-black shadow-[0_0_15px_rgba(16,185,129,0.4)]{% else %}bg-gray-800 text-white border border-gray-700{% endif %} w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center font-black text-xl">
+            {{ card.paso_numero|default:forloop.counter }}
+          </div>
+          <div>
+            <h3 class="text-xl font-bold text-white mb-2">{{ card.titulo }}</h3>
+            <p class="text-gray-400 text-sm leading-relaxed">{{ card.descripcion }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+    {% else %}
+      {# Fallback: pasos hardcodeados si no hay cards en BD todavía #}
+      <div class="space-y-12">
+        <div class="flex gap-6 items-start">
+          <div class="bg-[#10b981] text-black w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center font-black text-xl shadow-[0_0_15px_rgba(16,185,129,0.4)]">1</div>
+          <div>
+            <h3 class="text-xl font-bold text-white mb-2">Envíanos tu Proyecto</h3>
+            <p class="text-gray-400 text-sm leading-relaxed">Hay dos opciones:</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div class="bg-[#1e293b]/50 p-4 rounded-xl border border-gray-800">
+                <p class="text-[#10b981] font-bold text-xs uppercase mb-2">Para Expertos</p>
+                <p class="text-gray-400 text-sm">Aceptamos formatos <span class="text-white">.STL</span>, <span class="text-white">.OBJ</span> y el estándar moderno <span class="text-white">.3MF</span>.</p>
+              </div>
+              <div class="bg-[#1e293b]/50 p-4 rounded-xl border border-gray-800">
+                <p class="text-emerald-400 font-bold text-xs uppercase mb-2">Para Creativos</p>
+                <p class="text-gray-400 text-sm">¿No tienes el archivo? Envíanos una <span class="text-white">foto</span> o una pieza rota que necesites replicar.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-6 items-start">
+          <div class="bg-gray-800 text-white w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center font-black text-xl border border-gray-700">2</div>
+          <div><h3 class="text-xl font-bold text-white mb-2">Revisión y Optimización</h3><p class="text-gray-400 text-sm leading-relaxed">Analizamos tu archivo o idea y te enviamos una cotización detallada.</p></div>
+        </div>
+        <div class="flex gap-6 items-start">
+          <div class="bg-gray-800 text-white w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center font-black text-xl border border-gray-700">3</div>
+          <div><h3 class="text-xl font-bold text-white mb-2">Fabricación de Alta Precisión</h3><p class="text-gray-400 text-sm leading-relaxed">Imprimimos tu pieza usando tecnología FDM o Resina según tu elección.</p></div>
+        </div>
+        <div class="flex gap-6 items-start">
+          <div class="bg-gray-800 text-white w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center font-black text-xl border border-gray-700">4</div>
+          <div><h3 class="text-xl font-bold text-white mb-2">Control de Calidad y Envío</h3><p class="text-gray-400 text-sm leading-relaxed">Cada pieza pasa por inspección manual antes de entregarse.</p></div>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="mt-20 bg-gradient-to-b from-[#1e293b] to-[#0f172a] p-10 rounded-3xl border border-gray-800 text-center shadow-2xl">
+      <h4 class="text-2xl font-bold mb-6 text-white">¿Tienes un archivo listo o una idea en mente?</h4>
+      <div class="flex flex-col sm:flex-row justify-center gap-4">
+        <a href="{% url 'usuarios:register' %}"
+           class="bg-[#10b981] text-white px-10 py-4 rounded-2xl font-bold hover:bg-[#059669] transition shadow-lg shadow-[#10b981]/20">
+          Subir mi Archivo / Idea
+        </a>
+        <a href="{% url 'clientes:productos' %}"
+           class="bg-gray-800 text-white px-10 py-4 rounded-2xl font-bold hover:bg-gray-700 transition border border-gray-700">
+          Explorar Catálogo
+        </a>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  const carousel = document.getElementById('proc-carousel');
+  const prevBtn  = document.getElementById('proc-prev');
+  const nextBtn  = document.getElementById('proc-next');
+  const dots     = document.querySelectorAll('.proc-dot');
+  if (!carousel || !prevBtn) return;
+
+  const total  = carousel.children.length;
+  let current  = 0;
+
+  function goTo(index) {
+    current = Math.max(0, Math.min(index, total - 1));
+    const cardW = carousel.parentElement.offsetWidth;
+    carousel.style.transform = `translateX(-${current * cardW}px)`;
+    dots.forEach((d, i) => {
+      d.classList.toggle('bg-[#10b981]', i === current);
+      d.classList.toggle('bg-gray-700', i !== current);
+    });
+    prevBtn.disabled = current === 0;
+    nextBtn.disabled = current === total - 1;
+    prevBtn.classList.toggle('opacity-30', current === 0);
+    nextBtn.classList.toggle('opacity-30', current === total - 1);
+  }
+
+  prevBtn.addEventListener('click', () => goTo(current - 1));
+  nextBtn.addEventListener('click', () => goTo(current + 1));
+  dots.forEach(d => d.addEventListener('click', () => goTo(parseInt(d.dataset.index))));
+
+  let startX = 0;
+  carousel.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive:true});
+  carousel.addEventListener('touchend',   e => {
+    const diff = startX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) goTo(diff > 0 ? current + 1 : current - 1);
+  });
+
+  goTo(0);
+})();
+</script>
+{% endblock %}
