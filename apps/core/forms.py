@@ -12,7 +12,7 @@ class ImpresoraForm(TailwindModelForm):
     
     class Meta:
         model = Impresora
-        fields = ['nombre', 'modelo', 'estado']
+        fields = ['nombre', 'modelo']
 
     def clean_nombre(self):
         nombre = self.cleaned_data.get('nombre')

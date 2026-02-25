@@ -1,0 +1,128 @@
+{% extends "core/modal_base.html" %}
+
+{% block modal_content %}
+<form method="POST" action="{% url 'pedidos:registrar_fallo' pedido.id %}" id="formRegistrarFallo">
+    {% csrf_token %}
+
+    {# ── Selección por ítem ── #}
+    <div class="space-y-3 mb-5">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+            Selecciona qué ítems fallaron
+        </p>
+
+        {% for item in items %}
+            {% if item.material_personalizado %}
+            {# ── Ítem personalizado: puede fallar ── #}
+            <label for="item_{{ item.id }}"
+                   class="flex items-start gap-3 p-3 rounded-xl border border-gray-700 cursor-pointer
+                          hover:border-orange-500/40 hover:bg-orange-500/5 transition-all group
+                          has-[:checked]:border-orange-500/50 has-[:checked]:bg-orange-500/5">
+                <div class="pt-0.5">
+                    <input type="checkbox"
+                           id="item_{{ item.id }}"
+                           name="item_fallido"
+                           value="{{ item.id }}"
+                           class="w-4 h-4 accent-orange-500 cursor-pointer">
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2">
+                        <p class="text-white text-sm font-semibold truncate">
+                            {{ item.descripcion|default:"Pieza personalizada" }}
+                        </p>
+                        <span class="text-orange-400 font-mono text-xs font-bold flex-shrink-0">
+                            {{ item.gramos_totales|floatformat:1 }}g
+                        </span>
+                    </div>
+                    <p class="text-gray-500 text-[11px] mt-0.5">
+                        {{ item.material_personalizado }} · {{ item.cantidad }} unidad{{ item.cantidad|pluralize:"es" }}
+                    </p>
+                    {# Motivo individual — aparece al marcar el checkbox #}
+                    <div class="item-motivo-wrapper hidden mt-2" data-for="item_{{ item.id }}">
+                        <input type="text"
+                               name="motivo_{{ item.id }}"
+                               placeholder="Motivo del fallo (opcional)..."
+                               class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white
+                                      placeholder-gray-600 outline-none focus:border-orange-500/50 transition-colors">
+                    </div>
+                </div>
+                <div class="w-6 h-6 rounded-lg flex-shrink-0 flex items-center justify-center
+                            bg-gray-900 border border-gray-700 transition-all
+                            group-has-[:checked]:bg-orange-500/10 group-has-[:checked]:border-orange-500/40">
+                    <svg class="w-3.5 h-3.5 text-gray-600 group-has-[:checked]:text-orange-400 transition-colors"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+            </label>
+
+            {% elif item.variante %}
+            {# ── Ítem de catálogo: solo informativo, no puede fallar ── #}
+            <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-700/40 bg-gray-900/20 opacity-50 select-none">
+                <div class="w-4 h-4 flex-shrink-0">
+                    <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-gray-500 text-sm truncate">{{ item.variante.producto.nombre }}</p>
+                    <p class="text-gray-600 text-[11px]">Catálogo — no aplica fallo de impresión</p>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    {# ── Aviso de consecuencias ── #}
+    <div class="flex items-start gap-2.5 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl mb-5">
+        <svg class="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p class="text-[11px] text-amber-400/80 leading-relaxed">
+            <span class="font-bold text-amber-400">Solo los ítems marcados se ven afectados.</span>
+            El material se registra como pérdida en el historial de inventario.
+            Los ítems sin marcar continúan en producción normalmente.
+            El cliente no es notificado — se genera una nota interna automáticamente.
+        </p>
+    </div>
+
+    {# ── Footer con botones ── #}
+    <div class="flex justify-end gap-2 pt-2 border-t border-gray-800">
+    <button type="button"
+            onclick="cerrarUltimoModal()"
+            class="flex-1 px-4 py-3 rounded-xl border border-gray-700 text-gray-400 hover:bg-gray-800 transition-all font-bold text-sm">
+        Cancelar
+    </button>
+    <button type="submit"
+            id="btnConfirmarFallo"
+            disabled
+            class="flex-1 px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-sm font-bold
+                   transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2
+                   disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
+        Confirmar Fallo
+    </button>
+</div>
+</form>
+
+<script>
+(function () {
+    const form    = document.getElementById('formRegistrarFallo');
+    const btnConf = document.getElementById('btnConfirmarFallo');
+    const checks  = form.querySelectorAll('input[type="checkbox"]');
+
+    function actualizarBoton() {
+        btnConf.disabled = ![...checks].some(c => c.checked);
+    }
+
+    checks.forEach(chk => {
+        chk.addEventListener('change', function () {
+            const wrapper = form.querySelector(`.item-motivo-wrapper[data-for="${this.id}"]`);
+            if (wrapper) wrapper.classList.toggle('hidden', !this.checked);
+            actualizarBoton();
+        });
+    });
+})();
+</script>
+{% endblock modal_content %}

@@ -139,7 +139,6 @@ class Pedido(models.Model):
         ("Listo", "Listo para entrega"),
         ("Entregado", "Entregado"),
         ("Cancelado", "Cancelado"),
-        ("Fallido", "Error de Impresión / Desperdicio"),
     )
 
     # Relación con cliente
@@ -308,7 +307,6 @@ class Pedido(models.Model):
             "En_Produccion": 60,
             "Listo": 90,
             "Entregado": 100,
-            "Cancelado": 0,
         }
         return progresos.get(self.estado_pedido, 0)
 
@@ -634,6 +632,57 @@ class ActualizacionPedido(models.Model):
         verbose_name = "Actualización de Pedido"
         verbose_name_plural = "Actualizaciones de Pedidos"
         ordering = ["-fecha"]
+
+
+class PerdidaMaterial(models.Model):
+    """
+    Registro interno de material perdido por fallos de impresión.
+    
+    - NO es un estado del pedido.
+    - NO es visible para el cliente.
+    - El pedido regresa a 'Confirmado' para poder reintentar la impresión.
+    - El administrador puede ver el historial de pérdidas por pedido.
+    """
+
+    pedido = models.ForeignKey(
+        'Pedido',
+        on_delete=models.CASCADE,
+        related_name='perdidas_material',
+        verbose_name='Pedido',
+    )
+    material = models.ForeignKey(
+        'materiales.Material',
+        on_delete=models.PROTECT,
+        verbose_name='Material perdido',
+    )
+    gramos_perdidos = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name='Gramos perdidos',
+    )
+    motivo = models.TextField(
+        blank=True,
+        verbose_name='Motivo / descripción del fallo',
+        help_text='Ej: Adhesión fallida a la mitad de la impresión, fallo de filamento, etc.',
+    )
+    fecha = models.DateTimeField(auto_now_add=True, verbose_name='Fecha')
+    registrado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Registrado por',
+    )
+
+    class Meta:
+        verbose_name = 'Pérdida de Material'
+        verbose_name_plural = 'Pérdidas de Material'
+        ordering = ['-fecha']
+
+    def __str__(self):
+        return (
+            f"Pérdida {self.gramos_perdidos}g de {self.material} "
+            f"— Pedido #{self.pedido.id} ({self.fecha.date()})"
+        )
 
 
 # =============================

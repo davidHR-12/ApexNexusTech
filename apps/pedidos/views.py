@@ -5,8 +5,9 @@ from django.views.decorators.http import require_POST
 from django.db.models import Q
 from django.core.paginator import Paginator
 from django.contrib import messages
+from django.db import transaction as db_transaction
 from .forms import PedidoManualForm, ItemCatalogoForm, ItemPersonalizadoForm
-from .models import Pedido, ItemPedido, Impresora, SolicitudCotizacion, NotaPedido, Pago, ConfiguracionPago
+from .models import Pedido, ItemPedido, Impresora, SolicitudCotizacion, NotaPedido, Pago, ConfiguracionPago,PerdidaMaterial
 
 
 # ==========================================
@@ -193,33 +194,6 @@ def _revertir_stock_y_liberar(pedido, request):
     messages.warning(request, "Stock restaurado y máquinas liberadas.")
 
 
-def _procesar_pedido_fallido(pedido, request):
-    """
-    Si falla la impresión, el filamento se pierde (no se devuelve),
-    pero los productos de catálogo sí se reintegran al inventario.
-    """
-    items_con_maquina = pedido.items.filter(impresora_asignada__isnull=False)
-    
-    # 1. Liberar máquinas
-    for item in items_con_maquina:
-        maquina = item.impresora_asignada
-        maquina.estado = "Disponible"
-        maquina.save()
-
-    # 2. Devolver solo Catálogo
-    devoluciones = 0
-    for item in pedido.items.all():
-        if item.variante:
-            item.variante.stock_disponible += item.cantidad
-            item.variante.save()
-            devoluciones += 1
-    
-    if devoluciones > 0:
-        messages.info(request, "Productos de catálogo devueltos. El filamento personalizado se registró como pérdida.")
-    else:
-        messages.error(request, "Pérdida registrada: El material personalizado no regresó al stock.")
-
-
 def _descontar_stock(pedido, nuevo_estado, request):
     """Resta del inventario."""
     for item in pedido.items.all():
@@ -252,16 +226,132 @@ def _gestionar_ciclo_vida_impresoras(pedido, nuevo_estado, request):
                 maquina.estado = "Imprimiendo"
                 maquina.save()
         
-        elif nuevo_estado in ["Listo", "Entregado", "Cancelado", "Fallido"]:
+        elif nuevo_estado in ["Listo", "Entregado", "Fallido"]:
             maquina.estado = "Disponible"
             maquina.save()
             
         maquinas_procesadas.add(maquina.id)
 
 
+@require_POST
+@admin_required
+def registrar_fallo_impresion(request, pedido_id):
+    """
+    Registra fallos de impresión de forma granular por ítem.
+
+    - Recibe una lista de IDs de ítems fallidos vía POST (checkboxes: name="item_fallido")
+    - Cada ítem fallido genera un registro PerdidaMaterial + HistorialInventario
+    - Los ítems NO marcados no se tocan (siguen en producción)
+    - Si un ítem fallido tiene impresora asignada y ningún otro ítem activo la usa → se libera
+    - El pedido permanece En_Produccion si quedan ítems activos;
+      regresa a Confirmado solo si todos los ítems personalizados fallaron
+    - stock_descontado se mantiene True (el stock ya salió; la pérdida es el registro)
+    - El cliente no ve nada — se crea una nota interna privada
+    """
+    from apps.materiales.models import HistorialInventario
+
+    pedido = get_object_or_404(Pedido, pk=pedido_id)
+
+    if pedido.estado_pedido != 'En_Produccion':
+        messages.error(request, "Solo se puede registrar un fallo cuando el pedido está En Producción.")
+        return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
+
+    # IDs de ítems marcados como fallidos
+    ids_fallidos = request.POST.getlist('item_fallido')  # lista de str
+
+    if not ids_fallidos:
+        messages.error(request, "Debes seleccionar al menos un ítem para registrar el fallo.")
+        return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
+
+    perdidas_resumen = []
+    maquinas_a_liberar = set()
+
+    with db_transaction.atomic():
+        items_personalizados_total = pedido.items.filter(material_personalizado__isnull=False).count()
+        items_personalizados_fallidos = 0
+
+        for item in pedido.items.filter(id__in=ids_fallidos):
+            if not item.material_personalizado:
+                continue  # Solo aplica a ítems personalizados, seguridad extra
+
+            gramos = item.gramos_por_unidad * item.cantidad
+            material = item.material_personalizado
+            motivo = request.POST.get(f'motivo_{item.id}', '').strip() or 'Sin especificar'
+
+            # 1. Registrar pérdida
+            PerdidaMaterial.objects.create(
+                pedido=pedido,
+                material=material,
+                gramos_perdidos=gramos,
+                motivo=motivo,
+                registrado_por=request.user,
+            )
+
+            # 2. Registrar en historial de inventario para auditoría
+            HistorialInventario.objects.create(
+                material=material,
+                accion='Consumo',
+                cantidad_nueva=material.stock_actual,
+                cantidad_anterior=material.stock_actual + gramos,
+                diferencia=-gramos,
+            )
+
+            perdidas_resumen.append(
+                f"{item.descripcion or 'Pieza'}: {gramos}g de {material} ({motivo})"
+            )
+            items_personalizados_fallidos += 1
+
+            # 3. Marcar impresora para liberar si ya no la necesita otro ítem activo del pedido
+            if item.impresora_asignada:
+                maquinas_a_liberar.add(item.impresora_asignada_id)
+
+        # 4. Liberar impresoras solo si ningún otro ítem activo (no fallido) las sigue usando
+        for item in pedido.items.exclude(id__in=ids_fallidos).filter(impresora_asignada__isnull=False):
+            maquinas_a_liberar.discard(item.impresora_asignada_id)
+
+        from apps.core.models import Impresora
+        for maquina_id in maquinas_a_liberar:
+            Impresora.objects.filter(id=maquina_id).update(estado='Disponible')
+
+        # 5. Nota interna automática
+        NotaPedido.objects.create(
+            pedido=pedido,
+            autor=request.user,
+            contenido=(
+                f"FALLO DE IMPRESIÓN — {items_personalizados_fallidos} ítem(s)\n\n"
+                + "\n".join(f"• {r}" for r in perdidas_resumen)
+                + (f"\n\nImpresoras liberadas: {len(maquinas_a_liberar)}" if maquinas_a_liberar else "")
+            ),
+            visible_para_cliente=False,
+        )
+
+        # 6. Si TODOS los ítems personalizados fallaron → regresar a Confirmado
+        #    Si quedan ítems activos → el pedido sigue En_Produccion
+        if items_personalizados_fallidos >= items_personalizados_total:
+            pedido.estado_pedido = 'Confirmado'
+            pedido.stock_descontado = False
+            pedido.save()
+            messages.warning(
+                request,
+                f"Todos los ítems personalizados fallaron. "
+                f"Material registrado como pérdida. El pedido regresó a 'Confirmado' para reintentar."
+            )
+        else:
+            # El pedido sigue En_Produccion, no tocamos stock_descontado
+            pedido.save()
+            restantes = items_personalizados_total - items_personalizados_fallidos
+            messages.warning(
+                request,
+                f"Fallo registrado en {items_personalizados_fallidos} ítem(s). "
+                f"Quedan {restantes} ítem(s) en producción. Impresoras liberadas si aplica."
+            )
+
+    return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
+
 # ==========================================
 #  VISTA PRINCIPAL REFACTORIZADA
 # ==========================================
+
 
 
 @admin_required
@@ -269,51 +359,35 @@ def cambiar_estado_pedido(request, pedido_id):
     pedido = get_object_or_404(Pedido, pk=pedido_id)
     nuevo_estado = request.POST.get("nuevo_estado")
 
-    # BLOQUEO DE SEGURIDAD PARA ESTADOS FINALIZADOS O FALLIDOS
-    if pedido.estado_pedido in ["Entregado", "Cancelado", "Fallido"]:
-        messages.error(request, f"El pedido está en estado {pedido.estado_pedido} y no puede ser modificado.")
-        return redirect("pedidos:pedido_detalle", pedido_id=pedido_id)
-
-    # 1. VALIDACIÓN DE SEGURIDAD BÁSICA
+    # BLOQUEO: estados finales no se modifican
     if pedido.estado_pedido in ["Entregado", "Cancelado"]:
-        messages.error(request, "No se puede modificar un pedido finalizado.")
+        messages.error(request, f"El pedido está en estado final y no puede ser modificado.")
         return redirect("pedidos:pedido_detalle", pedido_id=pedido_id)
 
     if not nuevo_estado:
         return redirect("pedidos:pedido_detalle", pedido_id=pedido_id)
 
-    # 2. VALIDACIONES PREVIAS AL CAMBIO
-    # A. Validar Stock (Solo si intentamos avanzar a estados de consumo y no se ha descontado aún)
+    # Validar stock (solo al avanzar por primera vez)
     estados_que_consumen = ["Confirmado", "En_Produccion", "Listo", "Entregado"]
     if nuevo_estado in estados_que_consumen and not pedido.stock_descontado:
         if not _validar_stock_disponible(pedido, request):
             return redirect("pedidos:pedido_detalle", pedido_id=pedido_id)
 
-    # B. Validar Impresoras (Solo si el nuevo estado es producción)
+    # Validar impresoras (solo al pasar a producción)
     if nuevo_estado == "En_Produccion":
         if not _validar_requisitos_produccion(pedido, request):
             return redirect("pedidos:pedido_detalle", pedido_id=pedido_id)
 
-    # 3. EJECUCIÓN DE LÓGICA SEGÚN TRANSICIÓN
-    
-    # Caso Reversión: Volver a borrador o cancelar habiendo descontado stock
+    # Reversión: volver a En_Espera o cancelar habiendo descontado stock
     if nuevo_estado in ["En_Espera", "Cancelado"] and pedido.stock_descontado:
         _revertir_stock_y_liberar(pedido, request)
 
-    # Caso Fallo: Manejo de pérdida de material
-    elif nuevo_estado == "Fallido" and pedido.stock_descontado:
-        _procesar_pedido_fallido(pedido, request)
-
-    # Caso Avance: Consumo de stock y actualización de máquinas
+    # Avance normal: descontar stock y gestionar impresoras
     elif nuevo_estado in estados_que_consumen:
-        # Descontar stock si es la primera vez que entra en este flujo
         if not pedido.stock_descontado:
             _descontar_stock(pedido, nuevo_estado, request)
-        
-        # Gestionar (Activar/Liberar) máquinas físicas
         _gestionar_ciclo_vida_impresoras(pedido, nuevo_estado, request)
 
-    # 4. GUARDADO FINAL
     pedido.estado_pedido = nuevo_estado
     pedido.save()
 

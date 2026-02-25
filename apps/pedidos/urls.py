@@ -25,6 +25,10 @@ urlpatterns = [
     path('pedidos/<int:pedido_id>/comprobante/revisar/', views.revisar_comprobante, name='revisar_comprobante'),
     # ────────────────────────────────────────────────────────────
 
+    # ── FALLOS DE IMPRESIÓN (NUEVAS) ──────────────────────────
+    path('pedidos/<int:pedido_id>/registrar-fallo/', views.registrar_fallo_impresion, name='registrar_fallo'),
+    # ────────────────────────────────────────────────────────────
+
     # Solicitudes
     path('solicitudes/', views.solicitudes_list, name='solicitudes_list'),
     path('solicitudes/convertir/<int:solicitud_id>/', views.convertir_solicitud_a_pedido, name='convertir_solicitud'),

@@ -9,38 +9,36 @@
         </div>
         <div class="grid gap-4">
             {% for pedido in pedidos %}
-            <a href="{% url 'clientes:detalle_pedido' pedido.id %}" class="p-2 text-gray-400 hover:text-white transition-colors">
-                <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-5 hover:border-[#10b981]/50 transition-all group">
-                    <div class="flex flex-wrap justify-between items-center gap-4">
-                        <div class="flex items-center gap-4">
-                            <div class="p-3 bg-[#334155] rounded-xl text-[#10b981]">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                </svg>
+                <a href="{% url 'clientes:detalle_pedido' pedido.id %}"
+                   class="p-2 text-gray-400 hover:text-white transition-colors">
+                    <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-5 hover:border-[#10b981]/50 transition-all group">
+                        <div class="flex flex-wrap justify-between items-center gap-4">
+                            <div class="flex items-center gap-4">
+                                <div class="p-3 bg-[#334155] rounded-xl text-[#10b981]">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-white font-bold text-lg">Pedido #{{ pedido.id }}</h3>
+                                    <p class="text-gray-500 text-xs uppercase font-bold tracking-wider">{{ pedido.fecha_creacion|date:"d M, Y" }}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 class="text-white font-bold text-lg">Pedido #{{ pedido.id }}</h3>
-                                <p class="text-gray-500 text-xs uppercase font-bold tracking-wider">{{ pedido.fecha_creacion|date:"d M, Y" }}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-6">
-                            <div class="text-right">
-                                <p class="text-gray-400 text-xs uppercase font-bold">Total</p>
-                                <p class="text-white font-mono font-bold text-lg">RD$ {{ pedido.total|floatformat:2 }}</p>
-                            </div>
-                            {# Badge de Estado #}
-                            <span class="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest {% if pedido.estado == 'pendiente' %} bg-amber-500/10 text-amber-500 border border-amber-500/20 {% elif pedido.estado == 'completado' %} bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 {% else %} bg-blue-500/10 text-blue-500 border border-blue-500/20 {% endif %}">
-                                {{ pedido.get_estado_display }}
-                            </span>
-                            
-                               
+                            <div class="flex items-center gap-6">
+                                <span class="px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest {% if pedido.estado_pedido == 'En_Espera' %} bg-amber-500/20 text-amber-700 border border-amber-500/30 {% elif pedido.estado_pedido == 'Confirmado' %} bg-blue-500/20 text-blue-700 border border-blue-500/30 {% elif pedido.estado_pedido == 'En_Produccion' %} bg-indigo-500/20 text-indigo-700 border border-indigo-500/30 {% elif pedido.estado_pedido == 'Listo' %} bg-cyan-500/20 text-cyan-700 border border-cyan-500/30 {% elif pedido.estado_pedido == 'Entregado' %} bg-emerald-500/20 text-emerald-700 border border-emerald-500/30 {% elif pedido.estado_pedido == 'Cancelado' %} bg-rose-500/20 text-rose-700 border border-rose-500/30 {% endif %}">
+                                    {{ pedido.get_estado_pedido_display }}
+                                </span>
+                                <div class="text-right">
+                                    <p class="text-gray-400 text-xs uppercase font-bold">Total</p>
+                                    <p class="text-white font-mono font-bold text-lg">RD$ {{ pedido.precio_total|floatformat:2 }}</p>
+                                </div>
+                                {# Badge de Estado #}
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path d="M9 5l7 7-7 7" />
                                 </svg>
-                            
+                            </div>
                         </div>
                     </div>
-                </div>
                 </a>
             {% empty %}
                 <div class="text-center py-20 bg-[#1e293b] rounded-2xl border border-dashed border-gray-700">
