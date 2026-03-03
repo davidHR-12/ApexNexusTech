@@ -10,7 +10,7 @@ from django.dispatch import receiver
 from apps.core.models import Impresora
 from django.contrib.auth.models import User
 from django.conf import settings
-
+from django.core.validators import FileExtensionValidator
 
 # =============================
 # SOLICITUDES DE COTIZACIÓN
@@ -39,8 +39,9 @@ class SolicitudCotizacion(models.Model):
     descripcion = models.TextField(
         help_text="Descripción del producto a cotizar", verbose_name="Descripción"
     )
-    imagen_referencia = models.ImageField(
+    imagen_referencia = models.FileField(
         upload_to="pedidos/referencias/",
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp', 'svg'])],
         blank=True,
         max_length=255,
         null=True,

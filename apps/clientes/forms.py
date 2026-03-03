@@ -13,7 +13,7 @@ class PerfilClienteForm(TailwindModelForm):
 class SolicitudCotizacionForm(TailwindModelForm):
     """
     Formulario para piezas personalizadas.
-    Basado fielmente en apps.pedidos.models.SolicitudCotizacion
+    Permite imágenes estándar y SVG.
     """
     class Meta:
         model = SolicitudCotizacion
@@ -23,12 +23,45 @@ class SolicitudCotizacionForm(TailwindModelForm):
             'enlace_referencia', 
             'dimensiones_aprox'
         ]
+        labels = {
+            'descripcion': 'Descripción del Pedido',
+            'imagen_referencia': 'Imagen de Referencia',
+            'enlace_referencia': 'Enlace Externo',
+            'dimensiones_aprox': 'Dimensiones Aproximadas',
+        }
         widgets = {
-            'descripcion': forms.Textarea(attrs={'placeholder': 'Cuéntanos qué quieres imprimir...'}),
+            'descripcion': forms.Textarea(attrs={
+                'placeholder': 'Cuéntanos qué quieres imprimir...',
+                'rows': 4,
+            }),
             'dimensiones_aprox': forms.TextInput(attrs={'placeholder': 'Ej: 15cm de alto o escala 1:12'}),
             'enlace_referencia': forms.URLInput(attrs={'placeholder': 'Link de Thingiverse, Printables, etc.'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Aplicar resize-none al textarea
+        if 'descripcion' in self.fields:
+            existing_classes = self.fields['descripcion'].widget.attrs.get('class', '')
+            self.fields['descripcion'].widget.attrs.update({
+                'class': f'{existing_classes} resize-none'.strip()
+            })
+            
+        # Personalizar el mensaje de error de la imagen
+        if 'imagen_referencia' in self.fields:
+            self.fields['imagen_referencia'].error_messages.update({
+                'invalid_image': 'El archivo no es una imagen válida (JPG, PNG, WebP) o es un SVG no soportado.',
+            })
+
+    def clean_imagen_referencia(self):
+        imagen = self.cleaned_data.get('imagen_referencia')
+        if imagen:
+            extension = imagen.name.split('.')[-1].lower()
+            if extension == 'svg':
+                # Aquí podrías añadir lógica extra para validar XML si lo deseas
+                return imagen
+        return imagen
+        
 class GuestCheckoutForm(forms.Form):
     """
     Checkout sin cuenta. NO crea usuarios.

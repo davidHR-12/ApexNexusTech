@@ -12,7 +12,7 @@ function prepararNuevoGasto(urlCrear) {
     console.error('❌ Form con ID "formGasto" no encontrado');
     return;
   }
-  
+
   form.reset();
   form.action = urlCrear;
 
@@ -51,7 +51,7 @@ function prepararNuevoGasto(urlCrear) {
   // Actualizar títulos y mensajes informativos
   const infoText = document.getElementById('infoTextGasto');
   const btnSubmit = document.getElementById('btnSubmitGasto');
-  
+
   if (infoText) infoText.innerHTML = "<b>Nota:</b> Si registras una compra desde inventario, el gasto se genera automáticamente.";
   if (btnSubmit) btnSubmit.innerText = "Confirmar";
 
@@ -88,16 +88,16 @@ function abrirEditarGasto(id) {
     })
     .then(data => {
       console.log('✅ Datos del gasto cargados:', data);
-      
+
       // Llenar campos del formulario
       rellenarFormularioGasto(id, data);
-      
+
       // Aplicar restricciones según tipo de gasto
       aplicarRestriccionesGasto(data.es_automatico);
-      
+
       // Actualizar UI según tipo
       actualizarUIEdicionGasto(data);
-      
+
       // Abrir modal en modo edición
       abrirModal('modalEditarGasto');
     })
@@ -123,63 +123,63 @@ function rellenarFormularioGasto(id, data) {
     console.error('❌ Form "formEditarGasto" no encontrado');
     return;
   }
-  
+
   // Configurar acción del formulario para edición
   form.action = `/administrador/gastos/editar/${id}/`;
-  
+
   // ===== CAMPOS BÁSICOS =====
-  
+
   // Descripción - usar ID correcto: edit_descripcion
   const descripcionInput = document.getElementById('edit_descripcion');
   if (descripcionInput) {
     descripcionInput.value = data.descripcion || '';
     console.log('✅ Descripción:', data.descripcion);
   }
-  
+
   // Notas - usar ID correcto: edit_notas
   const notasInput = document.getElementById('edit_notas');
   if (notasInput) {
     notasInput.value = data.notas || '';
     console.log('✅ Notas:', data.notas);
   }
-  
+
   // Monto - usar ID correcto: edit_monto
   const montoInput = document.getElementById('edit_monto');
   if (montoInput) {
     montoInput.value = data.monto || '';
     console.log('✅ Monto:', data.monto);
   }
-  
+
   // Fecha - usar ID correcto: edit_fecha
   const fechaInput = document.getElementById('edit_fecha');
   if (fechaInput) {
     fechaInput.value = data.fecha || '';
     console.log('✅ Fecha:', data.fecha);
   }
-  
+
   // Tipo/Categoría - usar ID correcto: edit_selectTipoGasto
   const selectTipo = document.getElementById('edit_selectTipoGasto');
   if (selectTipo) {
     selectTipo.value = data.tipo || '';
     console.log('✅ Tipo:', data.tipo);
   }
-  
+
   // ===== CAMPOS EXTENDIDOS =====
-  
+
   // Proveedor - usar ID correcto: edit_proveedor
   const proveedorInput = document.getElementById('edit_proveedor');
   if (proveedorInput) {
     proveedorInput.value = data.proveedor || '';
     console.log('✅ Proveedor:', data.proveedor);
   }
-  
+
   // Número de Factura - usar ID correcto: edit_numero_factura
   const facturaInput = document.getElementById('edit_numero_factura');
   if (facturaInput) {
     facturaInput.value = data.numero_factura || '';
     console.log('✅ Número factura:', data.numero_factura);
   }
-  
+
   // Checkbox Recurrente - usar ID correcto: edit_es_recurrente
   const recurrenteCheckbox = document.getElementById('edit_es_recurrente');
   if (recurrenteCheckbox) {
@@ -218,29 +218,29 @@ function rellenarFormularioGasto(id, data) {
 function aplicarRestriccionesGasto(esAutomatico) {
   const form = document.getElementById('formEditarGasto');
   if (!form) return;
-  
+
   // Usar IDs correctos
   const inputMonto = document.getElementById('edit_monto');
   const inputFecha = document.getElementById('edit_fecha');
   const selectTipo = document.getElementById('edit_selectTipoGasto');
-  
+
   if (esAutomatico) {
     // GASTO AUTOMÁTICO: bloquear campos críticos
     if (inputMonto) {
       inputMonto.readOnly = true;
       inputMonto.classList.add('opacity-50');
     }
-    
+
     if (inputFecha) {
       inputFecha.readOnly = true;
       inputFecha.classList.add('opacity-50');
     }
-    
+
     if (selectTipo) {
       selectTipo.disabled = true;
       selectTipo.classList.add('opacity-50');
     }
-    
+
     console.log('🔒 Restricciones aplicadas: gasto automático');
   } else {
     // GASTO MANUAL: permitir edición completa
@@ -248,17 +248,17 @@ function aplicarRestriccionesGasto(esAutomatico) {
       inputMonto.readOnly = false;
       inputMonto.classList.remove('opacity-50');
     }
-    
+
     if (inputFecha) {
       inputFecha.readOnly = false;
       inputFecha.classList.remove('opacity-50');
     }
-    
+
     if (selectTipo) {
       selectTipo.disabled = false;
       selectTipo.classList.remove('opacity-50');
     }
-    
+
     console.log('✅ Todos los campos habilitados: gasto manual');
   }
 }
@@ -323,15 +323,15 @@ function actualizarUIEdicionGasto(data) {
  * Habilita campos bloqueados justo antes del envío para que Django reciba los datos.
  */
 function manejarEnvioGasto(e) {
-    const form = e.currentTarget;
-    const fields = form.querySelectorAll('[name="monto"], [name="fecha"], [name="tipo"]');
-    
-    fields.forEach(f => {
-        f.readOnly = false;
-        f.disabled = false;
-    });
-    
-    console.log(`✅ Formulario ${form.id} preparado y enviando...`);
+  const form = e.currentTarget;
+  const fields = form.querySelectorAll('[name="monto"], [name="fecha"], [name="tipo"]');
+
+  fields.forEach(f => {
+    f.readOnly = false;
+    f.disabled = false;
+  });
+
+  console.log(`✅ Formulario ${form.id} preparado y enviando...`);
 }
 
 // Escuchar ambos formularios
@@ -350,9 +350,9 @@ function toggleRecurrente(element) {
     console.warn('⚠️ toggleRecurrente() llamado sin elemento');
     return;
   }
-  
+
   const estaChecked = element.checked;
-  
+
   if (estaChecked) {
     console.log('✅ Gasto recurrente habilitado');
   } else {
@@ -364,18 +364,18 @@ function toggleRecurrente(element) {
  * Previsualiza el comprobante seleccionado (Imagen o PDF)
  */
 function previsualizarComprobante(input, previewId) {
-    const container = document.getElementById(previewId);
-    if (!container || !input.files || !input.files[0]) return;
+  const container = document.getElementById(previewId);
+  if (!container || !input.files || !input.files[0]) return;
 
-    const file = input.files[0];
-    const reader = new FileReader();
+  const file = input.files[0];
+  const reader = new FileReader();
 
-    reader.onload = function(e) {
-        let html = '';
-        
-        if (file.type.startsWith('image/')) {
-            // Es una imagen
-            html = `
+  reader.onload = function (e) {
+    let html = '';
+
+    if (file.type.startsWith('image/')) {
+      // Es una imagen
+      html = `
                 <div class="relative group mt-2 w-full h-32 bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
                     <img src="${e.target.result}" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -383,9 +383,9 @@ function previsualizarComprobante(input, previewId) {
                     </div>
                 </div>
             `;
-        } else {
-             // Otro tipo de archivo
-             html = `
+    } else {
+      // Otro tipo de archivo
+      html = `
                 <div class="relative group mt-2 w-full p-3 bg-gray-800 rounded-lg border border-gray-700 flex items-center gap-3">
                     <div class="bg-blue-500/20 p-2 rounded-lg text-blue-500">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -395,50 +395,50 @@ function previsualizarComprobante(input, previewId) {
                     </div>
                 </div>
             `;
-        }
-
-        container.innerHTML = html;
-        container.classList.remove('hidden');
     }
-    
-    reader.readAsDataURL(file);
+
+    container.innerHTML = html;
+    container.classList.remove('hidden');
+  }
+
+  reader.readAsDataURL(file);
 }
 
 /**
  * Limpia la selección del input file y la preview
  */
 function limpiarSeleccionArchivo(inputId, previewId) {
-    const input = document.getElementById(inputId);
-    const container = document.getElementById(previewId);
-    
-    if (input) input.value = '';
-    
-    if (container) {
-        container.innerHTML = '';
-        container.classList.add('hidden');
-    }
+  const input = document.getElementById(inputId);
+  const container = document.getElementById(previewId);
+
+  if (input) input.value = '';
+
+  if (container) {
+    container.innerHTML = '';
+    container.classList.add('hidden');
+  }
 }
 
 /**
- * ✅ Muestra preview de un archivo existente CON BOTÓN DE ELIMINAR usando SweetAlert2
+ * Muestra preview de un archivo existente CON BOTÓN DE ELIMINAR usando SweetAlert2
  * @param {string} previewId - ID del contenedor de preview
  * @param {string} urlArchivo - URL del archivo existente
  */
 function mostrarPreviewComprobanteConEliminar(previewId, urlArchivo) {
-    const container = document.getElementById(previewId);
-    if (!container || !urlArchivo) {
-      console.warn('⚠️ No se puede mostrar preview: container o URL faltando', { previewId, urlArchivo });
-      return;
-    }
+  const container = document.getElementById(previewId);
+  if (!container || !urlArchivo) {
+    console.warn('⚠️ No se puede mostrar preview: container o URL faltando', { previewId, urlArchivo });
+    return;
+  }
 
-    // Detectar tipo por extensión
-    const esImagen = urlArchivo.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-    const nombreArchivo = urlArchivo.split('/').pop();
-    
-    let html = '';
-    
-    if (esImagen) {
-        html = `
+  // Detectar tipo por extensión
+  const esImagen = urlArchivo.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+  const nombreArchivo = urlArchivo.split('/').pop();
+
+  let html = '';
+
+  if (esImagen) {
+    html = `
             <div class="relative group mt-2 w-full bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
                 <img src="${urlArchivo}" class="w-full h-24 object-cover" onerror="console.error('Error cargando imagen:', this.src)">
                 <div class="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -455,8 +455,8 @@ function mostrarPreviewComprobanteConEliminar(previewId, urlArchivo) {
             </div>
             <p class="text-[10px] text-gray-500 mt-1 italic">Archivo actual • Pasa el cursor para ver opciones</p>
         `;
-    } else {
-         html = `
+  } else {
+    html = `
             <div class="relative group mt-2 w-full p-3 bg-gray-800 rounded-lg border border-gray-700">
                 <div class="flex items-center gap-3">
                     <div class="bg-blue-500/20 p-2 rounded-lg text-blue-500">
@@ -481,44 +481,44 @@ function mostrarPreviewComprobanteConEliminar(previewId, urlArchivo) {
             </div>
             <p class="text-[10px] text-gray-500 mt-1 italic">Archivo actual</p>
         `;
-    }
+  }
 
-    container.innerHTML = html;
-    container.classList.remove('hidden');
-    console.log('✅ Preview del comprobante mostrado con opción de eliminar:', nombreArchivo);
+  container.innerHTML = html;
+  container.classList.remove('hidden');
+  console.log('✅ Preview del comprobante mostrado con opción de eliminar:', nombreArchivo);
 }
 
 /**
- * ✅ Confirma y ejecuta eliminación de comprobante usando SweetAlert2 (estilo productos.js)
+ * Confirma y ejecuta eliminación de comprobante usando SweetAlert2 (estilo productos.js)
  */
 function confirmarEliminarComprobante() {
-    // Configuración base de SweetAlert2 (igual que productos.js)
-    const swalConfigBase = {
-        background: '#1e293b',
-        color: '#fff',
-        showCancelButton: true,
-        reverseButtons: true,
-        buttonsStyling: false,
-        showClass: { popup: '', backdrop: '' },
-        hideClass: { popup: '', backdrop: '' },
-        backdrop: 'rgba(0, 0, 0, 0.5)',
-        didOpen: () => {
-            const container = Swal.getContainer();
-            if (container) container.style.backdropFilter = 'blur(4px)';
-        }
-    };
+  // Configuración base de SweetAlert2 (igual que productos.js)
+  const swalConfigBase = {
+    background: '#1e293b',
+    color: '#fff',
+    showCancelButton: true,
+    reverseButtons: true,
+    buttonsStyling: false,
+    showClass: { popup: '', backdrop: '' },
+    hideClass: { popup: '', backdrop: '' },
+    backdrop: 'rgba(0, 0, 0, 0.5)',
+    didOpen: () => {
+      const container = Swal.getContainer();
+      if (container) container.style.backdropFilter = 'blur(4px)';
+    }
+  };
 
-    const swalCustomClasses = {
-        popup: 'bg-[#1e293b] border border-gray-800 rounded-2xl shadow-2xl',
-        title: 'text-xl font-bold text-white',
-        htmlContainer: 'text-gray-300',
-        confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase px-6 py-3 rounded-xl transition-colors mx-2',
-        cancelButton: 'bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs uppercase px-6 py-3 rounded-xl transition-colors mx-2',
-        actions: 'pb-4'
-    };
+  const swalCustomClasses = {
+    popup: 'bg-[#1e293b] border border-gray-800 rounded-2xl shadow-2xl',
+    title: 'text-xl font-bold text-white',
+    htmlContainer: 'text-gray-300',
+    confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase px-6 py-3 rounded-xl transition-colors mx-2',
+    cancelButton: 'bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs uppercase px-6 py-3 rounded-xl transition-colors mx-2',
+    actions: 'pb-4'
+  };
 
-    // Icono personalizado (estilo productos.js)
-    const iconoEliminar = `
+  // Icono personalizado (estilo productos.js)
+  const iconoEliminar = `
         <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-500/10">
             <svg class="h-6 w-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -526,42 +526,42 @@ function confirmarEliminarComprobante() {
         </div>
     `;
 
-    Swal.fire({
-        ...swalConfigBase,
-        title: '¿QUITAR COMPROBANTE?',
-        html: '<p class="text-gray-400 text-sm">El archivo se eliminará permanentemente al guardar los cambios.</p>',
-        iconHtml: iconoEliminar,
-        confirmButtonText: 'SÍ, ELIMINAR',
-        cancelButtonText: 'CANCELAR',
-        showCloseButton: true,
-        customClass: {
-            ...swalCustomClasses,
-            icon: 'border-0'
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            ejecutarEliminacionComprobante();
-        }
-    });
+  Swal.fire({
+    ...swalConfigBase,
+    title: '¿QUITAR COMPROBANTE?',
+    html: '<p class="text-gray-400 text-sm">El archivo se eliminará permanentemente al guardar los cambios.</p>',
+    iconHtml: iconoEliminar,
+    confirmButtonText: 'SÍ, ELIMINAR',
+    cancelButtonText: 'CANCELAR',
+    showCloseButton: true,
+    customClass: {
+      ...swalCustomClasses,
+      icon: 'border-0'
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      ejecutarEliminacionComprobante();
+    }
+  });
 }
 
 /**
- * ✅ Ejecuta la eliminación marcando el flag y mostrando mensaje visual
+ * Ejecuta la eliminación marcando el flag y mostrando mensaje visual
  */
 function ejecutarEliminacionComprobante() {
-    const eliminarFlag = document.getElementById('edit_eliminar_comprobante');
-    const container = document.getElementById('preview-comprobante-editar');
-    const inputFile = document.getElementById('edit_comprobante');
+  const eliminarFlag = document.getElementById('edit_eliminar_comprobante');
+  const container = document.getElementById('preview-comprobante-editar');
+  const inputFile = document.getElementById('edit_comprobante');
 
-    // Marcar flag de eliminación
-    if (eliminarFlag) {
-        eliminarFlag.value = 'true';
-        console.log('✅ Flag de eliminación activado');
-    }
+  // Marcar flag de eliminación
+  if (eliminarFlag) {
+    eliminarFlag.value = 'true';
+    console.log('✅ Flag de eliminación activado');
+  }
 
-    // Mostrar mensaje visual de advertencia
-    if (container) {
-        container.innerHTML = `
+  // Mostrar mensaje visual de advertencia
+  if (container) {
+    container.innerHTML = `
             <div class="mt-2 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
                 <p class="text-orange-400 text-xs font-bold flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -572,20 +572,20 @@ function ejecutarEliminacionComprobante() {
                 </p>
             </div>
         `;
-        container.classList.remove('hidden');
-    }
+    container.classList.remove('hidden');
+  }
 
-    // Resetear input file por si tenía algo seleccionado
-    if (inputFile) {
-        inputFile.value = '';
-    }
+  // Resetear input file por si tenía algo seleccionado
+  if (inputFile) {
+    inputFile.value = '';
+  }
 
-    // Toast de confirmación
-    if (typeof mostrarToast === 'function') {
-        mostrarToast('success', 'Comprobante marcado para eliminar');
-    }
+  // Toast de confirmación
+  if (typeof mostrarToast === 'function') {
+    mostrarToast('success', 'Comprobante marcado para eliminar');
+  }
 
-    console.log('🗑️ Comprobante marcado para eliminar');
+  console.log('🗑️ Comprobante marcado para eliminar');
 }
 
 /**
@@ -593,19 +593,19 @@ function ejecutarEliminacionComprobante() {
  * Función original sin botón de eliminar (usada en creación y gasto_detalle.html)
  */
 function mostrarPreviewExistente(previewId, urlArchivo) {
-    const container = document.getElementById(previewId);
-    if (!container || !urlArchivo) {
-      console.warn('⚠️ No se puede mostrar preview: container o URL faltando', { previewId, urlArchivo });
-      return;
-    }
+  const container = document.getElementById(previewId);
+  if (!container || !urlArchivo) {
+    console.warn('⚠️ No se puede mostrar preview: container o URL faltando', { previewId, urlArchivo });
+    return;
+  }
 
-    const esImagen = urlArchivo.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-    const nombreArchivo = urlArchivo.split('/').pop();
-    
-    let html = '';
-    
-    if (esImagen) {
-        html = `
+  const esImagen = urlArchivo.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+  const nombreArchivo = urlArchivo.split('/').pop();
+
+  let html = '';
+
+  if (esImagen) {
+    html = `
             <div class="relative group mt-2 w-full h-20 bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
                 <img src="${urlArchivo}" class="w-full h-full object-cover" onerror="console.error('Error cargando imagen:', this.src)">
                 <div class="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -614,8 +614,8 @@ function mostrarPreviewExistente(previewId, urlArchivo) {
             </div>
             <p class="text-[10px] text-gray-500 mt-1 italic">Archivo actual</p>
         `;
-    } else {
-         html = `
+  } else {
+    html = `
             <div class="relative group mt-2 w-full p-3 bg-gray-800 rounded-lg border border-gray-700 flex items-center gap-3">
                 <div class="bg-blue-500/20 p-2 rounded-lg text-blue-500">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -626,9 +626,9 @@ function mostrarPreviewExistente(previewId, urlArchivo) {
             </div>
             <p class="text-[10px] text-gray-500 mt-1 italic">Archivo actual</p>
         `;
-    }
+  }
 
-    container.innerHTML = html;
-    container.classList.remove('hidden');
-    console.log('✅ Preview del comprobante mostrado:', nombreArchivo);
+  container.innerHTML = html;
+  container.classList.remove('hidden');
+  console.log('✅ Preview del comprobante mostrado:', nombreArchivo);
 }

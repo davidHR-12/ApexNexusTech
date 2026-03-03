@@ -274,7 +274,7 @@ def configuracion_cliente(request):
 
 @login_required
 def solicitar_cotizacion(request):
-    """Procesa la subida de archivos personalizados"""
+    """Procesa la subida de archivos personalizados con validación de mensajes"""
     if request.method == 'POST':
         form = SolicitudCotizacionForm(request.POST, request.FILES)
         if form.is_valid():
@@ -282,11 +282,18 @@ def solicitar_cotizacion(request):
             solicitud.usuario = request.user
             solicitud.estado = 'Pendiente'
             solicitud.save()
-            messages.success(request, "Solicitud enviada. Te avisaremos cuando tengamos tu presupuesto.")
+            messages.success(request, "¡Recibido! Revisaremos tu solicitud y te avisaremos pronto.")
             return redirect('clientes:home')
+        else:
+            # Si hay errores, los enviamos uno a uno al SweetAlert
+            for field, errors in form.errors.items():
+                for error in errors:
+                    # Obtenemos el nombre legible del campo (label)
+                    label = form.fields[field].label if field in form.fields else "Formulario"
+                    messages.error(request, f"{label}: {error}")
     else:
         form = SolicitudCotizacionForm()
-    
+        
     return render(request, 'clientes/solicitar.html', {'form': form})
 
 @login_required
