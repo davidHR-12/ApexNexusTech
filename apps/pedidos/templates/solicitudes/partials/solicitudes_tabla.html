@@ -1,0 +1,207 @@
+{# solicitudes/partials/solicitudes_tabla.html #}
+<div class="relative overflow-hidden shadow-2xl rounded-2xl border border-gray-700/50 bg-gray-900/40">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse min-w-[800px]">
+            <thead>
+                <tr class="border-b border-gray-700/50 bg-gray-800/30">
+                    <th class="px-6 py-4 text-xs uppercase tracking-wider text-gray-400 font-bold">Cliente / Fecha</th>
+                    <th class="px-6 py-4 text-xs uppercase tracking-wider text-gray-400 font-bold">Descripción</th>
+                    <th class="px-6 py-4 text-xs uppercase tracking-wider text-gray-400 font-bold text-center">Referencia</th>
+                    <th class="px-6 py-4 text-xs uppercase tracking-wider text-gray-400 font-bold text-center">Estado</th>
+                    <th class="px-6 py-4 text-xs uppercase tracking-wider text-gray-400 font-bold text-right">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800">
+                {% for solicitud in solicitudes %}
+                    <tr class="hover:bg-gray-800/30 transition-colors group">
+                        <td class="px-6 py-4">
+                            <div class="text-white font-medium text-sm">{{ solicitud.usuario.get_full_name|default:solicitud.usuario.email }}</div>
+                            <div class="text-gray-500 text-xs">{{ solicitud.fecha_solicitud|date:"d M, Y H:i" }}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-gray-300 text-sm line-clamp-2 max-w-xs">{{ solicitud.descripcion }}</div>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if solicitud.imagen_referencia %}
+                                <a href="{{ solicitud.imagen_referencia.url }}"
+                                   target="_blank"
+                                   class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all"
+                                   title="Ver Imagen">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </a>
+                            {% elif solicitud.enlace_referencia %}
+                                <a href="{{ solicitud.enlace_referencia }}"
+                                   target="_blank"
+                                   class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white transition-all"
+                                   title="Abrir Link">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                    </svg>
+                                </a>
+                            {% else %}
+                                <span class="text-gray-600 text-xs">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if solicitud.estado == 'Pendiente' %}
+                                <span class="px-2.5 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-[10px] font-bold border border-yellow-500/20 uppercase">
+                                    Pendiente
+                                </span>
+                            {% elif solicitud.estado == 'Completada' %}
+                                <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20 uppercase">
+                                    Convertida
+                                </span>
+                            {% elif solicitud.estado == 'Rechazada' %}
+                                <span class="px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 text-[10px] font-bold border border-red-500/20 uppercase">
+                                    Rechazada
+                                </span>
+                            {% else %}
+                                <span class="px-2.5 py-1 rounded-full bg-gray-500/10 text-gray-400 text-[10px] font-bold border border-gray-500/20 uppercase">
+                                    {{ solicitud.get_estado_display }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                {% if solicitud.pedido %}
+                                    {# ── Ya tiene pedido → solo Ver ── #}
+                                    <a href="{% url 'pedidos:pedido_detalle' solicitud.pedido.id %}"
+                                       class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all">
+                                        <svg class="w-3.5 h-3.5"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        Ver Pedido #{{ solicitud.pedido.id }}
+                                    </a>
+                                {% elif solicitud.estado == 'Rechazada' %}
+                                    {# ── Rechazada → solo etiqueta, sin acciones ── #}
+                                    <span class="text-gray-600 text-xs italic">Sin acciones</span>
+                                {% else %}
+                                    {# ── Pendiente → Convertir + Rechazar ── #}
+                                    <a href="{% url 'pedidos:convertir_solicitud' solicitud.id %}"
+                                       class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-500/20">
+                                        <svg class="w-3.5 h-3.5"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        Convertir
+                                    </a>
+                                    {# Botón Rechazar con confirmación SweetAlert2 #}
+                                    <form id="form-rechazar-{{ solicitud.id }}"
+                                          method="POST"
+                                          action="{% url 'pedidos:rechazar_solicitud' solicitud.id %}">
+                                        {% csrf_token %}
+                                        <button type="button"
+                                                onclick="confirmarRechazo({{ solicitud.id }}, '{{ solicitud.usuario.get_full_name|default:solicitud.usuario.email|escapejs }}')"
+                                                class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
+                                                title="Rechazar solicitud">
+                                            <svg class="w-3.5 h-3.5"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                            Rechazar
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center gap-3 text-gray-600">
+                                <svg class="w-10 h-10"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                </svg>
+                                <p class="italic text-sm">No se encontraron solicitudes.</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{# ── Paginación ── #}
+{% if solicitudes.paginator.num_pages > 1 %}
+    <div class="bg-[#1e293b] border border-gray-700/50 border-t-0 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-b-2xl">
+        <div class="hidden sm:block text-sm text-gray-400">
+            Mostrando <span class="text-white">{{ solicitudes.start_index }}–{{ solicitudes.end_index }}</span>
+            de <span class="text-white">{{ solicitudes.paginator.count }}</span> solicitudes
+        </div>
+        <nav class="flex items-center gap-1">
+            {% if solicitudes.has_previous %}
+                <button hx-get="{% url 'pedidos:solicitudes_list' %}?page={{ solicitudes.previous_page_number }}&q={{ busqueda_actual }}&estado={{ filtro_actual }}"
+                        hx-target="#solicitudes-container"
+                        hx-push-url="true"
+                        class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+            {% endif %}
+            {% for i in solicitudes.paginator.page_range %}
+                {% if solicitudes.number == i %}
+                    <span class="px-3.5 py-1.5 text-sm font-bold bg-blue-600 text-white rounded-lg">{{ i }}</span>
+                {% elif i > solicitudes.number|add:'-3' and i < solicitudes.number|add:'3' %}
+                    <button hx-get="{% url 'pedidos:solicitudes_list' %}?page={{ i }}&q={{ busqueda_actual }}&estado={{ filtro_actual }}"
+                            hx-target="#solicitudes-container"
+                            hx-push-url="true"
+                            class="px-3.5 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg">
+                        {{ i }}
+                    </button>
+                {% endif %}
+            {% endfor %}
+            {% if solicitudes.has_next %}
+                <button hx-get="{% url 'pedidos:solicitudes_list' %}?page={{ solicitudes.next_page_number }}&q={{ busqueda_actual }}&estado={{ filtro_actual }}"
+                        hx-target="#solicitudes-container"
+                        hx-push-url="true"
+                        class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            {% endif %}
+        </nav>
+    </div>
+{% endif %}
+{# ── Script: confirmación SweetAlert2 ── #}
+<script>
+function confirmarRechazo(solicitudId, clienteNombre) {
+    Swal.fire({
+        ...window.swalConfigBase,
+        customClass: window.swalCustomClasses,
+        showCloseButton: true,
+        html: `
+            ${window.swalIcons.warningRed}
+            <h2 class="text-xl font-bold text-white mb-2">¿Rechazar solicitud?</h2>
+            <p class="text-gray-400 text-sm">
+                La solicitud de <span class="text-white font-semibold">${clienteNombre}</span>
+                quedará marcada como <span class="text-red-400 font-semibold">Rechazada</span>.
+                Esta acción no elimina el registro.
+            </p>
+        `,
+        confirmButtonText: 'Sí, rechazar',
+        cancelButtonText: 'Cancelar',
+        customClass: {
+            ...window.swalCustomClasses,
+            confirmButton: 'px-4 py-3 rounded-xl border border-red-500 text-white bg-red-500 hover:bg-red-600 transition-all font-bold text-sm mx-2',
+        },
+    }).then(result => {
+        if (result.isConfirmed) {
+            document.getElementById(`form-rechazar-${solicitudId}`).submit();
+        }
+    });
+}
+</script>

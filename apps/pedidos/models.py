@@ -24,10 +24,9 @@ class SolicitudCotizacion(models.Model):
     """
 
     ESTADOS = (
-        ("Pendiente", "Pendiente de revisión"),
-        ("Cotizada", "Cotización enviada"),
-        ("Aceptada", "Aceptada por cliente"),
-        ("Rechazada", "Rechazada"),
+        ("Pendiente",   "Pendiente de revisión"),
+        ("Completada",  "Convertida a pedido"),
+        ("Rechazada",   "Rechazada"),
     )
 
     usuario = models.ForeignKey(

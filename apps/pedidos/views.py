@@ -569,35 +569,49 @@ def asignar_impresora_item(request, item_id):
 
 @admin_required
 def solicitudes_list(request):
-    solicitudes_list = SolicitudCotizacion.objects.select_related("usuario").order_by(
-        "-fecha_solicitud"
-    )
+    """Vista de solicitudes con búsqueda HTMX y paginación."""
+    busqueda   = request.GET.get("q", "")
+    estado     = request.GET.get("estado", "")
+    page_number = request.GET.get("page", 1)
 
-    # Filtro básico por estado si lo deseas
-    estado = request.GET.get("estado")
+    qs = SolicitudCotizacion.objects.select_related("usuario").order_by("-fecha_solicitud")
+
     if estado:
-        solicitudes_list = solicitudes_list.filter(estado=estado)
+        qs = qs.filter(estado=estado)
 
-    # Calculamos los KPIs para las cards superiores
+    if busqueda:
+        palabras = busqueda.split()
+        for palabra in palabras:
+            qs = qs.filter(
+                Q(usuario__first_name__icontains=palabra) |
+                Q(usuario__last_name__icontains=palabra)  |
+                Q(usuario__email__icontains=palabra)      |
+                Q(descripcion__icontains=palabra)
+            )
+        qs = qs.distinct()
+
+    paginator    = Paginator(qs, 10)
+    solicitudes  = paginator.get_page(page_number)
+
     kpis = {
-        "solicitudes_nuevas": SolicitudCotizacion.objects.filter(
-            estado="Pendiente"
-        ).count(),
+        "solicitudes_nuevas": SolicitudCotizacion.objects.filter(estado="Pendiente").count(),
+        "total": paginator.count,
     }
-    paginator = Paginator(solicitudes_list, 10)
-    solicitudes = paginator.get_page(request.GET.get("page"))
 
-    return render(
-        request,
-        "solicitudes/solicitudes_list.html",
-        {
-            "segment": "solicitud",
-            "solicitudes": solicitudes,
-            "filtro_actual": estado,
-            "kpis": kpis,
-        },
-    )
+    context = {
+        "segment": "solicitud",
+        "solicitudes": solicitudes,
+        "filtro_actual": estado,
+        "busqueda_actual": busqueda,
+        "estados_opciones": SolicitudCotizacion.ESTADOS,
+        "kpis": kpis,
+    }
 
+    # HTMX → solo la tabla
+    if request.headers.get("HX-Request"):
+        return render(request, "solicitudes/partials/solicitudes_tabla.html", context)
+
+    return render(request, "solicitudes/solicitudes_list.html", context)
 
 @admin_required
 def convertir_solicitud_a_pedido(request, solicitud_id):
@@ -622,7 +636,21 @@ def convertir_solicitud_a_pedido(request, solicitud_id):
         return redirect("pedidos:pedido_detalle", pedido_id=nuevo_pedido.id)
     except Exception as e:
         messages.error(request, f"Error al convertir: {str(e)}")
-        return redirect("pedidos:solicitudes_lista")
+        return redirect("pedidos:solicitudes_list")
+
+@require_POST
+@admin_required
+def rechazar_solicitud(request, solicitud_id):
+    solicitud = get_object_or_404(SolicitudCotizacion, id=solicitud_id)
+
+    if solicitud.estado in ['Completada', 'Rechazada']:
+        messages.warning(request, f"La solicitud ya está en estado '{solicitud.get_estado_display()}'.")
+        return redirect('pedidos:solicitudes_list')
+
+    solicitud.estado = 'Rechazada'
+    solicitud.save(update_fields=['estado'])
+    messages.success(request, f"Solicitud #{solicitud.id} de {solicitud.usuario.get_full_name() or solicitud.usuario.email} marcada como rechazada.")
+    return redirect('pedidos:solicitudes_list')
 
 @admin_required
 def editar_notas_modal(request, pedido_id):

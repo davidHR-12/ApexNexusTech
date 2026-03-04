@@ -64,10 +64,73 @@ def proceso_view(request):
     cards_proceso    = CardPublica.objects.filter(seccion='proceso', activo=True).order_by('orden')
     return render(request, 'publico/proceso.html', {'config': config, 'cards_proceso': cards_proceso})
 
+
+
 def productos(request):
-    """Catálogo completo de productos"""
-    productos = Producto.objects.filter(mostrar_en_web=True)
-    return render(request, "publico/productos.html", {"productos": productos})
+    from apps.productos.models import Categoria
+    from apps.materiales.models import Color
+    from django.db.models import Q
+
+    q          = request.GET.get('q', '').strip()
+    categoria  = request.GET.get('categoria', '')
+    precio_max = request.GET.get('precio_max', '')
+    color_id   = request.GET.get('color', '')
+
+    qs = Producto.objects.filter(mostrar_en_web=True, activo=True).prefetch_related(
+        'variantes__detalles_material__material__color'
+    )
+
+    if q:
+        qs = qs.filter(Q(nombre__icontains=q) | Q(descripcion__icontains=q))
+
+    if categoria:
+        qs = qs.filter(categoria__slug=categoria)
+
+    if precio_max:
+        try:
+            qs = qs.filter(precio_venta__lte=int(precio_max))
+        except ValueError:
+            pass
+
+    if color_id:
+        qs = qs.filter(
+            variantes__activa=True,
+            variantes__detalles_material__material__color__id=color_id
+        ).distinct()
+
+    categorias = Categoria.objects.filter(
+        productos__mostrar_en_web=True,
+        productos__activo=True,
+    ).distinct()
+
+    colores = Color.objects.filter(
+        material__variantes_que_lo_usan__producto__mostrar_en_web=True,
+        material__variantes_que_lo_usan__producto__activo=True,
+        material__variantes_que_lo_usan__activa=True,
+    ).distinct().order_by('nombre')
+
+    context = {
+        'productos':         qs,
+        'categorias':        categorias,
+        'colores':           colores,
+        'precio_opciones': [
+            ('500',  'RD$ 500'),
+            ('1000', 'RD$ 1K'),
+            ('2000', 'RD$ 2K'),
+            ('5000', 'RD$ 5K'),
+        ],
+        'q_actual':          q,
+        'categoria_actual':  categoria,
+        'precio_max_actual': precio_max,
+        'color_actual':      color_id,
+        'total_resultados':  qs.count(),
+    }
+
+    if request.headers.get('HX-Request'):
+        return render(request, 'publico/partials/productos_tabla.html', context)
+
+    return render(request, 'publico/productos.html', context)
+
 
 def detalle_producto(request, pk):
     producto = get_object_or_404(Producto, pk=pk, mostrar_en_web=True)

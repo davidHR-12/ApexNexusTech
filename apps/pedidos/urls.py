@@ -32,4 +32,5 @@ urlpatterns = [
     # Solicitudes
     path('solicitudes/', views.solicitudes_list, name='solicitudes_list'),
     path('solicitudes/convertir/<int:solicitud_id>/', views.convertir_solicitud_a_pedido, name='convertir_solicitud'),
+    path('solicitudes/<int:solicitud_id>/rechazar/', views.rechazar_solicitud, name='rechazar_solicitud'),
 ]

@@ -306,3 +306,32 @@ document.addEventListener('change', (e) => {
             });
     }
 });
+
+function confirmarRechazo(url, cliente) {
+    Swal.fire({
+        ...window.swalConfigBase, // Tu config de colores y blur
+        customClass: window.swalCustomClasses,
+        title: '¿Rechazar solicitud?',
+        html: `¿Estás seguro de que deseas rechazar la solicitud de <b>${cliente}</b>? Esta acción no se puede deshacer.`,
+        iconHtml: window.swalIcons.warningRed, // Usamos tu ícono rojo
+        confirmButtonText: 'Sí, rechazar',
+        cancelButtonText: 'Cancelar',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Creamos un formulario dinámico para hacer el POST
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = url;
+
+            // Añadimos el token CSRF (importante en Django)
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = '{{ csrf_token }}'; // Django inyectará esto
+
+            form.appendChild(csrfInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+}

@@ -1,7 +1,7 @@
 {% extends "core/base_admin.html" %}
-{% load static %}
 {% block content %}
     <div class="p-6">
+        {# ── KPIs ── #}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="flex flex-col justify-center">
                 <h1 class="text-3xl font-bold text-white tracking-tight">Solicitudes</h1>
@@ -9,7 +9,7 @@
             </div>
             <div class="bg-gray-800 rounded-2xl p-4 border border-gray-700/50 flex items-center justify-between shadow-lg">
                 <div>
-                    <p class="text-gray-400 text-xs uppercase font-bold tracking-wider italic">Por Revisar</p>
+                    <p class="text-gray-400 text-xs uppercase font-bold tracking-wider">Por Revisar</p>
                     <p class="text-3xl font-bold text-yellow-400">{{ kpis.solicitudes_nuevas }}</p>
                 </div>
                 <div class="p-3 bg-yellow-500/10 rounded-xl text-yellow-400">
@@ -20,8 +20,8 @@
             </div>
             <div class="bg-gray-800 rounded-2xl p-4 border border-gray-700/50 flex items-center justify-between shadow-lg">
                 <div>
-                    <p class="text-gray-400 text-xs uppercase font-bold tracking-wider italic">Total en Lista</p>
-                    <p class="text-3xl font-bold text-[#10b981]">{{ solicitudes.paginator.count }}</p>
+                    <p class="text-gray-400 text-xs uppercase font-bold tracking-wider">Total en Lista</p>
+                    <p class="text-3xl font-bold text-[#10b981]">{{ kpis.total }}</p>
                 </div>
                 <div class="p-3 bg-[#10b981]/10 rounded-xl text-[#10b981]">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -30,83 +30,9 @@
                 </div>
             </div>
         </div>
-        <div class="relative overflow-hidden shadow-2xl rounded-2xl border border-gray-700/50 bg-gray-900/40">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse min-w-[800px]">
-                    <thead class="text-[10px] text-gray-500 uppercase tracking-widest bg-gray-900/80 border-b border-gray-700/50">
-                        <tr class="border-b border-gray-700/50 bg-gray-800/30">
-                            <th class="px-6 py-4 text-xs uppercase tracking-wider text-gray-400 font-bold">Cliente / Fecha</th>
-                            <th class="px-6 py-4 text-xs uppercase tracking-wider text-gray-400 font-bold">Descripción</th>
-                            <th class="px-6 py-4 text-xs uppercase tracking-wider text-gray-400 font-bold text-center">Referencia</th>
-                            <th class="px-6 py-4 text-xs uppercase tracking-wider text-gray-400 font-bold text-center">Estado</th>
-                            <th class="px-6 py-4 text-xs uppercase tracking-wider text-gray-400 font-bold text-right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-800">
-                        {% for solicitud in solicitudes %}
-                            <tr class="hover:bg-gray-800/30 transition-colors group">
-                                <td class="px-6 py-4">
-                                    <div class="text-white font-medium">{{ solicitud.usuario.get_full_name }}</div>
-                                    <div class="text-gray-500 text-xs">{{ solicitud.fecha_solicitud|date:"d M, Y H:i" }}</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-gray-300 text-sm line-clamp-2 max-w-xs">{{ solicitud.descripcion }}</div>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    {% if solicitud.imagen_referencia %}
-                                        <a href="{{ solicitud.imagen_referencia.url }}"
-                                           target="_blank"
-                                           class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-sm shadow-emerald-500/20"
-                                           title="Ver Imagen">
-                                            <i class="fas fa-image text-sm"></i>
-                                        </a>
-                                    {% elif solicitud.enlace_referencia %}
-                                        <a href="{{ solicitud.enlace_referencia }}"
-                                           target="_blank"
-                                           class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white transition-all shadow-sm shadow-blue-500/20"
-                                           title="Abrir Link">
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 fill="none"
-                                                 viewBox="0 0 24 24"
-                                                 stroke-width="2"
-                                                 stroke="currentColor"
-                                                 class="w-4 h-4">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
-                                            </svg>
-                                        </a>
-                                    {% else %}
-                                        <span class="text-gray-600 text-xs">—</span>
-                                    {% endif %}
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <span class="inline-flex items-center bg-yellow-500/5 text-yellow-400 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border border-yellow-500/20">
-                                        {{ solicitud.get_estado_display }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    {% if solicitud.pedido %}
-                                        <a href="{% url 'pedidos:pedido_detalle' solicitud.pedido.id %}"
-                                           class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-500/20">
-                                            <i class="fas fa-eye"></i>
-                                            Ver Pedido #{{ solicitud.pedido.id }}
-                                        </a>
-                                    {% else %}
-                                        <a href="{% url 'pedidos:convertir_solicitud' solicitud.id %}"
-                                           class="inline-flex items-center gap-2 bg-[#10b981] hover:bg-[#059669] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20">
-                                            <i class="fas fa-file-invoice-dollar"></i>
-                                            Cotizar / Convertir
-                                        </a>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="5" class="px-6 py-12 text-center text-gray-500 italic">No hay solicitudes pendientes de revisión.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        {# ── Filtros ── #}
+        {% include "solicitudes/partials/barra_filtros_solicitudes.html" %}
+        {# ── Tabla (target HTMX) ── #}
+        <div id="solicitudes-container" class="space-y-0">{% include "solicitudes/partials/solicitudes_tabla.html" %}</div>
     </div>
 {% endblock %}
