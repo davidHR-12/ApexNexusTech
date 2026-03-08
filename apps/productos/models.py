@@ -6,6 +6,7 @@ from django.utils.text import slugify
 from decimal import Decimal
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from PIL import Image
 import hashlib
 
 # =============================
@@ -193,7 +194,22 @@ class Producto(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.nombre)
-        super().save(*args, **kwargs)
+        
+        super().save(*args, **kwargs)  # ← PRIMERO guardar, así el archivo existe en disco
+        
+        if self.imagen:
+            try:
+                from PIL import Image  # ← import aquí arriba del archivo mejor
+                ruta = self.imagen.path
+                img = Image.open(ruta)
+                
+                if img.mode in ('RGBA', 'P'):
+                    img = img.convert('RGB')
+                
+                img  = img.resize((800, 800), Image.LANCZOS)
+                img.save(ruta, quality=85, optimize=True)
+            except Exception as e:
+                print(f"Error procesando imagen de producto: {e}")
 
     def __str__(self):
         return self.nombre

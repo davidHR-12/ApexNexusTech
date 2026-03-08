@@ -100,13 +100,21 @@
             </div>
           </a>
           {# Desktop nav #}
-          <div class="hidden md:flex items-center space-x-8 text-sm font-medium">
+          <div class="hidden md:flex items-center space-x-4 text-sm font-medium">
+            {# Enlace Materiales #}
             <a href="{% url 'clientes:materiales' %}"
-               class="text-gray-400 hover:text-[#10b981] transition">Materiales</a>
+               class="px-4 py-2 rounded-lg transition-all duration-200 {% if request.resolver_match.url_name == 'materiales' %} bg-gray-800 text-[#10b981] shadow-sm {% else %} text-gray-400 hover:text-[#10b981] hover:bg-gray-800/50 {% endif %}">
+              Materiales
+            </a>
+            {# Enlace Productos #}
             <a href="{% url 'clientes:productos' %}"
-               class="text-gray-400 hover:text-[#10b981] transition">Productos</a>
+               class="px-4 py-2 rounded-lg transition-all duration-200 {% if request.resolver_match.url_name == 'productos' %} bg-gray-800 text-[#10b981] shadow-sm {% else %} text-gray-400 hover:text-[#10b981] hover:bg-gray-800/50 {% endif %}">
+              Productos
+            </a>
             <a href="{% url 'clientes:proceso' %}"
-               class="text-gray-400 hover:text-[#10b981] transition">Proceso</a>
+               class="px-4 py-2 rounded-lg transition-all duration-200 {% if request.resolver_match.url_name == 'proceso' %} bg-gray-800 text-[#10b981] shadow-sm {% else %} text-gray-400 hover:text-[#10b981] hover:bg-gray-800/50 {% endif %}">
+              Proceso
+            </a>
             <div class="h-6 w-[1px] bg-gray-800 mx-2"></div>
             {# Botón carrito con badge #}
             <button onclick="abrirCarrito()"
@@ -116,7 +124,7 @@
               </svg>
               {% if request.session.carrito %}
                 <span class="badge-pulse absolute -top-1 -right-1 bg-[#10b981] text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg shadow-[#10b981]/40">
-                  {{ request.session.carrito|json_script:"data-carrito" }}
+                  {{ request.session.carrito|json_script:"data-carrito" }}{{ request.session.carrito|length }}
                 </span>
               {% endif %}
             </button>
@@ -363,7 +371,8 @@
                    class="hover:text-[#10b981] transition">Cómo funciona</a>
               </li>
               <li>
-                <a href="#" class="hover:text-[#10b981] transition">Preguntas frecuentes</a>
+                <a href="{% url 'clientes:materiales' %}"
+                   class="hover:text-[#10b981] transition">Materiales</a>
               </li>
             </ul>
           </div>

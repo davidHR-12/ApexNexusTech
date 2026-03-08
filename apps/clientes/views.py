@@ -65,16 +65,15 @@ def proceso_view(request):
     return render(request, 'publico/proceso.html', {'config': config, 'cards_proceso': cards_proceso})
 
 
-
 def productos(request):
     from apps.productos.models import Categoria
     from apps.materiales.models import Color
-    from django.db.models import Q
+    from django.db.models import Q, Min, F, ExpressionWrapper, DecimalField
+    from django.db.models.functions import Coalesce
 
     q          = request.GET.get('q', '').strip()
     categoria  = request.GET.get('categoria', '')
     precio_max = request.GET.get('precio_max', '')
-    color_id   = request.GET.get('color', '')
 
     qs = Producto.objects.filter(mostrar_en_web=True, activo=True).prefetch_related(
         'variantes__detalles_material__material__color'
@@ -88,15 +87,22 @@ def productos(request):
 
     if precio_max:
         try:
-            qs = qs.filter(precio_venta__lte=int(precio_max))
+            # Anotamos con el precio mínimo real (precio_venta + precio_adicional de la variante más barata)
+            # Coalesce hace fallback a precio_venta si el producto no tiene variantes activas
+            qs = qs.annotate(
+                precio_real=Coalesce(
+                    Min(
+                        ExpressionWrapper(
+                            F('precio_venta') + F('variantes__precio_adicional'),
+                            output_field=DecimalField(max_digits=12, decimal_places=2)
+                        )
+                    ),
+                    F('precio_venta'),
+                    output_field=DecimalField(max_digits=12, decimal_places=2)
+                )
+            ).filter(precio_real__lte=int(precio_max))
         except ValueError:
             pass
-
-    if color_id:
-        qs = qs.filter(
-            variantes__activa=True,
-            variantes__detalles_material__material__color__id=color_id
-        ).distinct()
 
     categorias = Categoria.objects.filter(
         productos__mostrar_en_web=True,
@@ -114,15 +120,15 @@ def productos(request):
         'categorias':        categorias,
         'colores':           colores,
         'precio_opciones': [
+            ('100',  'RD$ 100'),
+            ('200',  'RD$ 200'),
             ('500',  'RD$ 500'),
             ('1000', 'RD$ 1K'),
             ('2000', 'RD$ 2K'),
-            ('5000', 'RD$ 5K'),
         ],
         'q_actual':          q,
         'categoria_actual':  categoria,
         'precio_max_actual': precio_max,
-        'color_actual':      color_id,
         'total_resultados':  qs.count(),
     }
 
@@ -405,9 +411,9 @@ def _procesar_pedido_desde_carrito(usuario, carrito):
             usuario=usuario,
             estado_pedido='En_Espera',
             descripcion="Pedido Web: Varios productos del catálogo",
-            peso_estimado_g=0,      # <--- Obligatorio
-            tiempo_estimado_h=0,    # <--- Obligatorio
-            precio_total=0          # <--- Obligatorio
+            peso_estimado_g=0,      
+            tiempo_estimado_h=0,    
+            precio_total=0          
         )
 
         for variante_id, item_data in carrito.items():
@@ -588,15 +594,15 @@ def agregar_al_carrito(request, variante_id):
         carrito[v_id_str]['cantidad'] += cantidad
     else:
         carrito[v_id_str] = {
-            'nombre': variante.producto.nombre,
+            'nombre': str(variante),
             'precio': float(variante.precio_final),
             'cantidad': cantidad,
             'imagen': variante.producto.imagen.url if variante.producto.imagen else ''
         }
     
     request.session['carrito'] = carrito
-    messages.success(request, f"Se han añadido {cantidad} unidad(es) de {variante.producto.nombre}.")
     return redirect(request.META.get('HTTP_REFERER', 'clientes:productos'))
+    messages.success(request, f"Se han añadido {cantidad} unidad(es) de {variante}.")
 
 def actualizar_carrito(request, variante_id, accion):
     """

@@ -1,9 +1,9 @@
 {# solicitudes/partials/solicitudes_tabla.html #}
 <div class="relative overflow-hidden shadow-2xl rounded-2xl border border-gray-700/50 bg-gray-900/40">
     <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse min-w-[800px]">
-            <thead>
-                <tr class="border-b border-gray-700/50 bg-gray-800/30">
+        <table class="w-full text-sm text-left text-gray-400">
+            <thead class="text-[10px] text-gray-500 uppercase tracking-widest bg-gray-900/80 border-b border-gray-700/50">
+                <tr class="bg-[#1e293b]/60">
                     <th class="px-6 py-4 text-xs uppercase tracking-wider text-gray-400 font-bold">Cliente / Fecha</th>
                     <th class="px-6 py-4 text-xs uppercase tracking-wider text-gray-400 font-bold">Descripción</th>
                     <th class="px-6 py-4 text-xs uppercase tracking-wider text-gray-400 font-bold text-center">Referencia</th>
@@ -134,48 +134,46 @@
     </div>
 </div>
 {# ── Paginación ── #}
-{% if solicitudes.paginator.num_pages > 1 %}
-    <div class="bg-[#1e293b] border border-gray-700/50 border-t-0 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-b-2xl">
-        <div class="hidden sm:block text-sm text-gray-400">
-            Mostrando <span class="text-white">{{ solicitudes.start_index }}–{{ solicitudes.end_index }}</span>
-            de <span class="text-white">{{ solicitudes.paginator.count }}</span> solicitudes
-        </div>
-        <nav class="flex items-center gap-1">
-            {% if solicitudes.has_previous %}
-                <button hx-get="{% url 'pedidos:solicitudes_list' %}?page={{ solicitudes.previous_page_number }}&q={{ busqueda_actual }}&estado={{ filtro_actual }}"
-                        hx-target="#solicitudes-container"
-                        hx-push-url="true"
-                        class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                    </svg>
-                </button>
-            {% endif %}
-            {% for i in solicitudes.paginator.page_range %}
-                {% if solicitudes.number == i %}
-                    <span class="px-3.5 py-1.5 text-sm font-bold bg-blue-600 text-white rounded-lg">{{ i }}</span>
-                {% elif i > solicitudes.number|add:'-3' and i < solicitudes.number|add:'3' %}
-                    <button hx-get="{% url 'pedidos:solicitudes_list' %}?page={{ i }}&q={{ busqueda_actual }}&estado={{ filtro_actual }}"
-                            hx-target="#solicitudes-container"
-                            hx-push-url="true"
-                            class="px-3.5 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg">
-                        {{ i }}
-                    </button>
-                {% endif %}
-            {% endfor %}
-            {% if solicitudes.has_next %}
-                <button hx-get="{% url 'pedidos:solicitudes_list' %}?page={{ solicitudes.next_page_number }}&q={{ busqueda_actual }}&estado={{ filtro_actual }}"
-                        hx-target="#solicitudes-container"
-                        hx-push-url="true"
-                        class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                </button>
-            {% endif %}
-        </nav>
+<div class="bg-[#1e293b] border-t border-gray-800 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-b-2xl">
+    <div class="hidden sm:block text-sm text-gray-400">
+        Mostrando <span class="text-white">{{ solicitudes.start_index }}–{{ solicitudes.end_index }}</span>
+        de <span class="text-white">{{ solicitudes.paginator.count }}</span> solicitudes
     </div>
-{% endif %}
+    <nav class="flex items-center gap-1">
+        {% if solicitudes.has_previous %}
+            <button hx-get="{% url 'pedidos:solicitudes_list' %}?page={{ solicitudes.previous_page_number }}&q={{ busqueda_actual }}&estado={{ filtro_actual }}"
+                    hx-target="#solicitudes-container"
+                    hx-push-url="true"
+                    class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+        {% endif %}
+        {% for i in solicitudes.paginator.page_range %}
+            {% if solicitudes.number == i %}
+                <span class="px-3.5 py-1.5 text-sm font-bold bg-blue-600 text-white rounded-lg">{{ i }}</span>
+            {% elif i > solicitudes.number|add:'-3' and i < solicitudes.number|add:'3' %}
+                <button hx-get="{% url 'pedidos:solicitudes_list' %}?page={{ i }}&q={{ busqueda_actual }}&estado={{ filtro_actual }}"
+                        hx-target="#solicitudes-container"
+                        hx-push-url="true"
+                        class="px-3.5 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg">
+                    {{ i }}
+                </button>
+            {% endif %}
+        {% endfor %}
+        {% if solicitudes.has_next %}
+            <button hx-get="{% url 'pedidos:solicitudes_list' %}?page={{ solicitudes.next_page_number }}&q={{ busqueda_actual }}&estado={{ filtro_actual }}"
+                    hx-target="#solicitudes-container"
+                    hx-push-url="true"
+                    class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+        {% endif %}
+    </nav>
+</div>
 {# ── Script: confirmación SweetAlert2 ── #}
 <script>
 function confirmarRechazo(solicitudId, clienteNombre) {
