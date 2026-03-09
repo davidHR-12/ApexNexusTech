@@ -208,6 +208,7 @@ def detalle_pedido_cliente(request, pedido_id):
     return render(request, 'clientes/detalle_pedido.html', {
         'pedido': pedido,
         'items': items,
+        'pagos': pedido.pagos.filter(pedido=pedido).order_by('-fecha_pago'),
         'notas': notas_publicas,
         'config_pago': config_pago,
         'pago_existente': pago_existente,
@@ -575,21 +576,17 @@ def confirmacion_guest(request):
     
     return render(request, 'clientes/confirmacion_guest.html', {'pedido': pedido})
 
-
-
 def agregar_al_carrito(request, variante_id):
-    """Soporta cantidad personalizada vía parámetro GET."""
     carrito = request.session.get('carrito', {})
     variante = get_object_or_404(VarianteProducto, id=variante_id)
-    
-    # Capturar cantidad del GET (por defecto 1 si no viene nada)
+
     try:
         cantidad = int(request.GET.get('cantidad', 1))
     except ValueError:
         cantidad = 1
 
     v_id_str = str(variante_id)
-    
+
     if v_id_str in carrito:
         carrito[v_id_str]['cantidad'] += cantidad
     else:
@@ -599,15 +596,20 @@ def agregar_al_carrito(request, variante_id):
             'cantidad': cantidad,
             'imagen': variante.producto.imagen.url if variante.producto.imagen else ''
         }
-    
+
     request.session['carrito'] = carrito
+
+    # Si viene de HTMX → devolver el partial (sin recargar)
+    if request.headers.get('HX-Request'):
+        return render(request, 'publico/partials/carrito_contenido.html', {'es_htmx': True, 'carrito': carrito,
+        })
+
+    # Si viene de navegación normal → redirigir como antes
+    messages.success(request, f"Se añadieron {cantidad} unidad(es) de {variante}.")
     return redirect(request.META.get('HTTP_REFERER', 'clientes:productos'))
-    messages.success(request, f"Se han añadido {cantidad} unidad(es) de {variante}.")
+
 
 def actualizar_carrito(request, variante_id, accion):
-    """
-    Acciones: 'sumar', 'restar', 'eliminar'
-    """
     carrito = request.session.get('carrito', {})
     v_id_str = str(variante_id)
 
@@ -620,8 +622,13 @@ def actualizar_carrito(request, variante_id, accion):
                 del carrito[v_id_str]
         elif accion == 'eliminar':
             del carrito[v_id_str]
-        
+
         request.session['carrito'] = carrito
         request.session.modified = True
-        
+
+    # Si viene de HTMX → devolver el partial
+    if request.headers.get('HX-Request'):
+        return render(request, 'publico/partials/carrito_contenido.html', {'es_htmx': True, 'carrito': carrito,
+        })
+
     return redirect(request.META.get('HTTP_REFERER', 'clientes:productos'))

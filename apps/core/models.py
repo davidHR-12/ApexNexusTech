@@ -1,5 +1,5 @@
 from django.db import models
-
+from decimal import Decimal, ROUND_HALF_UP
 
 # Modelos de Impresoras
 class Impresora(models.Model):
@@ -123,8 +123,18 @@ class ConfiguracionSitio(models.Model):
         max_length=20, blank=True, default="",
         verbose_name="Número WhatsApp (formato: 18095551234)"
     )
+    
+    instagram_url= models.URLField(
+        max_length=500, blank=True, default="https://www.instagram.com/ant_printer_3d/",
+        verbose_name="Instagram",
+        null=True,
+    )
+
     mostrar_boton_whatsapp = models.BooleanField(
         default=False, verbose_name="Mostrar botón flotante de WhatsApp"
+    )
+    mostrar_boton_instagram = models.BooleanField(
+        default=False, verbose_name="Mostrar botón flotante de Instagram"
     )
     email_contacto = models.EmailField(
         blank=True, default="info@3dprint.do",
@@ -147,6 +157,36 @@ class ConfiguracionSitio(models.Model):
         """Devuelve la única instancia, creándola con defaults si no existe."""
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class ConfiguracionCalculadora(models.Model):
+    """
+    Singleton. Guarda los valores predeterminados de la calculadora
+    que el admin configura una sola vez. No guarda cálculos individuales.
+    """
+    # ── Gastos fijos ──
+    precio_kg= models.DecimalField("Precio KG (RD$)",max_digits=10, decimal_places=2, default=1600)
+    precio_kwh= models.DecimalField("Precio KWh (RD$)",max_digits=10, decimal_places=2, default=15)
+    consumo_watts= models.DecimalField("Consumo (Watts)",max_digits=10, decimal_places=2, default=150)
+    vida_util_horas= models.DecimalField("Vida Útil Máquina (H)",max_digits=10, decimal_places=2, default=2779)
+    precio_repuestos= models.DecimalField("Precio Repuestos (RD$)",max_digits=10, decimal_places=2, default=1650)
+    margen_error_porcentaje= models.DecimalField("% Margen de Error",max_digits=5, decimal_places=2, default=10)
+
+    # ── Ganancia ──
+    multiplicador_ganancia= models.DecimalField("Multiplicador de Ganancia", max_digits=5,  decimal_places=2, default=4)
+
+    class Meta:
+        verbose_name = "Configuración Calculadora"
+        verbose_name_plural = "Configuración Calculadora"
+
+    @classmethod
+    def obtener(cls):
+        """Devuelve la única instancia, creándola si no existe."""
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def __str__(self):
+        return "Configuración Calculadora"
 
 
 class CardPublica(models.Model):

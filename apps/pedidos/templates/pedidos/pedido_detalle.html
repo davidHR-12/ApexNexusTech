@@ -160,9 +160,7 @@
                                                 </span>
                                             </div>
                                         </td>
-                                        <td class="px-4 py-2.5 text-center">
-                                            {{ item.gramos_totales }} g
-                                        </td>
+                                        <td class="px-4 py-2.5 text-center">{{ item.gramos_totales }} g</td>
                                         <td class="px-4 py-2.5 text-center">
                                             {% if item.variante %}
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">Catálogo</span>
@@ -255,13 +253,15 @@
                                 </svg>
                                 Información y Notas
                             </h3>
-                            <button onclick="abrirModal('modalEditarNotas')"
-                                    class="flex items-center gap-1 px-2.5 py-1 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors text-xs font-bold border border-blue-500/20">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                </svg>
-                                Nueva Nota
-                            </button>
+                            {% if not pedido.estado_pedido == 'Entregado' %}
+                                <button onclick="abrirModal('modalEditarNotas')"
+                                        class="flex items-center gap-1 px-2.5 py-1 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors text-xs font-bold border border-blue-500/20">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Nueva Nota
+                                </button>
+                            {% endif %}
                         </div>
                         {# Solicitud del cliente #}
                         <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Solicitud del Cliente</p>
@@ -502,7 +502,7 @@
         {% include "pedidos/modals/editar_notas.html" with modal_id="modalNotasPedido" title="Notas del Pedido" description=" Añade notas al pedido " max_width="max-w-2xl" %}
         {% include "pedidos/modals/comprobante_cliente.html" with modal_id="modalComprobante" title="Comprobante del Cliente" description="Sube el comprobante de pago" max_width="max-w-lg" %}
         {% include "pedidos/modals/registrar_pago.html" with modal_id="modalRegistrarPago" title="Registrar Pago" description="Registra un pago para este pedido" max_width="max-w-lg" %}
-        {% if pedido.estado_pedido == 'En_Produccion'  %}
+        {% if pedido.estado_pedido == 'En_Produccion' %}
             {% include "pedidos/modals/registrar_fallo.html" with modal_id="modalRegistrarFallo" title="Registrar Fallo de Impresión" description="Solo visible para el equipo — el cliente no será notificado" max_width="max-w-lg" %}
         {% endif %}
         <div id="modal-editar-item-wrapper"></div>

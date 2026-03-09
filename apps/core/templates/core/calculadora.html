@@ -1,11 +1,22 @@
 {% extends "core/base_admin.html" %}
 {% block content %}
   <div class="space-y-6">
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-white">Calculadora de Costos</h1>
-      <p class="text-gray-400 mt-1">Optimiza tus márgenes de ganancia con precisión industrial.</p>
+    <div class="mb-8 flex items-start justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-white">Calculadora de Costos</h1>
+        <p class="text-gray-400 mt-1">Optimiza tus márgenes de ganancia con precisión industrial.</p>
+      </div>
+      <a href="{% url 'core:configurar_calculadora' %}"
+         class="flex items-center gap-2 text-xs text-gray-500 hover:text-[#10b981] border border-gray-700 hover:border-[#10b981]/40 px-4 py-2 rounded-xl transition-all">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        Valores predeterminados
+      </a>
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {# ══ COLUMNA 1 — Gastos Fijos ══ #}
       <div class="lg:col-span-4 flex flex-col bg-[#1e293b] rounded-2xl shadow-xl border border-gray-800 overflow-hidden">
         <div class="p-6 pb-4 border-b border-gray-800 bg-[#334155]/20">
           <h3 class="text-lg font-bold text-white flex items-center gap-2">
@@ -13,51 +24,79 @@
                  fill="none"
                  stroke="currentColor"
                  viewBox="0 0 24 24">
-              <path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
             Gastos Fijos
           </h3>
+          <p class="text-gray-500 text-xs mt-1">
+            Valores desde
+            <a href="{% url 'core:configurar_calculadora' %}"
+               class="text-[#10b981] hover:underline">configuración</a>.
+            Puedes editarlos para este cálculo.
+          </p>
         </div>
         <div class="p-6 flex flex-col gap-4">
-          <div>
-            <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Precio KG (RD$)</label>
-            <input type="number"
-                   name="precio_kg"
-                   class="w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-white font-mono focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] outline-none transition">
-          </div>
-          <div>
-            <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Precio Kwh (RD$)</label>
-            <input type="number"
-                   name="precio_kwh"
-                   class="w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-white font-mono focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] outline-none transition">
-          </div>
-          <div>
-            <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Consumo (Watts)</label>
-            <input type="number"
-                   name="consumo_real_hora"
-                   class="w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-white font-mono focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] outline-none transition">
-          </div>
-          <div>
-            <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Vida Útil Máquina (H)</label>
-            <input type="number"
-                   name="desgaste_maquina_horas"
-                   class="w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-white font-mono focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] outline-none transition">
-          </div>
-          <div>
-            <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Precio Repuestos (RD$)</label>
-            <input type="number"
-                   name="precio_repuestos"
-                   class="w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-white font-mono focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] outline-none transition">
-          </div>
-          <div>
-            <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">% Margen de Error</label>
-            <input type="number"
-                   name="margen_error_porcentaje"
-                   class="w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-white font-mono focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] outline-none transition">
-          </div>
+          {% with base="w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-white font-mono focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] outline-none transition" %}
+            <div>
+              <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Precio KG (RD$)</label>
+              <input id="precio_kg"
+                     type="number"
+                     step="0.01"
+                     min="0"
+                     value="{{ config.precio_kg }}"
+                     class="{{ base }}">
+            </div>
+            <div>
+              <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Precio KWh (RD$)</label>
+              <input id="precio_kwh"
+                     type="number"
+                     step="0.01"
+                     min="0"
+                     value="{{ config.precio_kwh }}"
+                     class="{{ base }}">
+            </div>
+            <div>
+              <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Consumo (Watts)</label>
+              <input id="consumo_watts"
+                     type="number"
+                     step="0.01"
+                     min="0"
+                     value="{{ config.consumo_watts }}"
+                     class="{{ base }}">
+            </div>
+            <div>
+              <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Vida Útil Máquina (H)</label>
+              <input id="vida_util_horas"
+                     type="number"
+                     step="0.01"
+                     min="0"
+                     value="{{ config.vida_util_horas }}"
+                     class="{{ base }}">
+            </div>
+            <div>
+              <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Precio Repuestos (RD$)</label>
+              <input id="precio_repuestos"
+                     type="number"
+                     step="0.01"
+                     min="0"
+                     value="{{ config.precio_repuestos }}"
+                     class="{{ base }}">
+            </div>
+            <div>
+              <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">% Margen de Error</label>
+              <input id="margen_error_porcentaje"
+                     type="number"
+                     step="0.01"
+                     min="0"
+                     value="{{ config.margen_error_porcentaje }}"
+                     class="{{ base }}">
+            </div>
+          {% endwith %}
         </div>
       </div>
+      {# ══ COLUMNA 2 — Datos de Pieza + Multiplicador ══ #}
       <div class="lg:col-span-4 flex flex-col gap-6">
+        {# Datos de Pieza #}
         <div class="flex flex-col bg-[#1e293b] rounded-2xl shadow-xl border border-gray-800 overflow-hidden">
           <div class="p-6 pb-4 border-b border-gray-800 bg-[#334155]/20">
             <h3 class="text-lg font-bold text-white flex items-center gap-2">
@@ -67,40 +106,57 @@
                    viewBox="0 0 24 24">
                 <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
-              Datos de Pieza
+              Datos de la Pieza
             </h3>
           </div>
           <div class="p-6 flex flex-col gap-4">
-            <div>
-              <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Tiempo de impresión</label>
-              <div class="grid grid-cols-2 gap-3">
-                <input type="number"
-                       placeholder="Horas"
-                       class="bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-white font-mono focus:border-[#10b981] outline-none">
-                <input type="number"
-                       placeholder="Min"
-                       class="bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-white font-mono focus:border-[#10b981] outline-none">
+            {% with base="bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-white font-mono focus:border-[#10b981] outline-none transition w-full" %}
+              <div>
+                <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Tiempo de impresión</label>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <input id="tiempo_horas"
+                           type="number"
+                           min="0"
+                           placeholder="Horas"
+                           class="{{ base }}">
+                    <p class="text-gray-600 text-[10px] mt-1 ml-1">horas</p>
+                  </div>
+                  <div>
+                    <input id="tiempo_minutos"
+                           type="number"
+                           min="0"
+                           max="59"
+                           placeholder="Min"
+                           class="{{ base }}">
+                    <p class="text-gray-600 text-[10px] mt-1 ml-1">minutos</p>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div>
-              <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Gramos de filamento</label>
-              <input type="number"
-                     class="w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-white font-mono focus:border-[#10b981] outline-none">
-            </div>
-            <div>
-              <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Otros Insumos (RD$)</label>
-              <input type="number"
-                     class="w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-white font-mono focus:border-[#10b981] outline-none">
-            </div>
+              <div>
+                <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Gramos de filamento</label>
+                <input id="gramos" type="number" step="1" min="0" class="{{ base }}">
+              </div>
+              <div>
+                <label class="text-gray-400 text-xs uppercase font-bold mb-1 block">Otros Insumos (RD$)</label>
+                <input id="insumos" type="number" step="1" min="0" class="{{ base }}">
+              </div>
+            {% endwith %}
           </div>
         </div>
+        {# Multiplicador #}
         <div class="flex flex-col bg-[#1e293b] rounded-2xl shadow-xl border border-gray-800 overflow-hidden">
-          <div class="p-6 pb-4 border-b border-gray-800 bg-[#334155]/20 font-bold text-white">Multiplicador Ganancia</div>
+          <div class="p-6 pb-4 border-b border-gray-800 bg-[#334155]/20">
+            <h3 class="text-lg font-bold text-white">Multiplicador Ganancia</h3>
+          </div>
           <div class="p-6 flex flex-col gap-4">
-            <input type="number"
-                   value="4"
-                   class="w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-[#10b981] font-bold text-xl outline-none">
-            <div class="bg-[#0f172a]/50 p-3 rounded-xl space-y-1 text-xs text-gray-400">
+            <input id="multiplicador"
+                   type="number"
+                   step="1"
+                   min="0"
+                   value="{{ config.multiplicador_ganancia }}"
+                   class="w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-[#10b981] font-bold text-xl outline-none focus:border-[#10b981] transition">
+            <div class="bg-[#0f172a]/50 p-3 rounded-xl space-y-1.5 text-xs text-gray-400">
               <p>
                 ● <span class="text-white">Minorista:</span> 4.0
               </p>
@@ -108,12 +164,13 @@
                 ● <span class="text-white">Mayorista:</span> 3.0
               </p>
               <p>
-                ● <span class="text-white">Llaveros/Pequeños:</span> 5.0
+                ● <span class="text-white">Llaveros / Pequeños:</span> 5.0
               </p>
             </div>
           </div>
         </div>
       </div>
+      {# ══ COLUMNA 3 — Resumen ══ #}
       <div class="lg:col-span-4 flex flex-col bg-[#1e293b] border-2 border-[#10b981]/30 rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.1)] overflow-hidden">
         <div class="h-1.5 bg-[#10b981]"></div>
         <div class="p-6 flex-1 flex flex-col">
@@ -129,47 +186,148 @@
           <div class="space-y-3 text-sm flex-1">
             <div class="flex justify-between items-center py-2 border-b border-gray-800">
               <span class="text-gray-400">Precio Material</span>
-              <span id="precio-material" class="text-white font-mono">RD$ 0.00</span>
+              <span id="r-material" class="text-white font-mono">RD$ 0.00</span>
             </div>
             <div class="flex justify-between items-center py-2 border-b border-gray-800">
               <span class="text-gray-400">Precio Luz (Energía)</span>
-              <span id="precio-luz" class="text-white font-mono">RD$ 0.00</span>
+              <span id="r-luz" class="text-white font-mono">RD$ 0.00</span>
             </div>
             <div class="flex justify-between items-center py-2 border-b border-gray-800">
               <span class="text-gray-400">Desgaste Máquina</span>
-              <span id="desgaste-maquina" class="text-white font-mono">RD$ 0.00</span>
+              <span id="r-desgaste" class="text-white font-mono">RD$ 0.00</span>
             </div>
             <div class="flex justify-between items-center py-2 border-b border-gray-800">
               <span class="text-gray-400">Margen de Error</span>
-              <span id="margen-error" class="text-white font-mono text-yellow-500/80">RD$ 0.00</span>
+              <span id="r-margen" class="text-yellow-500/80 font-mono">RD$ 0.00</span>
             </div>
             <div class="flex justify-between items-center py-2 border-b border-gray-800">
               <span class="text-gray-400">Insumos Adicionales</span>
-              <span id="insumos-display" class="text-white font-mono">RD$ 0.00</span>
+              <span id="r-insumos" class="text-white font-mono">RD$ 0.00</span>
             </div>
             <div class="flex justify-between items-center py-3 border-b-2 border-dashed border-gray-700 mt-2">
               <span class="text-gray-300 font-bold uppercase text-xs">Costo Total Producción</span>
-              <span id="costo-total-insumos" class="text-white font-mono font-bold">RD$ 0.00</span>
+              <span id="r-costo-total" class="text-white font-mono font-bold">RD$ 0.00</span>
             </div>
-            <div class="mt-8 p-4 bg-[#10b981]/10 rounded-2xl border border-[#10b981]/20 text-center">
+            {# Total destacado #}
+            <div class="mt-6 p-5 bg-[#10b981]/10 rounded-2xl border border-[#10b981]/20 text-center">
               <p class="text-gray-400 uppercase text-xs font-bold tracking-widest mb-1">Total Sugerido a Cobrar</p>
-              <p id="total-cobrar" class="text-4xl font-black text-[#10b981]">RD$ 0.00</p>
+              <p id="r-total-cobrar"
+                 class="text-4xl font-black text-[#10b981] transition-all duration-300">RD$ 0.00</p>
             </div>
           </div>
-          <div class="mt-8 space-y-3">
+          {# Estado / indicador #}
+          <div id="calc-status"
+               class="mt-4 text-center text-xs text-gray-700 hidden">
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse"></span>
+              Calculando…
+            </span>
+          </div>
+          <div class="mt-6 space-y-3">
             <button type="button"
                     id="btn-calcular"
-                    class="w-full bg-[#10b981] hover:bg-[#059669] text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-900/20 transition-all hover:scale-[1.02] active:scale-95">
+                    class="w-full bg-[#10b981] hover:bg-[#059669] text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-900/20 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
               Calcular
             </button>
             <button type="button"
                     id="btn-limpiar"
-                    class="w-full text-gray-500 hover:text-white font-medium py-2 text-sm transition">
-              Limpiar Datos
+                    class="w-full text-gray-500 hover:text-white font-medium py-2 text-sm transition border border-gray-800 hover:border-gray-700 rounded-xl">
+              Limpiar campos de pieza
             </button>
           </div>
         </div>
       </div>
     </div>
   </div>
+  <script>
+(function () {
+  const CALCULAR_URL = "{% url 'core:calcular_ajax' %}";
+  const CSRF_TOKEN   = "{{ csrf_token }}";
+
+  // ── Helpers ──────────────────────────────────────────────
+  function val(id) {
+    return parseFloat(document.getElementById(id)?.value || 0) || 0;
+  }
+  function set(id, num) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = `RD$ ${num.toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  // ── Calcular ──────────────────────────────────────────────
+  async function calcular() {
+    const status = document.getElementById('calc-status');
+    status.classList.remove('hidden');
+
+    const payload = {
+      precio_kg:val('precio_kg'),
+      precio_kwh:val('precio_kwh'),
+      consumo_watts:val('consumo_watts'),
+      vida_util_horas:val('vida_util_horas'),
+      precio_repuestos:val('precio_repuestos'),
+      margen_error_porcentaje:val('margen_error_porcentaje'),
+      tiempo_horas:val('tiempo_horas'),
+      tiempo_minutos:val('tiempo_minutos'),
+      gramos:val('gramos'),
+      insumos:val('insumos'),
+      multiplicador:val('multiplicador'),
+    };
+
+    try {
+      const res  = await fetch(CALCULAR_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken':  CSRF_TOKEN,
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        set('r-material',data.precio_material);
+        set('r-luz',data.precio_luz);
+        set('r-desgaste',data.desgaste_maquina);
+        set('r-margen',data.margen_error);
+        set('r-insumos',data.insumos);
+        set('r-costo-total',data.costo_total);
+        set('r-total-cobrar',data.total_cobrar);
+
+        // Animación sutil en total
+        const total = document.getElementById('r-total-cobrar');
+        total.classList.add('scale-105');
+        setTimeout(() => total.classList.remove('scale-105'), 200);
+      } else {
+        console.error('Error del servidor:',data.error);
+      }
+    } catch (e) {
+      console.error('Error de red:',e);
+    } finally {
+      status.classList.add('hidden');
+    }
+  }
+
+  // ── Limpiar solo campos de pieza ──────────────────────────
+  function limpiar() {
+    ['tiempo_horas', 'tiempo_minutos', 'gramos', 'insumos'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    // Resetear resumen
+    ['r-material','r-luz','r-desgaste','r-margen','r-insumos','r-costo-total','r-total-cobrar']
+      .forEach(id => { const el = document.getElementById(id); if(el) el.textContent = 'RD$ 0.00'; });
+  }
+
+  // ── Eventos ───────────────────────────────────────────────
+  document.getElementById('btn-calcular').addEventListener('click', calcular);
+  document.getElementById('btn-limpiar').addEventListener('click', limpiar);
+
+  // Calcular automáticamente al presionar Enter en cualquier input
+  document.querySelectorAll('input[type="number"]').forEach(input => {
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') calcular(); });
+  });
+})();
+  </script>
 {% endblock content %}

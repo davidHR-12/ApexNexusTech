@@ -9,7 +9,9 @@ urlpatterns = [
 
     # Dashboard y generales
     path("dashboard/", views.dashboard_admin, name="dashboard_admin"),
-    path("calculadora/", views.calculadora, name="calculadora"),
+    path('calculadora/', views.calculadora, name='calculadora'),
+    path('calculadora/calcular/', views.calcular_ajax, name='calcular_ajax'),
+    path('calculadora/config/', views.configurar_calculadora, name='configurar_calculadora'),
 
     # Configuración
     path("configuracion/", views.configuracion, name="configuracion"),

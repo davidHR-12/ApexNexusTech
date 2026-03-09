@@ -1,5 +1,5 @@
 from django import forms
-from .models import Impresora, CardPublica, ConfiguracionSitio
+from .models import Impresora, CardPublica, ConfiguracionSitio, ConfiguracionCalculadora
 from apps.core.utils import TailwindModelForm
 
 
@@ -139,7 +139,9 @@ class ContactoForm(TailwindModelForm):
         model = ConfiguracionSitio
         fields = [
             'whatsapp_numero',
+            'instagram_url',
             'mostrar_boton_whatsapp',
+            'mostrar_boton_instagram',
             'email_contacto',
             'ciudad_contacto',
         ]
@@ -149,7 +151,17 @@ class ContactoForm(TailwindModelForm):
                 'pattern': '[0-9]{10,}'
             }),
             'email_contacto': forms.EmailInput(),
+            'instagram_url': forms.URLInput(attrs={
+                'placeholder': 'https://www.instagram.com/ant_printer_3d/',
+            }),
         }
+
+    def clean_instagram_url(self):
+        url = self.cleaned_data.get('instagram_url')
+        if url:
+            if not url.startswith('https://www.instagram.com/'):
+                raise forms.ValidationError("La URL debe comenzar con 'https://www.instagram.com/'.")
+        return url
 
     def clean_whatsapp_numero(self):
         numero = self.cleaned_data.get('whatsapp_numero')
@@ -159,3 +171,21 @@ class ContactoForm(TailwindModelForm):
             if len(numero) < 10:
                 raise forms.ValidationError("Mínimo 10 dígitos.")
         return numero
+
+
+INPUT_CLASS = (
+    "w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 "
+    "text-white font-mono focus:border-[#10b981] focus:ring-1 "
+    "focus:ring-[#10b981] outline-none transition"
+)
+
+
+class ConfiguracionCalculadoraForm(forms.ModelForm):
+    class Meta:
+        model  = ConfiguracionCalculadora
+        fields = [
+            'precio_kg', 'precio_kwh', 'consumo_watts',
+            'vida_util_horas', 'precio_repuestos',
+            'margen_error_porcentaje', 'multiplicador_ganancia',
+        ]
+        widgets = {f: forms.NumberInput(attrs={'class': INPUT_CLASS, 'step': '0.01'}) for f in fields}

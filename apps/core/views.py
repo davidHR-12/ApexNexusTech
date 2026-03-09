@@ -1,10 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum, Q, Count
 from django.utils import timezone
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+
 
 import os
 import json
@@ -16,10 +19,10 @@ from apps.materiales.models import Material
 from apps.productos.models import Categoria, Producto
 from apps.usuarios.decorators import admin_required
 
-from .models import Impresora, ConfiguracionSitio, CardPublica
+from .models import Impresora, ConfiguracionSitio, CardPublica, ConfiguracionCalculadora
 from .forms import (
     ImpresoraForm, CardPublicaForm, EstadisticasForm, MaterialesForm,
-    ProductosDestacadosForm, ProcesoForm, ContactoForm
+    ProductosDestacadosForm, ProcesoForm, ContactoForm, ConfiguracionCalculadoraForm
 )
 
 
@@ -194,11 +197,88 @@ def dashboard_admin(request):
     }
     return render(request, "core/dashboard_admin.html", context)
 
-
 @admin_required
 def calculadora(request):
-    """Vista de la calculadora de impresoras."""
-    return render(request, "core/calculadora.html")
+    """
+    Muestra la calculadora. Los valores predeterminados vienen de
+    ConfiguracionCalculadora y pre-rellenan los inputs de gastos fijos.
+    No guarda ningún cálculo en BD.
+    """
+    config = ConfiguracionCalculadora.obtener()
+    return render(request, 'core/calculadora.html', {'config': config})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def calcular_ajax(request):
+    """
+    Recibe JSON con todos los valores del formulario,
+    calcula y devuelve resultados. Nunca toca la BD.
+    """
+    try:
+        data = json.loads(request.body)
+
+        def d(key, default=0):
+            return Decimal(str(data.get(key, default) or 0))
+
+        precio_kg               = d('precio_kg')
+        precio_kwh              = d('precio_kwh')
+        consumo_watts           = d('consumo_watts')
+        vida_util_horas         = d('vida_util_horas')
+        precio_repuestos        = d('precio_repuestos')
+        margen_error_pct        = d('margen_error_porcentaje')
+        tiempo_horas            = d('tiempo_horas')
+        tiempo_minutos          = d('tiempo_minutos')
+        gramos                  = d('gramos')
+        insumos                 = d('insumos')
+        multiplicador           = d('multiplicador', 4)
+
+        # Tiempo total en horas
+        tiempo_total = tiempo_horas + (tiempo_minutos / Decimal('60'))
+
+        # Cálculos
+        precio_material  = (gramos * precio_kg) / Decimal('1000')
+        precio_luz       = (consumo_watts * precio_kwh / Decimal('1000')) * tiempo_total
+        desgaste         = (tiempo_total * precio_repuestos / vida_util_horas) if vida_util_horas > 0 else Decimal('0')
+        base             = precio_material + precio_luz
+        margen_error     = base * (margen_error_pct / Decimal('100'))
+        costo_total      = base + desgaste + margen_error + insumos
+        total_cobrar     = costo_total * multiplicador
+
+        def fmt(val):
+            return float(val.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
+
+        return JsonResponse({
+            'success': True,
+            'precio_material':  fmt(precio_material),
+            'precio_luz':       fmt(precio_luz),
+            'desgaste_maquina': fmt(desgaste),
+            'margen_error':     fmt(margen_error),
+            'insumos':          fmt(insumos),
+            'costo_total':      fmt(costo_total),
+            'total_cobrar':     fmt(total_cobrar),
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+@admin_required
+def configurar_calculadora(request):
+    """
+    Permite al admin editar los valores predeterminados de la calculadora.
+    """
+    config = ConfiguracionCalculadora.obtener()
+
+    if request.method == 'POST':
+        form = ConfiguracionCalculadoraForm(request.POST, instance=config)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Configuración de la calculadora guardada.")
+            return redirect('core:configurar_calculadora')
+    else:
+        form = ConfiguracionCalculadoraForm(instance=config)
+
+    return render(request, 'core/configuraciones/config_calculadora.html', {'form': form})
 
 
 @admin_required
