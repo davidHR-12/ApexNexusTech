@@ -40,27 +40,35 @@
                     </div>
                     <div class="divide-y divide-gray-800/60">
                         {% for item in items %}
+                            {# Solo mostramos ítems raíz — los componentes de producción son internos #}
                             <div class="px-4 py-3 flex items-center justify-between hover:bg-gray-800/20 transition-colors">
                                 <div class="flex items-center gap-3">
                                     <div class="w-9 h-9 bg-[#334155] rounded-lg flex items-center justify-center text-[#10b981] flex-shrink-0">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-                                        </svg>
+                                        {% if item.variante and item.variante.producto.imagen %}
+                                            <img src="{{ item.variante.producto.imagen.url }}"
+                                                 class="w-full h-full object-cover rounded-lg"
+                                                 alt="{{ item.variante.producto.nombre }}">
+                                        {% else %}
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                            </svg>
+                                        {% endif %}
                                     </div>
                                     <div>
                                         <p class="text-white font-semibold text-sm">
-                                            {% if item.descripcion %}
-                                                {{ item.descripcion }}
-                                            {% elif item.variante %}
+                                            {% if item.variante %}
                                                 {{ item.variante.producto.nombre }}
+                                                {% if item.variante.nombre %}
+                                                    <span class="text-gray-400 font-normal text-xs ml-1">— {{ item.variante.nombre }}</span>
+                                                {% endif %}
                                             {% else %}
-                                                Producto Personalizado
+                                                {{ item.descripcion|default:"Producto Personalizado" }}
                                             {% endif %}
                                         </p>
-                                        <p class="text-gray-500 text-xs">{{ item.cantidad }} ud × RD$ {{ item.precio_unitario|floatformat:2 }}</p>
+                                        <p class="text-gray-500 text-xs">{{ item.cantidad }} ud × RD$ {{ item.precio_unitario_efectivo|floatformat:2 }}</p>
                                     </div>
                                 </div>
-                                <span class="text-white font-mono font-bold text-sm">RD$ {{ item.subtotal|floatformat:2 }}</span>
+                                <span class="text-white font-mono font-bold text-sm flex-shrink-0">RD$ {{ item.subtotal|floatformat:2 }}</span>
                             </div>
                         {% endfor %}
                     </div>

@@ -28,7 +28,7 @@
                         </td>
                         <td class="px-6 py-4 text-xs">
                             <div>{{ pedido.fecha_creacion|date:"d M Y" }}</div>
-                            <div class="text-gray-600">{{ pedido.fecha_creacion|time:"H:i" }}</div>
+                            <div class="text-gray-600">{{ pedido.fecha_creacion|time:"h:i A" }}</div>
                         </td>
                         <td class="px-6 py-4">
                             <div class="text-sm max-w-xs truncate">{{ pedido.descripcion }}</div>
@@ -45,7 +45,7 @@
                             {% endif %}
                         </td>
                         <td class="px-6 py-4 text-right font-mono font-bold">
-                            <span class="text-gray-500 text-xs">RD$</span>{{ pedido.precio_total|floatformat:2|intcomma }}
+                            <span class="text-gray-500 text-xs">RD$</span> {{ pedido.precio_total|floatformat:2|intcomma }}
                         </td>
                     </tr>
                 {% empty %}

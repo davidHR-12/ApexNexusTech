@@ -30,8 +30,8 @@ ROJO     = colors.HexColor("#ef4444")
 AZUL     = colors.HexColor("#3b82f6")
 
 W, H = A4
-MG   = 15 * mm        # margen uniforme
-UTIL = W - 2 * MG     # ancho útil ≈ 565 pt
+MG   = 15 * mm
+UTIL = W - 2 * MG
 
 
 # ════════════════════════════════════════════════════════════════
@@ -55,6 +55,7 @@ def _estilos():
         "th_l":     P("th_l",     fontSize=7,  textColor=BLANCO,   leading=9,  fontName="Helvetica-Bold"),
         "td_c":     P("td_c",     fontSize=8,  textColor=OSCURO,   leading=10, alignment=TA_CENTER),
         "td_l":     P("td_l",     fontSize=8,  textColor=OSCURO,   leading=10),
+        "td_sub":   P("td_sub",   fontSize=6,  textColor=GRIS_MED, leading=8),
         "td_r":     P("td_r",     fontSize=8,  textColor=OSCURO,   leading=10, alignment=TA_RIGHT, fontName="Courier"),
         "tot_lbl":  P("tot_lbl",  fontSize=8,  textColor=GRIS_MED, leading=10, alignment=TA_RIGHT),
         "tot_val":  P("tot_val",  fontSize=8,  textColor=OSCURO,   leading=10, fontName="Helvetica-Bold", alignment=TA_RIGHT),
@@ -80,21 +81,60 @@ def _color_estado(estado):
     }.get(estado, GRIS_MED)
 
 
+def _materiales_contenedor(item):
+    """
+    Devuelve una cadena con los materiales únicos de los componentes del contenedor.
+    Ejemplo: "ABS Rojo · PLA Amarillo"
+    """
+    materiales = []
+    vistos = set()
+    for comp in item.componentes.all():
+        mp = getattr(comp, "material_personalizado", None)
+        if not mp:
+            continue
+        if mp.pk in vistos:
+            continue
+        vistos.add(mp.pk)
+        tipo  = str(getattr(mp, "tipo", "") or "")
+        color = getattr(mp, "color", None)
+        color_str = (str(color.nombre) if hasattr(color, "nombre") else str(color)) if color else ""
+        label = " ".join(filter(None, [tipo, color_str]))
+        materiales.append(label or str(mp))
+    return " · ".join(materiales) if materiales else "—"
+
+
 # ════════════════════════════════════════════════════════════════
 # FUNCIÓN PRINCIPAL
 # ════════════════════════════════════════════════════════════════
 def generar_factura_pdf(request, pedido_id):
     """
-    Vista Django: genera y devuelve el PDF de la factura del pedido.
+    Genera y devuelve el PDF de factura del pedido.
+
+    Reglas de visibilidad en la factura:
+    • Ítems de catálogo  → una línea normal.
+    • Contenedor         → una línea con nombre, materiales agregados de componentes
+                           y precio final al cliente. Los componentes NO aparecen.
+    • Ítem manual legacy → una línea normal (flujo antiguo, sin item_padre).
+    • Componentes        → nunca se muestran (son detalle interno de producción).
     """
-    # ── Ajusta estos imports a la ruta real de tus modelos ──────
     from apps.pedidos.models import Pedido
-    from apps.core.models import ConfiguracionFactura   # o donde tengas la config
+    from apps.core.models import ConfiguracionFactura
 
     pedido = get_object_or_404(Pedido, pk=pedido_id)
     config = ConfiguracionFactura.obtener()
-    items  = pedido.items.all().select_related("variante__producto", "material_personalizado")
-    pagos  = pedido.pagos.all()
+
+    # Solo raíz — excluye componentes (item_padre__isnull=True)
+    items = (
+        pedido.items
+        .filter(item_padre__isnull=True)
+        .select_related("variante__producto", "material_personalizado")
+        .prefetch_related(
+            "componentes",
+            "componentes__material_personalizado",
+            "componentes__material_personalizado__color",
+        )
+    )
+    pagos = pedido.pagos.all()
 
     S   = _estilos()
     buf = io.BytesIO()
@@ -113,7 +153,7 @@ def generar_factura_pdf(request, pedido_id):
     izq = []
     if config.logo and os.path.exists(config.logo.path):
         try:
-            logo = RLImage(config.logo.path, width=18*mm, height=18*mm)
+            logo = RLImage(config.logo.path, width=40*mm, height=14*mm)
             logo.hAlign = "LEFT"
             izq.append(logo)
             izq.append(Spacer(1, 2*mm))
@@ -206,7 +246,7 @@ def generar_factura_pdf(request, pedido_id):
     ]))
     story.append(info)
 
-        # 1. Preparamos los contenidos de cada columna
+    # ── Descripción + notas públicas ────────────────────────────
     col_descripcion = []
     if getattr(pedido, "descripcion", None):
         col_descripcion.append(Paragraph("DESCRIPCIÓN DEL PEDIDO", S["nota_tit"]))
@@ -214,70 +254,73 @@ def generar_factura_pdf(request, pedido_id):
         col_descripcion.append(Paragraph(pedido.descripcion, S["nota"]))
 
     col_notas = []
-    notas_visibles = pedido.anotaciones.filter(visible_para_cliente=True).order_by('fecha_creacion')
+    notas_visibles = pedido.anotaciones.filter(visible_para_cliente=True).order_by("fecha_creacion")
     if notas_visibles.exists():
         col_notas.append(Paragraph("NOTAS DEL PEDIDO", S["nota_tit"]))
         col_notas.append(Spacer(1, 1*mm))
         for nota in notas_visibles:
-            texto_nota = f"<b>{nota.fecha_creacion.strftime('%d/%m/%Y')}:</b> {nota.contenido}"
-            col_notas.append(Paragraph(texto_nota, S["nota"]))
+            col_notas.append(Paragraph(
+                f"<b>{nota.fecha_creacion.strftime('%d/%m/%Y')}:</b> {nota.contenido}",
+                S["nota"],
+            ))
             col_notas.append(Spacer(1, 1*mm))
 
-    # 2. Solo creamos la tabla si al menos una de las dos secciones tiene contenido
     if col_descripcion or col_notas:
         story.append(Spacer(1, 4*mm))
         story.append(HRFlowable(width="100%", thickness=0.5, color=GRIS_CLR))
         story.append(Spacer(1, 2*mm))
-
-        # Definimos los datos de la tabla (una sola fila con dos celdas)
-        # Cada celda recibe una lista de Flowables (nuestras columnas)
-        datos_tabla = [[col_descripcion, col_notas]]
-
-        # Calculamos el ancho (suponiendo una página A4 con márgenes estándar, ~180-190mm disponibles)
-        ancho_col = 90*mm 
-        
-        tabla_notas = Table(datos_tabla, colWidths=[ancho_col, ancho_col])
-        
-        # Aplicamos estilo para alinear el contenido al tope (VALIGN TOP)
+        ancho_col = 90*mm
+        tabla_notas = Table([[col_descripcion, col_notas]], colWidths=[ancho_col, ancho_col])
         tabla_notas.setStyle(TableStyle([
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 5*mm), # Espacio entre columnas
+            ("VALIGN",        (0,0),(-1,-1), "TOP"),
+            ("LEFTPADDING",   (0,0),(-1,-1), 0),
+            ("RIGHTPADDING",  (0,0),(-1,-1), 5*mm),
         ]))
-        
         story.append(tabla_notas)
         story.append(Spacer(1, 4*mm))
 
     # ── 3. TABLA DE ÍTEMS ────────────────────────────────────────
-    # Anchos fijos que suman exactamente UTIL (sin unidades mm en el cálculo)
-    fijos_mm = 8 + 22 + 14 + 30 + 30   # = 104 mm
+    fijos_mm = 8 + 22 + 14 + 30 + 30
     desc_w   = UTIL - fijos_mm * mm
     col_ws   = [8*mm, desc_w, 22*mm, 14*mm, 30*mm, 30*mm]
 
     filas = [[
         Paragraph("#",            S["th"]),
         Paragraph("Descripción",  S["th_l"]),
-        Paragraph("Material",     S["th"]),
+        Paragraph("Origen",       S["th"]),
         Paragraph("Cant.",        S["th"]),
         Paragraph("Precio Unit.", S["th"]),
         Paragraph("Subtotal",     S["th"]),
     ]]
+
     for i, item in enumerate(items, 1):
+
+        # ── Catálogo ──────────────────────────────────────────────
         if getattr(item, "variante", None):
-            nombre = item.variante.producto.nombre
-            mat    = "Catálogo"
+            nombre    = item.variante.producto.nombre
+            mat_str   = "Catálogo"
+            precio_u  = item.precio_unitario
+            subtotal  = item.subtotal
+            desc_cell = [Paragraph(nombre, S["td_l"])]
+
+        # ── Personalizado (contenedor con componentes) ───────────
         else:
-            nombre = getattr(item, "descripcion", None) or "Pieza personalizada"
-            mp     = getattr(item, "material_personalizado", None)
-            mat    = f"{mp.tipo} {mp.color}" if mp else "—"
+            nombre   = getattr(item, "descripcion", None) or "Producto personalizado"
+            mat_str  = "Personalizado"
+            subtotal = item.subtotal          # suma de subtotales de componentes
+            cantidad = item.cantidad or 1
+            precio_u = (subtotal / cantidad).quantize(Decimal("0.01")) if subtotal else Decimal("0")
+            desc_cell = [Paragraph(nombre, S["td_l"])]
+
+        precio_str = f"RD$ {precio_u:,.2f}" if precio_u else "—"
 
         filas.append([
-            Paragraph(str(i),                              S["td_c"]),
-            Paragraph(nombre,                              S["td_l"]),
-            Paragraph(mat,                                 S["td_c"]),
-            Paragraph(str(item.cantidad),                  S["td_c"]),
-            Paragraph(f"RD$ {item.precio_unitario:,.2f}",  S["td_r"]),
-            Paragraph(f"RD$ {item.subtotal:,.2f}",         S["td_r"]),
+            Paragraph(str(i),                 S["td_c"]),
+            desc_cell,
+            Paragraph(mat_str,                S["td_c"]),
+            Paragraph(str(item.cantidad),     S["td_c"]),
+            Paragraph(precio_str,             S["td_r"]),
+            Paragraph(f"RD$ {subtotal:,.2f}", S["td_r"]),
         ])
 
     tbl_items = Table(filas, colWidths=col_ws, repeatRows=1)
@@ -290,8 +333,9 @@ def generar_factura_pdf(request, pedido_id):
         ("BOTTOMPADDING", (0,1),(-1,-1), 5),
         ("LEFTPADDING",   (0,0),(-1,-1), 5),
         ("RIGHTPADDING",  (0,0),(-1,-1), 5),
-        ("ALIGN",         (0,1),(0, -1), "CENTER"),
-        ("ALIGN",         (2,1),(3, -1), "CENTER"),
+        ("VALIGN",        (0,1),(-1,-1), "TOP"),
+        ("ALIGN",         (0,1),(0,-1),  "CENTER"),
+        ("ALIGN",         (2,1),(3,-1),  "CENTER"),
         ("ALIGN",         (4,1),(-1,-1), "RIGHT"),
         ("LINEBELOW",     (0,0),(-1,-1), 0.3, GRIS_CLR),
         ("BOX",           (0,0),(-1,-1), 0.5, GRIS_CLR),
@@ -300,11 +344,12 @@ def generar_factura_pdf(request, pedido_id):
     story.append(Spacer(1, 4*mm))
 
     # ── 4. PAGOS + TOTALES ───────────────────────────────────────
-    total  = pedido.precio_total
-    saldo  = getattr(pedido, "saldo_pendiente", total)
-    pagado = (total - saldo) if saldo is not None else Decimal("0")
+    # Total calculado directo de ítems — no usar pedido.precio_total porque
+    # los contenedores tienen precio_unitario=0 y no se reflejan ahí.
+    total  = sum(item.subtotal for item in items)
+    pagado = sum(p.monto for p in pagos) if pagos.exists() else Decimal("0")
+    saldo  = total - pagado
 
-    # Columna derecha — totales
     tot_rows = [[
         Paragraph("Subtotal:",  S["tot_lbl"]),
         Paragraph(f"RD$ {total:,.2f}", S["tot_val"]),
@@ -347,20 +392,19 @@ def generar_factura_pdf(request, pedido_id):
     der_w    = 78 * mm
     izq_w    = UTIL - der_w - 5*mm
 
-    # Columna izquierda — pagos
     if pagos.exists():
         pf = [[
-            Paragraph("Método",  S["pag_th"]),
-            Paragraph("Monto",   S["pag_th"]),
-            Paragraph("Ref.",    S["pag_th"]),
-            Paragraph("Fecha",   S["pag_th"]),
+            Paragraph("Método", S["pag_th"]),
+            Paragraph("Monto",  S["pag_th"]),
+            Paragraph("Ref.",   S["pag_th"]),
+            Paragraph("Fecha",  S["pag_th"]),
         ]]
         for p in pagos:
             pf.append([
-                Paragraph(p.get_metodo_display(),                                       S["pag_td"]),
-                Paragraph(f"RD$ {p.monto:,.2f}",                                        S["pag_mon"]),
-                Paragraph(getattr(p, "referencia", None) or "—",                        S["pag_td"]),
-                Paragraph(p.fecha_pago.strftime("%d/%m/%y") if p.fecha_pago else "—",   S["pag_td"]),
+                Paragraph(p.get_metodo_display(),                                     S["pag_td"]),
+                Paragraph(f"RD$ {p.monto:,.2f}",                                      S["pag_mon"]),
+                Paragraph(getattr(p, "referencia", None) or "—",                      S["pag_td"]),
+                Paragraph(p.fecha_pago.strftime("%d/%m/%y") if p.fecha_pago else "—", S["pag_td"]),
             ])
         pw = [izq_w * r for r in (.30, .28, .25, .17)]
         tbl_pagos = Table(pf, colWidths=pw)
@@ -390,7 +434,7 @@ def generar_factura_pdf(request, pedido_id):
     ]))
     story.append(tbl_bot)
 
-    # ── 6. FOOTER ───────────────────────────────────────────────
+    # ── 5. FOOTER ───────────────────────────────────────────────
     story.append(Spacer(1, 5*mm))
     story.append(HRFlowable(width="100%", thickness=1.5, color=VERDE, spaceAfter=3*mm))
     for txt in filter(None, [
@@ -407,7 +451,7 @@ def generar_factura_pdf(request, pedido_id):
     doc.build(story)
     buf.seek(0)
 
-    raw = f"Factura_{pedido.id:04d}_{getattr(pedido, 'nombre_cliente', '') or 'cliente'}.pdf"
+    raw      = f"Factura_{pedido.id:04d}_{getattr(pedido, 'nombre_cliente', '') or 'cliente'}.pdf"
     filename = "".join(c if c.isalnum() or c in "-_." else "_" for c in raw)
 
     response = HttpResponse(buf, content_type="application/pdf")

@@ -10,7 +10,6 @@ if (formClienteExpress) {
             headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
         })
             .then(response => {
-                // Si es 400, igual queremos leer el JSON para ver los errores
                 return response.json().then(data => {
                     if (!response.ok) {
                         console.error("Errores del formulario:", data.errors);
@@ -21,14 +20,12 @@ if (formClienteExpress) {
             })
             .then(data => {
                 if (data.success) {
-                    // 1. Seleccionar el cliente en el select
                     const selectCliente = document.querySelector('select[name="usuario"]');
                     if (selectCliente) {
                         const textoOption = `${data.nombre} - ${data.telefono ? data.telefono : 'Sin Tel.'}`;
                         const newOption = new Option(textoOption, data.id, true, true);
                         selectCliente.add(newOption);
                     }
-
                     cerrarUltimoModal();
                     mostrarToast('success', 'Cliente creado correctamente');
                 } else {
@@ -39,7 +36,6 @@ if (formClienteExpress) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    // --- 1. Formateo de Teléfono ---
     const inputTelefono = document.querySelector('input[name="telefono"]');
     if (inputTelefono) {
         inputTelefono.addEventListener('input', function (e) {
@@ -82,7 +78,6 @@ function abrirModalEditarItem(itemId, url) {
         .then(html => {
             wrapper.innerHTML = html;
 
-            // Reinicializar HTMX en el contenido nuevo
             if (typeof htmx !== 'undefined') {
                 htmx.process(wrapper);
             }
@@ -110,7 +105,6 @@ function eliminarItem(itemId) {
     Swal.fire({
         ...swalConfigBase,
         title: '¿Eliminar ítem?',
-        text: "Esta acción no se puede deshacer.",
         html: `Se eliminará este ítem del pedido y se recalcularán los totales.`,
         iconHtml: swalIcons.warningRed,
         confirmButtonText: 'Sí, eliminar',
@@ -124,15 +118,12 @@ function eliminarItem(itemId) {
         if (result.isConfirmed) {
             fetch(`/administrador/pedidos/item/${itemId}/eliminar/`, {
                 method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                }
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
             })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
                         mostrarToast('success', data.message);
-                        // Recargar para ver los nuevos totales actualizados hoy
                         setTimeout(() => location.reload(), 500);
                     } else {
                         mostrarToast('error', data.message || 'Error al eliminar');
@@ -145,6 +136,88 @@ function eliminarItem(itemId) {
         }
     });
 }
+
+// ==========================================
+// CONTENEDOR / COMPONENTES
+// ==========================================
+
+/**
+ * Alterna la visibilidad de las filas de componentes de un contenedor.
+ * Rota el chevron para indicar estado abierto/cerrado.
+ */
+function toggleComponentes(itemId) {
+    const rows    = document.querySelectorAll(`.comp-rows-${itemId}`);
+    const chevron = document.getElementById(`chevron-${itemId}`);
+    const btn     = document.getElementById(`toggle-btn-${itemId}`);
+
+    if (!rows.length) return;
+
+    const isCurrentlyHidden = rows[0].classList.contains('hidden');
+    
+    // Si estaba oculto (true), ahora se va a mostrar (false)
+    const shouldShow = isCurrentlyHidden; 
+
+    rows.forEach(row => row.classList.toggle('hidden', !shouldShow));
+
+    if (chevron) {
+        chevron.style.transform = shouldShow ? 'rotate(90deg)' : 'rotate(0deg)';
+    }
+
+    // --- PERSISTENCIA ---
+    // Guardamos "true" si está expandido, "false" si está colapsado
+    localStorage.setItem(`tree-state-${itemId}`, shouldShow);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Buscamos todos los botones de toggle que tengan el patrón de ID
+    const toggleButtons = document.querySelectorAll('[id^="toggle-btn-"]');
+
+    toggleButtons.forEach(btn => {
+        // Extraemos el ID numérico del ID del elemento (ej: de "toggle-btn-5" a "5")
+        const itemId = btn.id.split('-').pop();
+        const savedState = localStorage.getItem(`tree-state-${itemId}`);
+
+        // Si el estado guardado es 'true', forzamos la apertura
+        if (savedState === 'true') {
+            const rows = document.querySelectorAll(`.comp-rows-${itemId}`);
+            const chevron = document.getElementById(`chevron-${itemId}`);
+
+            rows.forEach(row => row.classList.remove('hidden'));
+            
+            if (chevron) {
+                chevron.style.transform = 'rotate(90deg)';
+            }
+            
+            // Opcional: Aplicar estilos de botón activo si los usas
+            btn.classList.add('bg-blue-500/20', 'border-blue-500/40');
+        }
+    });
+});
+
+/**
+ * Abre el modal de agregar componente apuntando al URL correcto del ítem padre.
+ * Actualiza la acción del formulario dinámicamente antes de abrir.
+ */
+function abrirModalComponente(itemId, url) {
+    const form = document.getElementById('formAgregarComponente');
+    if (form) {
+        form.action = url;
+        // Limpiar campos del form para reutilización
+        form.reset();
+        // Limpiar resultados de búsqueda si los hay
+        const searchResults = document.getElementById('search-results-comp');
+        if (searchResults) searchResults.innerHTML = '';
+        // Ocultar panel de costos
+        const panel = form.querySelector('#panel-costos-pers');
+        if (panel) panel.classList.add('hidden');
+    }
+    abrirModal('modalAgregarComponente');
+}
+
+
+// ==========================================
+// CATÁLOGO: desglose de precio por variante
+// ==========================================
 const selectVariante = document.querySelector('#modalItemCatalogo [name="variante"]');
 if (selectVariante) {
     selectVariante.addEventListener('change', function () {
@@ -161,12 +234,10 @@ if (selectVariante) {
             .then(data => {
                 const modal = document.getElementById('modalItemCatalogo');
 
-                // 1. Asignar valores a los inputs
                 modal.querySelector('[name="precio_unitario"]').value = data.precio_unitario;
                 modal.querySelector('[name="gramos_por_unidad"]').value = data.gramos_por_unidad;
 
-                // 2. Construir el desglose visualmente
-                const base = data.precio_base.toLocaleString();
+                const base  = data.precio_base.toLocaleString();
                 const extra = data.precio_extra.toLocaleString();
                 const total = data.precio_unitario.toLocaleString();
 
@@ -179,51 +250,51 @@ if (selectVariante) {
     });
 }
 
-// 1. Lógica de selección del material (Mejorada para Edición)
+// ==========================================
+// MATERIALES: búsqueda y cálculo de costos
+// ==========================================
+
+/**
+ * Selecciona un material desde los resultados HTMX.
+ * Funciona en cualquier modal activo (personalizado, editar, componente).
+ */
 function seleccionarMaterial(id, textoCompleto) {
-    // Buscamos el modal que esté visible actualmente (el de arriba en el stack)
     const modalActivo = document.querySelector('.modal-overlay:not(.hidden)');
     if (!modalActivo) return;
 
-    const inputBusqueda = modalActivo.querySelector('#material-search-input');
-    // Buscamos el hidden por nombre si el ID falla o es dinámico
-    const inputHidden = modalActivo.querySelector('input[name="material_personalizado"]');
-    const resultados = modalActivo.querySelector('#search-results, #search-results-editar');
+    // Soportar ambos IDs de input de búsqueda
+    const inputBusqueda = modalActivo.querySelector('#material-search-input, #material-search-input-comp');
+    const inputHidden   = modalActivo.querySelector('input[name="material_personalizado"]');
+    const resultados    = modalActivo.querySelector('#search-results, #search-results-editar, #search-results-comp');
 
     if (inputBusqueda) inputBusqueda.value = textoCompleto;
     if (inputHidden) {
         inputHidden.value = id;
-        // Disparar evento change manualmente para que otros listeners lo capten
         inputHidden.dispatchEvent(new Event('change', { bubbles: true }));
     }
-
     if (resultados) resultados.innerHTML = '';
 
-    // Ejecutar cálculos
     calcularCostosPersonalizados();
 
-    // Focus al siguiente campo
     const nextInput = modalActivo.querySelector('input[name="gramos_por_unidad"]');
     if (nextInput) nextInput.focus();
 }
 
-
 /**
- * 2. Función de cálculo de costos y actualización de precio unitario
+ * Calcula costos estimados y precio sugerido basado en material + gramos + cantidad.
  */
 function calcularCostosPersonalizados() {
     const modalActivo = document.querySelector('.modal-overlay:not(.hidden)');
     if (!modalActivo) return;
 
-    const inputHidden = modalActivo.querySelector('input[name="material_personalizado"]');
-    const materialId = inputHidden ? inputHidden.value : null;
+    const inputHidden       = modalActivo.querySelector('input[name="material_personalizado"]');
+    const materialId        = inputHidden ? inputHidden.value : null;
+    const gramosInput       = modalActivo.querySelector('input[name="gramos_por_unidad"]');
+    const cantidadInput     = modalActivo.querySelector('input[name="cantidad"]');
+    const precioUnitarioInput = modalActivo.querySelector('input[name="precio_unitario"]');
+    const panel             = modalActivo.querySelector('#panel-costos-pers');
 
-    const gramosInput = modalActivo.querySelector('input[name="gramos_por_unidad"]');
-    const cantidadInput = modalActivo.querySelector('input[name="cantidad"]');
-    const precioUnitarioInput = modalActivo.querySelector('input[name="precio_unitario"]'); // Agregado
-    const panel = modalActivo.querySelector('#panel-costos-pers');
-
-    const gramos = parseFloat(gramosInput?.value) || 0;
+    const gramos   = parseFloat(gramosInput?.value) || 0;
     const cantidad = parseFloat(cantidadInput?.value) || 1;
 
     if (!materialId || materialId === "" || gramos <= 0) {
@@ -236,20 +307,18 @@ function calcularCostosPersonalizados() {
         .then(data => {
             if (!modalActivo.isConnected) return;
 
-            const costoGramo = parseFloat(data.costo_por_gramo || data.costo_gramo);
+            const costoGramo     = parseFloat(data.costo_por_gramo || data.costo_gramo);
             const inversionTotal = costoGramo * gramos * cantidad;
-            const precioSugerido = (costoGramo * gramos) * 1.5; // Sugerido por unidad
+            const precioSugerido = costoGramo * gramos * 1.5;
 
-            // Actualizar Etiquetas del Panel
-            const elCostoG = modalActivo.querySelector('#pers-costo-g');
+            const elCostoG    = modalActivo.querySelector('#pers-costo-g');
             const elInversion = modalActivo.querySelector('#pers-inversion-total');
-            const elSugerido = modalActivo.querySelector('#pers-sugerido');
+            const elSugerido  = modalActivo.querySelector('#pers-sugerido');
 
-            if (elCostoG) elCostoG.textContent = `RD$ ${costoGramo.toFixed(2)}`;
+            if (elCostoG)    elCostoG.textContent    = `RD$ ${costoGramo.toFixed(2)}`;
             if (elInversion) elInversion.textContent = `RD$ ${inversionTotal.toFixed(2)}`;
-            if (elSugerido) elSugerido.textContent = `RD$ ${precioSugerido.toFixed(2)}`;
+            if (elSugerido)  elSugerido.textContent  = `RD$ ${precioSugerido.toFixed(2)}`;
 
-            // Actualizar precio solo si NO fue editado manualmente por el usuario
             if (precioUnitarioInput && precioUnitarioInput.dataset.manualEdit !== 'true') {
                 precioUnitarioInput.value = precioSugerido.toFixed(2);
             }
@@ -259,75 +328,69 @@ function calcularCostosPersonalizados() {
         .catch(err => console.error('Error calculando costos:', err));
 }
 
-// Marcar precio como "editado manualmente" cuando el usuario escribe
+// Marcar precio como editado manualmente cuando el usuario escribe
 document.addEventListener('input', (e) => {
     if (e.target.name === 'precio_unitario') {
         e.target.dataset.manualEdit = 'true';
     }
 });
 
-/**
- * 3. Mejora UX: Permitir que al hacer clic en el precio sugerido se aplique al input
- */
+// Clic en precio sugerido → aplicar al input
 document.addEventListener('click', (e) => {
     if (e.target.id === 'pers-sugerido') {
         const modalActivo = e.target.closest('.modal-overlay');
         const precioTexto = e.target.textContent.replace('RD$ ', '').trim();
         const precioInput = modalActivo?.querySelector('input[name="precio_unitario"]');
-
         if (precioInput) {
             precioInput.value = precioTexto;
-            precioInput.dataset.manualEdit = 'false'; // Reset para que siga auto-actualizando
+            precioInput.dataset.manualEdit = 'false';
             mostrarToast('success', 'Precio sugerido aplicado');
         }
     }
 });
 
-// Escuchar cambios en CUALQUIER input de gramos o cantidad que esté dentro de un modal
+// Recalcular al cambiar gramos o cantidad
 document.addEventListener('input', (e) => {
     if (e.target.name === 'gramos_por_unidad' || e.target.name === 'cantidad') {
-        console.log('[Input] Target:', e.target.name);
-        console.log('[Input] Modal encontrado:', e.target.closest('.modal-overlay'));
         const modal = e.target.closest('.modal-overlay');
         if (modal) calcularCostosPersonalizados();
     }
 });
 
-// Escuchar cambios en el material
+// Recalcular al cambiar el material (hidden input)
 document.addEventListener('change', (e) => {
     if (e.target.name === 'material_personalizado') {
-        const id = e.target.value;
+        const id    = e.target.value;
         const modal = e.target.closest('.modal-overlay');
         if (!id || !modal) return;
         fetch(`/administrador/api/materiales/${id}/precio/`)
             .then(r => r.json())
-            .then(data => {
-                calcularCostosPersonalizados();
-            });
+            .then(() => calcularCostosPersonalizados());
     }
 });
 
+// ==========================================
+// SOLICITUDES: confirmar rechazo
+// ==========================================
 function confirmarRechazo(url, cliente) {
     Swal.fire({
-        ...window.swalConfigBase, // Tu config de colores y blur
+        ...window.swalConfigBase,
         customClass: window.swalCustomClasses,
         title: '¿Rechazar solicitud?',
         html: `¿Estás seguro de que deseas rechazar la solicitud de <b>${cliente}</b>? Esta acción no se puede deshacer.`,
-        iconHtml: window.swalIcons.warningRed, // Usamos tu ícono rojo
+        iconHtml: window.swalIcons.warningRed,
         confirmButtonText: 'Sí, rechazar',
         cancelButtonText: 'Cancelar',
     }).then((result) => {
         if (result.isConfirmed) {
-            // Creamos un formulario dinámico para hacer el POST
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = url;
 
-            // Añadimos el token CSRF (importante en Django)
             const csrfInput = document.createElement('input');
             csrfInput.type = 'hidden';
             csrfInput.name = 'csrfmiddlewaretoken';
-            csrfInput.value = '{{ csrf_token }}'; // Django inyectará esto
+            csrfInput.value = getCookie('csrftoken');
 
             form.appendChild(csrfInput);
             document.body.appendChild(form);

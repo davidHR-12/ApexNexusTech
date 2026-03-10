@@ -8,18 +8,15 @@ from apps.core.utils import TailwindModelForm
 # ════════════════════════════════════════════════════════════════════
 
 class ImpresoraForm(TailwindModelForm):
-    """Formulario para crear/editar impresoras 3D."""
-    
     class Meta:
-        model = Impresora
+        model  = Impresora
         fields = ['nombre', 'modelo']
 
     def clean_nombre(self):
         nombre = self.cleaned_data.get('nombre')
-        query = Impresora.objects.filter(nombre__iexact=nombre)
+        query  = Impresora.objects.filter(nombre__iexact=nombre)
         if self.instance.pk:
             query = query.exclude(pk=self.instance.pk)
-        
         if query.exists():
             raise forms.ValidationError(f"La impresora '{nombre}' ya está registrada.")
         return nombre
@@ -30,137 +27,86 @@ class ImpresoraForm(TailwindModelForm):
 # ════════════════════════════════════════════════════════════════════
 
 class CardPublicaForm(TailwindModelForm):
-    """
-    Formulario para crear/editar cards (materiales y proceso).
-    Incluye soporte para imágenes.
-    """
-    
     class Meta:
-        model = CardPublica
+        model  = CardPublica
         fields = [
-            'seccion', 'titulo', 'descripcion', 'imagen', 
+            'seccion', 'titulo', 'descripcion', 'imagen',
             'orden', 'activo',
-            'badge_texto', 'badge_color', 'tags',  # Solo materiales
-            'paso_numero', 'es_paso_destacado'      # Solo proceso
+            'badge_texto', 'badge_color', 'tags',
+            'paso_numero', 'es_paso_destacado',
         ]
         widgets = {
-            'titulo': forms.TextInput(attrs={
-                'placeholder': 'Ej: PLA Premium, Paso 1, etc.'
-            }),
-            'descripcion': forms.Textarea(attrs={
-                'rows': 4,
-                'placeholder': 'Describe el contenido...'
-            }),
-            'tags': forms.TextInput(attrs={
-                'placeholder': 'Ej: Fácil de Pintar, Eco-Friendly'
-            }),
-            'badge_texto': forms.TextInput(attrs={
-                'placeholder': 'Ej: Estético, Industrial'
-            }),
+            'titulo':      forms.TextInput(attrs={'placeholder': 'Ej: PLA Premium, Paso 1, etc.'}),
+            'descripcion': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Describe el contenido...'}),
+            'tags':        forms.TextInput(attrs={'placeholder': 'Ej: Fácil de Pintar, Eco-Friendly'}),
+            'badge_texto': forms.TextInput(attrs={'placeholder': 'Ej: Estético, Industrial'}),
         }
 
     def clean(self):
         cleaned_data = super().clean()
-        titulo = cleaned_data.get('titulo')
-        
-        if not titulo:
+        if not cleaned_data.get('titulo'):
             raise forms.ValidationError("El título es obligatorio.")
-        
         return cleaned_data
 
 
 # ════════════════════════════════════════════════════════════════════
-# CONFIGURACIÓN SIMPLIFICADA
+# CONFIGURACIÓN DEL SITIO
 # ════════════════════════════════════════════════════════════════════
 
 class EstadisticasForm(TailwindModelForm):
-    """Formulario para las estadísticas."""
-    
     class Meta:
-        model = ConfiguracionSitio
+        model  = ConfiguracionSitio
         fields = [
-            'stat_piezas_numero',
-            'stat_piezas_etiqueta',
-            'stat_respuesta_numero',
-            'stat_respuesta_etiqueta',
-            'stat_materiales_numero',
-            'stat_materiales_etiqueta',
-            'stat_garantia_numero',
-            'stat_garantia_etiqueta',
+            'stat_piezas_numero',     'stat_piezas_etiqueta',
+            'stat_respuesta_numero',  'stat_respuesta_etiqueta',
+            'stat_materiales_numero', 'stat_materiales_etiqueta',
+            'stat_garantia_numero',   'stat_garantia_etiqueta',
         ]
 
 
 class MaterialesForm(TailwindModelForm):
-    """Formulario para la sección de materiales."""
-    
     class Meta:
-        model = ConfiguracionSitio
-        fields = [
-            'mostrar_materiales_en_index',
-            'mostrar_materiales_en_pagina',
-        ]
+        model  = ConfiguracionSitio
+        fields = ['mostrar_materiales_en_index', 'mostrar_materiales_en_pagina']
 
 
 class ProductosDestacadosForm(TailwindModelForm):
-    """Formulario para productos destacados."""
-    
     class Meta:
-        model = ConfiguracionSitio
-        fields = [
-            'mostrar_seccion_productos_destacados',
-            'max_productos_destacados',
-        ]
+        model  = ConfiguracionSitio
+        fields = ['mostrar_seccion_productos_destacados', 'max_productos_destacados']
 
     def clean_max_productos_destacados(self):
         cantidad = self.cleaned_data.get('max_productos_destacados')
-        if cantidad and (cantidad < 1 or cantidad > 8):
+        if cantidad and not (1 <= cantidad <= 8):
             raise forms.ValidationError("La cantidad debe estar entre 1 y 8.")
         return cantidad
 
 
 class ProcesoForm(TailwindModelForm):
-    """Formulario para la sección de proceso."""
-    
     class Meta:
-        model = ConfiguracionSitio
-        fields = [
-            'proceso_titulo',
-            'proceso_subtitulo',
-        ]
-        widgets = {
-            'proceso_subtitulo': forms.Textarea(attrs={'rows': 2}),
-        }
+        model   = ConfiguracionSitio
+        fields  = ['proceso_titulo', 'proceso_subtitulo']
+        widgets = {'proceso_subtitulo': forms.Textarea(attrs={'rows': 2})}
 
 
 class ContactoForm(TailwindModelForm):
-    """Formulario para contacto y WhatsApp."""
-    
     class Meta:
-        model = ConfiguracionSitio
+        model  = ConfiguracionSitio
         fields = [
-            'whatsapp_numero',
-            'instagram_url',
-            'mostrar_boton_whatsapp',
-            'mostrar_boton_instagram',
-            'email_contacto',
-            'ciudad_contacto',
+            'whatsapp_numero', 'instagram_url',
+            'mostrar_boton_whatsapp', 'mostrar_boton_instagram',
+            'email_contacto', 'ciudad_contacto',
         ]
         widgets = {
-            'whatsapp_numero': forms.TextInput(attrs={
-                'placeholder': '18095551234',
-                'pattern': '[0-9]{10,}'
-            }),
-            'email_contacto': forms.EmailInput(),
-            'instagram_url': forms.URLInput(attrs={
-                'placeholder': 'https://www.instagram.com/ant_printer_3d/',
-            }),
+            'whatsapp_numero': forms.TextInput(attrs={'placeholder': '18095551234', 'pattern': '[0-9]{10,}'}),
+            'email_contacto':  forms.EmailInput(),
+            'instagram_url':   forms.URLInput(attrs={'placeholder': 'https://www.instagram.com/ant_printer_3d/'}),
         }
 
     def clean_instagram_url(self):
         url = self.cleaned_data.get('instagram_url')
-        if url:
-            if not url.startswith('https://www.instagram.com/'):
-                raise forms.ValidationError("La URL debe comenzar con 'https://www.instagram.com/'.")
+        if url and not url.startswith('https://www.instagram.com/'):
+            raise forms.ValidationError("La URL debe comenzar con 'https://www.instagram.com/'.")
         return url
 
     def clean_whatsapp_numero(self):
@@ -173,43 +119,36 @@ class ContactoForm(TailwindModelForm):
         return numero
 
 
-INPUT_CLASS = (
-    "w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 "
-    "text-white font-mono focus:border-[#10b981] focus:ring-1 "
-    "focus:ring-[#10b981] outline-none transition"
-)
+# ════════════════════════════════════════════════════════════════════
+# CALCULADORA
+# ════════════════════════════════════════════════════════════════════
 
+_CALC_FIELDS = [
+    'precio_kg', 'precio_kwh', 'consumo_watts',
+    'vida_util_horas', 'precio_repuestos',
+    'margen_error_porcentaje', 'multiplicador_ganancia',
+]
 
-class ConfiguracionCalculadoraForm(forms.ModelForm):
+class ConfiguracionCalculadoraForm(TailwindModelForm):
     class Meta:
-        model  = ConfiguracionCalculadora
-        fields = [
-            'precio_kg', 'precio_kwh', 'consumo_watts',
-            'vida_util_horas', 'precio_repuestos',
-            'margen_error_porcentaje', 'multiplicador_ganancia',
-        ]
-        widgets = {f: forms.NumberInput(attrs={'class': INPUT_CLASS, 'step': '0.01'}) for f in fields}
-    
-_INPUT  = "w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] outline-none transition"
-_FILE   = "w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2 px-4 text-gray-400 focus:border-[#10b981] outline-none transition text-sm file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-[#10b981]/10 file:text-[#10b981] hover:file:bg-[#10b981]/20"
+        model   = ConfiguracionCalculadora
+        fields  = _CALC_FIELDS
+        widgets = {f: forms.NumberInput(attrs={'step': '0.01'}) for f in _CALC_FIELDS}
 
 
-class ConfiguracionFacturaForm(forms.ModelForm):
+# ════════════════════════════════════════════════════════════════════
+# FACTURA
+# ════════════════════════════════════════════════════════════════════
+
+class ConfiguracionFacturaForm(TailwindModelForm):
     class Meta:
-        model  = ConfiguracionFactura
-        fields = [
+        model   = ConfiguracionFactura
+        fields  = [
             'nombre_negocio', 'slogan', 'rnc',
             'telefono', 'email', 'direccion',
             'logo', 'footer_texto', 'nota_legal',
         ]
         widgets = {
-            'nombre_negocio': forms.TextInput(attrs={'class': _INPUT}),
-            'slogan':         forms.TextInput(attrs={'class': _INPUT}),
-            'rnc':            forms.TextInput(attrs={'class': _INPUT}),
-            'telefono':       forms.TextInput(attrs={'class': _INPUT}),
-            'email':          forms.EmailInput(attrs={'class': _INPUT}),
-            'direccion':      forms.TextInput(attrs={'class': _INPUT}),
-            'logo':           forms.ClearableFileInput(attrs={'class': _FILE}),
-            'footer_texto':   forms.Textarea(attrs={'class': _INPUT, 'rows': 2}),
-            'nota_legal':     forms.Textarea(attrs={'class': _INPUT, 'rows': 2}),
+            'footer_texto': forms.Textarea(attrs={'rows': 2}),
+            'nota_legal':   forms.Textarea(attrs={'rows': 2}),
         }

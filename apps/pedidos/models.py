@@ -329,31 +329,50 @@ class Pedido(models.Model):
         return self.guest_telefono or "—"
 
     def actualizar_totales(self):
-        items = self.items.all()
+        """
+        Recalcula precio_total, costo_material y peso_estimado_g del pedido.
+
+        Usa item.subtotal y item.gramos_totales (propiedades del modelo ItemPedido)
+        que ya manejan la agregación de componentes para ítems contenedor.
+        Prefetchear 'componentes' evita queries N+1.
+        """
+        items = self.items.filter(item_padre__isnull=True).prefetch_related(
+            "componentes",
+            "componentes__material_personalizado",
+        )
         total_costo_prod = Decimal("0.00")
-        total_venta = Decimal("0.00")
-        total_peso = Decimal("0.00")
+        total_venta      = Decimal("0.00")
+        total_peso       = Decimal("0.00")
 
         for item in items:
-            cantidad = Decimal(item.cantidad or 0)
+            # ── Venta: usar la propiedad subtotal que ya sabe agregar componentes ──
+            total_venta += item.subtotal          # Decimal
+            total_peso  += item.gramos_totales    # Decimal
 
-            # Lógica de Costo
+            # ── Costo de producción ───────────────────────────────────────────────
             if item.variante:
-                costo_u = item.variante.costo_produccion_total
+                total_costo_prod += item.variante.costo_produccion_total * item.cantidad
+
+            elif item.es_contenedor:
+                # Suma el costo de cada componente (gramos × costo_por_gramo)
+                for comp in item.componentes.all():
+                    total_costo_prod += (
+                        Decimal(comp.gramos_por_unidad or 0)
+                        * Decimal(comp.costo_material_unitario or 0)
+                        * Decimal(comp.cantidad or 1)
+                    )
+
             else:
-                # Si es manual, usamos los gramos por el costo del material asociado
-                costo_u = Decimal(item.gramos_por_unidad or 0) * Decimal(
-                    item.costo_material_unitario or 0
+                # Ítem legacy manual (sin variante, sin componentes)
+                total_costo_prod += (
+                    Decimal(item.gramos_por_unidad or 0)
+                    * Decimal(item.costo_material_unitario or 0)
+                    * Decimal(item.cantidad or 0)
                 )
 
-            total_costo_prod += costo_u * cantidad
-            total_venta += Decimal(item.precio_unitario or 0) * cantidad
-            total_peso += Decimal(item.gramos_por_unidad or 0) * cantidad
-
-        self.costo_material = total_costo_prod
-        self.precio_total = total_venta
+        self.costo_material  = total_costo_prod
+        self.precio_total    = total_venta
         self.peso_estimado_g = total_peso
-        # Guardamos los cambios
         super(Pedido, self).save(
             update_fields=["costo_material", "precio_total", "peso_estimado_g"]
         )
@@ -475,6 +494,25 @@ class ItemPedido(models.Model):
         verbose_name="Material utilizado",
     )
 
+    item_padre = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='componentes',
+        verbose_name='Ítem contenedor',
+        help_text='Si está asignado, este ítem es un componente de producción del ítem padre.',
+    )
+
+    fallo_registrado = models.BooleanField(
+    default=False,
+    verbose_name='Fallo registrado',
+    help_text=(
+        'True si este ítem/componente tuvo un fallo de impresión confirmado. '
+        'El stock de su material NO se devuelve al revertir el pedido.'
+        ),
+    )
+
     descripcion = models.CharField(
         max_length=300,
         null=True,
@@ -502,13 +540,53 @@ class ItemPedido(models.Model):
     )
 
     @property
+    def es_contenedor(self):
+        """True si es un ítem personalizado padre (sin material propio, con componentes)."""
+        return self.item_padre_id is None and self.variante_id is None
+
+    @property
+    def es_componente(self):
+        return self.item_padre_id is not None
+
+    @property
     def subtotal(self):
-        """Subtotal del ítem"""
+        """
+        Si el ítem tiene componentes, el subtotal es la suma de ellos.
+        Si no, es precio_unitario × cantidad (comportamiento original).
+        """
+        # Usamos _prefetched_objects_cache si ya está prefetcheado para evitar N+1
+        if hasattr(self, '_componentes_cache'):
+            comps = self._componentes_cache
+        else:
+            comps = list(self.componentes.all())
+
+        if comps:
+            return sum(c.precio_unitario * c.cantidad for c in comps)
         return self.precio_unitario * self.cantidad
 
     @property
+    def precio_unitario_efectivo(self):
+        """
+        Precio por unidad real para mostrar al cliente.
+
+        - Catálogo / componente → precio_unitario (guardado en DB).
+        - Contenedor             → subtotal ÷ cantidad (precio_unitario está en 0
+                                   porque el precio surge de los componentes).
+        """
+        if self.es_contenedor:
+            cantidad = self.cantidad or 1
+            return (self.subtotal / cantidad).quantize(Decimal("0.01")) if self.subtotal else Decimal("0.00")
+        return self.precio_unitario
+
+    @property
     def gramos_totales(self):
-        """Total de gramos del ítem"""
+        if hasattr(self, '_componentes_cache'):
+            comps = self._componentes_cache
+        else:
+            comps = list(self.componentes.all())
+
+        if comps:
+            return sum(c.gramos_por_unidad * c.cantidad for c in comps)
         return self.gramos_por_unidad * self.cantidad
 
     def __str__(self):

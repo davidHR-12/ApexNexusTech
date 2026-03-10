@@ -176,26 +176,31 @@ def detalle_pedido_cliente(request, pedido_id):
         visible_para_cliente=True
     ).order_by('-fecha_creacion')
 
-    # Ítems
-    items = pedido.items.all()
+    # Solo ítems raíz — los componentes son detalle interno de producción
+    items = (
+        pedido.items
+        .filter(item_padre__isnull=True)
+        .select_related("variante__producto")
+        .prefetch_related("componentes")   # necesario para subtotal / precio_unitario_efectivo
+    )
 
     # Configuración de datos bancarios del negocio
     from apps.pedidos.models import ConfiguracionPago
     config_pago = ConfiguracionPago.obtener()
 
     # Tipo de pedido
-    es_pedido_cotizacion = pedido.solicitud is not None
-    tiene_items_catalogo = pedido.items.filter(variante__isnull=False).exists()
-    tiene_items_personalizados = pedido.items.filter(variante__isnull=True).exists()
+    es_pedido_cotizacion      = pedido.solicitud is not None
+    tiene_items_catalogo      = items.filter(variante__isnull=False).exists()
+    tiene_items_personalizados = items.filter(variante__isnull=True).exists()
 
-    # Determinar si ya tiene comprobante o pago registrado
+    # Primer pago registrado (referencia para el cliente)
     pago_existente = pedido.pagos.order_by('-fecha_pago').first()
 
     # Anticipo calculado (para pedidos personalizados cotizados)
     anticipo = None
     if config_pago and es_pedido_cotizacion and pedido.precio_total > 0:
         from decimal import Decimal
-        pct = config_pago.porcentaje_anticipo / Decimal('100')
+        pct     = config_pago.porcentaje_anticipo / Decimal('100')
         anticipo = (pedido.precio_total * pct).quantize(Decimal('0.01'))
 
     # Estados en los que el cliente puede interactuar con el pago
@@ -206,19 +211,18 @@ def detalle_pedido_cliente(request, pedido_id):
     )
 
     return render(request, 'clientes/detalle_pedido.html', {
-        'pedido': pedido,
-        'items': items,
-        'pagos': pedido.pagos.filter(pedido=pedido).order_by('-fecha_pago'),
-        'notas': notas_publicas,
-        'config_pago': config_pago,
-        'pago_existente': pago_existente,
-        'es_pedido_cotizacion': es_pedido_cotizacion,
-        'tiene_items_catalogo': tiene_items_catalogo,
+        'pedido':                    pedido,
+        'items':                     items,
+        'pagos':                     pedido.pagos.order_by('-fecha_pago'),
+        'notas':                     notas_publicas,
+        'config_pago':               config_pago,
+        'pago_existente':            pago_existente,
+        'es_pedido_cotizacion':      es_pedido_cotizacion,
+        'tiene_items_catalogo':      tiene_items_catalogo,
         'tiene_items_personalizados': tiene_items_personalizados,
-        'anticipo': anticipo,
-        'puede_seleccionar_pago': puede_seleccionar_pago,
+        'anticipo':                  anticipo,
+        'puede_seleccionar_pago':    puede_seleccionar_pago,
     })
-
 
 @login_required
 def seleccionar_metodo_pago(request, pedido_id):
@@ -470,6 +474,22 @@ def checkout_paso_final(request):
                     'form': form,
                     'carrito': carrito,
                 })
+
+            # ── NUEVO: bloquear si el email ya tiene cuenta ──
+            from apps.usuarios.models import Usuario  # o tu modelo de usuario
+            email_ingresado = form.cleaned_data.get('email', '').strip().lower()
+            if Usuario.objects.filter(email__iexact=email_ingresado).exists():
+                form.add_error(
+                    'email',
+                    'Este correo ya tiene una cuenta registrada. '
+                    'Por favor inicia sesión para continuar con tu pedido.'
+                )
+                return render(request, 'clientes/checkout_invitado.html', {
+                    'form': form,
+                    'carrito': carrito,
+                })
+            # ── fin validación ──
+
             datos_cliente = {
                 'usuario': None,
                 'guest_nombre': f"{form.cleaned_data['nombre']} {form.cleaned_data['apellido']}",

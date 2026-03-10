@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.db import transaction as db_transaction
-from .forms import PedidoManualForm, ItemCatalogoForm, ItemPersonalizadoForm
+from .forms import PedidoManualForm, ItemCatalogoForm, ItemPersonalizadoForm, ItemContenedorForm, ComponenteItemForm
 from .models import Pedido, ItemPedido, Impresora, SolicitudCotizacion, NotaPedido, Pago, ConfiguracionPago,PerdidaMaterial
 
 from apps.pedidos.factura_pdf import generar_factura_pdf
@@ -101,6 +101,8 @@ def pedido_detalle(request, pedido_id):
         "estados": Pedido.ESTADOS_PEDIDO,
         "form_catalogo": ItemCatalogoForm(),
         "form_personalizado": ItemPersonalizadoForm(),
+        "form_contenedor": ItemContenedorForm(),
+        "form_componente": ComponenteItemForm(),
         "segment": "pedidos",
         "kpis": {"solicitudes_nuevas": solicitudes_pendientes},
     }
@@ -111,103 +113,158 @@ def pedido_detalle(request, pedido_id):
 #  SERVICIOS AUXILIARES (LÓGICA DE NEGOCIO)
 # ==========================================
 
+def _items_de_produccion(pedido):
+    """
+    Retorna los ítems reales que necesitan impresión/material:
+    - Componentes de contenedores
+    - Ítems personalizados al estilo antiguo (sin item_padre, con material)
+    - Ítems de catálogo que requieren impresión (sin stock)
+    """
+    produccion = []
+    for item in pedido.items.filter(item_padre__isnull=True).prefetch_related('componentes'):
+        if item.variante:
+            if item.variante.stock_disponible < item.cantidad:
+                produccion.append(item)
+        elif item.componentes.exists():
+            produccion.extend(item.componentes.all())
+        elif item.material_personalizado:
+            produccion.append(item)
+    return produccion
+
 def _validar_requisitos_produccion(pedido, request):
-    """Verifica impresoras asignadas y su disponibilidad técnica."""
-    items_sin_maquina = []
+    """Verifica impresoras asignadas para todos los ítems que necesitan producción."""
+    items_sin_maquina  = []
     maquinas_con_error = []
 
-    for item in pedido.items.all():
-        necesita_impresion = item.material_personalizado or (item.variante and item.variante.stock_disponible < item.cantidad)
-
-        if necesita_impresion:
-            if not item.impresora_asignada:
-                items_sin_maquina.append(item.descripcion)
-            else:
-                maquina = item.impresora_asignada
-                # LÓGICA REPARADA:
-                # Solo damos error si la máquina NO está disponible 
-                # Y ADEMÁS no es una máquina que ya estuviéramos usando en este mismo pedido.
-                if maquina.estado != "Disponible":
-                    # Si la máquina está "Imprimiendo", verificamos si es por este mismo pedido
-                    # Buscamos si hay algún otro ítem de OTRO pedido usando esta máquina
-                    # Pero para simplificar: si el estado es Mantenimiento u Offline, error siempre.
-                    if maquina.estado in ["Mantenimiento", "Offline"]:
-                        maquinas_con_error.append(f"{maquina.nombre} ({maquina.estado})")
-                    
-                    # Si está "Imprimiendo", solo damos error si el pedido actual NO es el que la tiene
-                    # (Esto previene el error de "doble ítem")
-                    elif maquina.estado == "Imprimiendo":
-                        # Verificamos si hay otros ítems de OTROS pedidos que tengan esta máquina
-                        from .models import ItemPedido
-                        ocupada_por_otro = ItemPedido.objects.filter(
-                            impresora_asignada=maquina
-                        ).exclude(pedido=pedido).exists()
-                        
-                        if ocupada_por_otro:
-                            maquinas_con_error.append(f"{maquina.nombre} (Ocupada por otro pedido)")
+    for item in _items_de_produccion(pedido):
+        if not item.impresora_asignada:
+            nombre = item.descripcion or str(item)
+            items_sin_maquina.append(nombre)
+        else:
+            maquina = item.impresora_asignada
+            if maquina.estado != "Disponible":
+                if maquina.estado in ["Mantenimiento", "Offline"]:
+                    maquinas_con_error.append(f"{maquina.nombre} ({maquina.estado})")
+                elif maquina.estado == "Imprimiendo":
+                    from .models import ItemPedido as _IP
+                    if _IP.objects.filter(impresora_asignada=maquina).exclude(pedido=pedido).exists():
+                        maquinas_con_error.append(f"{maquina.nombre} (Ocupada por otro pedido)")
 
     if items_sin_maquina:
         messages.error(request, f"Falta asignar máquina a: {', '.join(items_sin_maquina)}")
         return False
-
     if maquinas_con_error:
         messages.error(request, f"No se puede iniciar producción: {', '.join(maquinas_con_error)}")
         return False
-
     return True
 
 def _validar_stock_disponible(pedido, request):
-    """Verifica si hay stock suficiente antes de permitir el avance del pedido."""
+    """Verifica stock de materiales y variantes (incluyendo componentes)."""
     faltantes = []
-    
-    for item in pedido.items.all():
+
+    for item in pedido.items.filter(item_padre__isnull=True).prefetch_related('componentes'):
         if item.variante:
             if item.variante.stock_disponible < item.cantidad:
-                faltantes.append(f"{item.descripcion} (Faltan {item.cantidad - item.variante.stock_disponible}u)")
-        
+                faltantes.append(
+                    f"{item.descripcion} (Faltan {item.cantidad - item.variante.stock_disponible}u)"
+                )
+        elif item.componentes.exists():
+            for comp in item.componentes.all():
+                if comp.material_personalizado:
+                    gramos = comp.gramos_por_unidad * comp.cantidad
+                    if comp.material_personalizado.stock_actual < gramos:
+                        faltantes.append(
+                            f"{comp.descripcion} — {comp.material_personalizado} "
+                            f"(Faltan {gramos - comp.material_personalizado.stock_actual}g)"
+                        )
         elif item.material_personalizado:
-            gramos_necesarios = item.gramos_por_unidad * item.cantidad
-            if item.material_personalizado.stock_actual < gramos_necesarios:
-                faltantes.append(f"Material {item.material_personalizado.tipo} (Faltan {gramos_necesarios - item.material_personalizado.stock_actual}g)")
+            gramos = item.gramos_por_unidad * item.cantidad
+            if item.material_personalizado.stock_actual < gramos:
+                faltantes.append(
+                    f"Material {item.material_personalizado.tipo} "
+                    f"(Faltan {gramos - item.material_personalizado.stock_actual}g)"
+                )
 
     if faltantes:
         messages.error(request, "Stock insuficiente: " + " | ".join(faltantes))
         return False
     return True
 
+
 def _revertir_stock_y_liberar(pedido, request):
-    """Devuelve TODO al inventario (Catálogo y Material) y libera impresoras."""
-    for item in pedido.items.all():
+    """
+    Devuelve al inventario solo el material de ítems que NO tuvieron fallo de
+    impresión confirmado (fallo_registrado=False).
+    Los ítems con fallo_registrado=True ya perdieron ese material → no se devuelve.
+    También libera impresoras de los ítems sin fallo.
+    """
+    for item in pedido.items.filter(item_padre__isnull=True).prefetch_related('componentes'):
         if item.variante:
+            # Los ítems de catálogo no tienen fallo de impresión → siempre devolver
             item.variante.stock_disponible += item.cantidad
             item.variante.save()
+
+        elif item.componentes.exists():
+            for comp in item.componentes.all():
+                if comp.fallo_registrado:
+                    # Material ya perdido — no devolver, solo liberar impresora si quedó asignada
+                    if comp.impresora_asignada:
+                        comp.impresora_asignada.estado = "Disponible"
+                        comp.impresora_asignada.save()
+                        comp.impresora_asignada = None
+                        comp.save()
+                    continue
+
+                if comp.material_personalizado:
+                    comp.material_personalizado.stock_actual += comp.gramos_por_unidad * comp.cantidad
+                    comp.material_personalizado.save()
+                if comp.impresora_asignada:
+                    comp.impresora_asignada.estado = "Disponible"
+                    comp.impresora_asignada.save()
+                    comp.impresora_asignada = None
+                    comp.save()
+
         elif item.material_personalizado:
-            gramos = item.gramos_por_unidad * item.cantidad
-            item.material_personalizado.stock_actual += gramos
+            if item.fallo_registrado:
+                # Material ya perdido — solo liberar impresora
+                if item.impresora_asignada:
+                    item.impresora_asignada.estado = "Disponible"
+                    item.impresora_asignada.save()
+                    item.impresora_asignada = None
+                    item.save()
+                continue
+
+            item.material_personalizado.stock_actual += item.gramos_por_unidad * item.cantidad
             item.material_personalizado.save()
 
-    # Liberar máquinas y limpiar asignación
-    items_con_maquina = pedido.items.filter(impresora_asignada__isnull=False)
-    for item in items_con_maquina:
-        maquina = item.impresora_asignada
-        maquina.estado = "Disponible"
-        maquina.save()
+    # Liberar impresoras de ítems raíz con impresora directa (no fallidos)
+    for item in pedido.items.filter(
+        item_padre__isnull=True,
+        impresora_asignada__isnull=False,
+        fallo_registrado=False,
+    ):
+        item.impresora_asignada.estado = "Disponible"
+        item.impresora_asignada.save()
         item.impresora_asignada = None
         item.save()
 
     pedido.stock_descontado = False
-    messages.warning(request, "Stock restaurado y máquinas liberadas.")
+    messages.warning(request, "Stock restaurado y máquinas liberadas (materiales con fallo no recuperados).")
 
 
 def _descontar_stock(pedido, nuevo_estado, request):
-    """Resta del inventario."""
-    for item in pedido.items.all():
+    """Descuenta inventario de variantes y materiales (incluyendo componentes)."""
+    for item in pedido.items.filter(item_padre__isnull=True).prefetch_related('componentes'):
         if item.variante:
             item.variante.stock_disponible -= item.cantidad
             item.variante.save()
+        elif item.componentes.exists():
+            for comp in item.componentes.all():
+                if comp.material_personalizado:
+                    comp.material_personalizado.stock_actual -= comp.gramos_por_unidad * comp.cantidad
+                    comp.material_personalizado.save()
         elif item.material_personalizado:
-            gramos = item.gramos_por_unidad * item.cantidad
-            item.material_personalizado.stock_actual -= gramos
+            item.material_personalizado.stock_actual -= item.gramos_por_unidad * item.cantidad
             item.material_personalizado.save()
 
     pedido.stock_descontado = True
@@ -272,83 +329,68 @@ def registrar_fallo_impresion(request, pedido_id):
     maquinas_a_liberar = set()
 
     with db_transaction.atomic():
-        items_personalizados_total = pedido.items.filter(material_personalizado__isnull=False).count()
-        items_personalizados_fallidos = 0
+        items_produccion = _items_de_produccion(pedido)
+        total_produccion = len(items_produccion)
+        fallidos_count   = 0
 
         for item in pedido.items.filter(id__in=ids_fallidos):
             if not item.material_personalizado:
-                continue  # Solo aplica a ítems personalizados, seguridad extra
+                continue
 
-            gramos = item.gramos_por_unidad * item.cantidad
+            gramos   = item.gramos_por_unidad * item.cantidad
             material = item.material_personalizado
-            motivo = request.POST.get(f'motivo_{item.id}', '').strip() or 'Sin especificar'
+            motivo   = request.POST.get(f"motivo_{item.id}", "").strip() or "Sin especificar"
 
-            # 1. Registrar pérdida
             PerdidaMaterial.objects.create(
-                pedido=pedido,
-                material=material,
-                gramos_perdidos=gramos,
-                motivo=motivo,
-                registrado_por=request.user,
+                pedido=pedido, material=material, gramos_perdidos=gramos,
+                motivo=motivo, registrado_por=request.user,
             )
-
-            # 2. Registrar en historial de inventario para auditoría
             HistorialInventario.objects.create(
-                material=material,
-                accion='Consumo',
+                material=material, accion="Consumo",
                 cantidad_nueva=material.stock_actual,
                 cantidad_anterior=material.stock_actual + gramos,
                 diferencia=-gramos,
             )
-
             perdidas_resumen.append(
                 f"{item.descripcion or 'Pieza'}: {gramos}g de {material} ({motivo})"
             )
-            items_personalizados_fallidos += 1
+            fallidos_count += 1
 
-            # 3. Marcar impresora para liberar si ya no la necesita otro ítem activo del pedido
+            # ← NUEVO: marcar el ítem como fallido
+            item.fallo_registrado = True
+            item.save(update_fields=['fallo_registrado'])
+
             if item.impresora_asignada:
                 maquinas_a_liberar.add(item.impresora_asignada_id)
 
-        # 4. Liberar impresoras solo si ningún otro ítem activo (no fallido) las sigue usando
+        # Liberar solo máquinas no usadas por ítems activos
         for item in pedido.items.exclude(id__in=ids_fallidos).filter(impresora_asignada__isnull=False):
             maquinas_a_liberar.discard(item.impresora_asignada_id)
 
-        from apps.core.models import Impresora
         for maquina_id in maquinas_a_liberar:
-            Impresora.objects.filter(id=maquina_id).update(estado='Disponible')
+            Impresora.objects.filter(id=maquina_id).update(estado="Disponible")
 
-        # 5. Nota interna automática
         NotaPedido.objects.create(
-            pedido=pedido,
-            autor=request.user,
+            pedido=pedido, autor=request.user,
             contenido=(
-                f"FALLO DE IMPRESIÓN — {items_personalizados_fallidos} ítem(s)\n\n"
+                f"FALLO DE IMPRESIÓN — {fallidos_count} componente(s)\n\n"
                 + "\n".join(f"• {r}" for r in perdidas_resumen)
                 + (f"\n\nImpresoras liberadas: {len(maquinas_a_liberar)}" if maquinas_a_liberar else "")
             ),
             visible_para_cliente=False,
         )
 
-        # 6. Si TODOS los ítems personalizados fallaron → regresar a Confirmado
-        #    Si quedan ítems activos → el pedido sigue En_Produccion
-        if items_personalizados_fallidos >= items_personalizados_total:
-            pedido.estado_pedido = 'Confirmado'
+        if fallidos_count >= total_produccion:
+            pedido.estado_pedido    = "Confirmado"
             pedido.stock_descontado = False
             pedido.save()
-            messages.warning(
-                request,
-                f"Todos los ítems personalizados fallaron. "
-                f"Material registrado como pérdida. El pedido regresó a 'Confirmado' para reintentar."
-            )
+            messages.warning(request, "Todos los componentes fallaron. Pedido regresó a 'Confirmado'.")
         else:
-            # El pedido sigue En_Produccion, no tocamos stock_descontado
             pedido.save()
-            restantes = items_personalizados_total - items_personalizados_fallidos
             messages.warning(
                 request,
-                f"Fallo registrado en {items_personalizados_fallidos} ítem(s). "
-                f"Quedan {restantes} ítem(s) en producción. Impresoras liberadas si aplica."
+                f"Fallo registrado en {fallidos_count} componente(s). "
+                f"Quedan {total_produccion - fallidos_count} activos."
             )
 
     return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
@@ -427,47 +469,157 @@ def crear_pedido_manual(request):
         return render(request, "pedidos/pedidos_list.html", context)
 
 
+
 @admin_required
 @require_POST
 def agregar_item_pedido(request, pedido_id):
     pedido = get_object_or_404(Pedido, pk=pedido_id)
+
     if getattr(pedido, "stock_descontado", False):
         messages.error(
             request,
-            "No puedes añadir ítems a un pedido que ya procesó inventario. Regresa el estado a 'En Espera' primero.",
+            "No puedes añadir ítems a un pedido que ya procesó inventario. "
+            "Regresa el estado a 'En Espera' primero.",
         )
         return redirect("pedidos:pedido_detalle", pedido_id=pedido.id)
 
     tipo = request.POST.get("tipo_item")
-    form = (
-        ItemCatalogoForm(request.POST)
-        if tipo == "catalogo"
-        else ItemPersonalizadoForm(request.POST)
-    )
 
-    if form.is_valid():
-        item = form.save(commit=False)
-        item.pedido = pedido
-        if tipo == "catalogo":
+    if tipo == "catalogo":
+        form = ItemCatalogoForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.pedido          = pedido
             item.precio_unitario = item.variante.precio_final
-            item.descripcion = item.variante.producto.nombre
+            item.descripcion     = item.variante.producto.nombre
             item.gramos_por_unidad = item.variante.peso_total
             item.costo_material_unitario = item.variante.costo_materiales
+            item.save()
+            messages.success(request, "Producto del catálogo agregado.")
         else:
-            item.costo_material_unitario = item.material_personalizado.costo_por_gramo
-        item.save()
-        messages.success(request, "Item agregado Correctamente.")
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}" if field != "__all__" else error)
+
+    elif tipo == "contenedor":
+        # Nuevo flujo: crea el ítem contenedor (solo nombre + cantidad)
+        form = ItemContenedorForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.pedido          = pedido
+            item.save()
+            messages.success(
+                request,
+                f"Producto '{item.descripcion}' creado. Ahora agrégale los componentes de producción."
+            )
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, error)
+
     else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                (
-                    messages.error(request, f"{error}")
-                    if field in ["material_personalizado", "__all__"]
-                    else messages.error(request, f"{field}: {error}")
-                )
+        # Compatibilidad con el flujo antiguo de "personalizado" (ítem simple con material)
+        form = ItemPersonalizadoForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.pedido = pedido
+            item.costo_material_unitario = item.material_personalizado.costo_por_gramo
+            item.save()
+            messages.success(request, "Ítem personalizado agregado.")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, error if field in ["material_personalizado", "__all__"] else f"{field}: {error}")
 
     return redirect("pedidos:pedido_detalle", pedido_id=pedido.id)
 
+
+@admin_required
+@require_POST
+def agregar_componente(request, item_id):
+    """
+    Agrega un componente de producción a un ítem contenedor.
+    Los componentes son los detalles técnicos (material, gramos, precio).
+    """
+    item_padre = get_object_or_404(ItemPedido, id=item_id)
+    pedido     = item_padre.pedido
+
+    if getattr(pedido, "stock_descontado", False):
+        messages.error(request, "No se pueden añadir componentes a un pedido con stock ya descontado.")
+        return redirect("pedidos:pedido_detalle", pedido_id=pedido.id)
+
+    if item_padre.variante:
+        messages.error(request, "No se pueden añadir componentes a ítems del catálogo.")
+        return redirect("pedidos:pedido_detalle", pedido_id=pedido.id)
+
+    form = ComponenteItemForm(request.POST)
+    if form.is_valid():
+        componente = form.save(commit=False)
+        componente.pedido      = pedido
+        componente.item_padre  = item_padre
+        componente.costo_material_unitario = componente.material_personalizado.costo_por_gramo
+        componente.save()   # save() dispara actualizar_totales vía el signal del contenedor
+        messages.success(request, f"Componente '{componente.descripcion}' agregado.")
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(request, error)
+
+    return redirect("pedidos:pedido_detalle", pedido_id=pedido.id)
+
+
+@admin_required
+def eliminar_componente(request, componente_id):
+    """Elimina un componente de producción."""
+    componente = get_object_or_404(ItemPedido, id=componente_id)
+
+    if not componente.es_componente:
+        return JsonResponse({"success": False, "message": "No es un componente válido."}, status=400)
+
+    if getattr(componente.pedido, "stock_descontado", False):
+        return JsonResponse(
+            {"success": False, "message": "No se puede eliminar un componente con stock ya descontado."},
+            status=400,
+        )
+
+    try:
+        pedido_id = componente.pedido_id
+        componente.delete()
+        # Recalculamos el padre manualmente (ya que el signal de delete llama a actualizar_totales)
+        return JsonResponse({"success": True, "message": "Componente eliminado."})
+    except Exception as e:
+        return JsonResponse({"success": False, "message": str(e)}, status=400)
+
+
+@admin_required
+def editar_componente(request, componente_id):
+    """Edita un componente de producción existente."""
+    componente = get_object_or_404(ItemPedido, id=componente_id)
+
+    if not componente.es_componente:
+        messages.error(request, "No es un componente válido.")
+        return redirect("pedidos:pedido_detalle", pedido_id=componente.pedido_id)
+
+    if getattr(componente.pedido, "stock_descontado", False):
+        messages.error(request, "No se puede editar con stock ya descontado.")
+        return redirect("pedidos:pedido_detalle", pedido_id=componente.pedido_id)
+
+    if request.method == "POST":
+        form = ComponenteItemForm(request.POST, instance=componente)
+        if form.is_valid():
+            comp = form.save(commit=False)
+            comp.costo_material_unitario = comp.material_personalizado.costo_por_gramo
+            comp.save()
+            messages.success(request, "Componente actualizado.")
+            return redirect("pedidos:pedido_detalle", pedido_id=componente.pedido_id)
+    else:
+        form = ComponenteItemForm(instance=componente)
+
+    return render(request, "pedidos/modals/editar_componente.html", {
+        "form":       form,
+        "componente": componente,
+        "pedido":     componente.pedido,
+    })
 
 @admin_required
 def editar_item_pedido(request, item_id):

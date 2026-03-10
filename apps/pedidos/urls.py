@@ -14,6 +14,9 @@ urlpatterns = [
     path('pedidos/item/<int:item_id>/eliminar/', views.eliminar_item_pedido, name='eliminar_item'),
     path('pedidos/<int:pedido_id>/cambiar-estado/', views.cambiar_estado_pedido, name='cambiar_estado'),
     path('pedidos/item/<int:item_id>/asignar-impresora/', views.asignar_impresora_item, name='asignar_impresora'),
+    path('pedidos/items/<int:item_id>/componentes/agregar/', views.agregar_componente, name='agregar_componente'),
+    path('pedidos/componentes/<int:componente_id>/eliminar/', views.eliminar_componente, name='eliminar_componente'),
+    path('pedidos/componentes/<int:componente_id>/editar/', views.editar_componente, name='editar_componente'),
 
     # Notas
     path('pedido/<int:pedido_id>/notas/agregar/', views.agregar_nota_pedido, name='agregar_nota_pedido'),

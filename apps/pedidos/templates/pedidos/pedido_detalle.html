@@ -35,7 +35,6 @@
                                     class="bg-gray-800 border border-gray-700 text-white text-sm rounded-xl px-3 h-[38px] focus:ring-blue-500">
                                 {% for cod, nombre in estados %}
                                     {% if cod != 'Fallido' %}
-                                        {# Fallido ya no es una opción de dropdown #}
                                         <option value="{{ cod }}"
                                                 {% if pedido.estado_pedido == cod %}selected{% endif %}>
                                             {{ nombre }}
@@ -51,19 +50,6 @@
                                 <span class="hidden sm:inline">Actualizar</span>
                             </button>
                         {% endif %}
-                        <a href="{% url 'pedidos:generar_factura' pedido.id %}"
-                           target="_blank"
-                           class="flex items-center gap-1.5 px-3 py-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 hover:border-gray-500 text-white rounded-xl text-sm font-bold transition-all"
-                           title="Descargar factura PDF">
-                            <svg class="w-4 h-4 text-[#10b981]"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 13l2 2 4-4m-6 6h.01" />
-                            </svg>
-                            <span class="hidden sm:inline">Factura PDF</span>
-                        </a>
                     {% else %}
                         <div class="text-gray-500 text-xs italic bg-gray-800/50 px-3 py-2 rounded-xl border border-gray-700">
                             Agregue ítems para cambiar estado
@@ -90,7 +76,8 @@
                         </svg>
                         <span>Catálogo</span>
                     </button>
-                    <button onclick="abrirModal('modalItemPersonalizado')"
+                    {# ── NUEVO: abre modal de contenedor (producto personalizado con componentes) ── #}
+                    <button onclick="abrirModal('modalItemContenedor')"
                             class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -108,16 +95,15 @@
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
             {# ── COL 1 + 2: Tabla de ítems (ocupa 2 columnas) ── #}
             <div class="xl:col-span-2 space-y-4">
-                {# Tabla de ítems #}
                 <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
                     <div class="px-4 py-3 border-b border-gray-700 bg-gray-700/30 flex items-center justify-between">
                         <h3 class="font-bold text-white text-sm">Ítems del Pedido</h3>
                         <span class="text-xs text-gray-500">{{ items|length }} ítem{{ items|length|pluralize:"s" }}</span>
                     </div>
-                    <div class="overflow-x-auto max-h-[320px] overflow-y-auto scrollbar-thin">
+                    <div class="overflow-x-auto max-h-[380px] overflow-y-auto scrollbar-thin">
                         <table class="w-full text-left text-gray-400 text-sm">
                             <thead>
-                                <tr class="bg-[#1e293b]/60 text-gray-400 text-[10px] uppercase tracking-widest sticky top-0 z-10">
+                                <tr class="bg-[#1e293b]/20 text-gray-400 text-[10px] border-b border-gray-700 uppercase tracking-widest sticky top-0 z-10">
                                     <th class="px-4 py-2.5">Producto / Descripción</th>
                                     <th class="px-4 py-2.5">Consumo Material</th>
                                     <th class="px-4 py-2.5 text-center">Tipo</th>
@@ -129,124 +115,259 @@
                             </thead>
                             <tbody class="divide-y divide-gray-700">
                                 {% for item in items %}
-                                    <tr class="hover:bg-gray-800/30 transition-colors">
-                                        <td class="px-4 py-2.5">
-                                            <div class="flex flex-col">
+                                    {% if not item.es_componente %}
+                                        {# ══ FILA PRINCIPAL ══ #}
+                                        <tr class="hover:bg-gray-800/30 transition-colors {% if item.es_contenedor %}bg-[#0f172a]/60{% endif %}">
+                                            {# ── Producto / Descripción ── #}
+                                            <td class="px-4 py-2.5">
                                                 <div class="flex items-center gap-2">
-                                                    <span class="text-white font-medium text-sm">
-                                                        {% if item.variante %}
-                                                            {{ item.variante.producto.nombre }}
-                                                        {% else %}
-                                                            {{ item.descripcion|default:"Sin descripción" }}
-                                                        {% endif %}
-                                                    </span>
-                                                    {% if item.variante %}
-                                                        {% for detalle in item.variante.detalles_material.all %}
-                                                            {% if detalle.material.stock_actual < item.gramos_totales %}
-                                                                <svg class="w-4 h-4 text-orange-500 animate-pulse flex-shrink-0"
-                                                                     fill="currentColor"
-                                                                     viewBox="0 0 20 20"
-                                                                     title="Falta material">
-                                                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                                                </svg>
+                                                    {# Chevron toggle — solo contenedores #}
+                                                    {% if item.es_contenedor %}
+                                                        <button type="button"
+                                                                onclick="toggleComponentes({{ item.id }})"
+                                                                id="toggle-btn-{{ item.id }}"
+                                                                class="w-5 h-5 rounded-md bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors shrink-0"
+                                                                title="Ver componentes de producción">
+                                                            <svg class="w-5 h-5 transition-transform duration-200"
+                                                                 id="chevron-{{ item.id }}"
+                                                                 fill="none"
+                                                                 stroke="currentColor"
+                                                                 viewBox="0 0 24 24"
+                                                                 style="transform: rotate(0deg)">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m10 16 4-4-4-4" />
+                                                            </svg>
+                                                        </button>
+                                                    {% endif %}
+                                                    <div class="flex flex-col">
+                                                        <div class="flex items-center gap-1.5">
+                                                            <span class="text-white font-medium text-sm {% if item.es_contenedor %}font-bold{% endif %}">
+                                                                {% if item.variante %}
+                                                                    {{ item.variante.producto.nombre }}
+                                                                {% else %}
+                                                                    {{ item.descripcion|default:"Sin descripción" }}
+                                                                {% endif %}
+                                                            </span>
+                                                            {# Alerta stock bajo — solo catálogo #}
+                                                            {% if item.variante %}
+                                                                {% for detalle in item.variante.detalles_material.all %}
+                                                                    {% if detalle.material.stock_actual < item.gramos_totales %}
+                                                                        <svg class="w-4 h-4 text-orange-500 animate-pulse flex-shrink-0"
+                                                                             fill="currentColor"
+                                                                             viewBox="0 0 20 20"
+                                                                             title="Falta material">
+                                                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                                        </svg>
+                                                                    {% endif %}
+                                                                {% endfor %}
                                                             {% endif %}
-                                                        {% endfor %}
-                                                    {% elif item.material_personalizado and item.material_personalizado.stock_actual < item.gramos_totales %}
-                                                        <svg class="w-4 h-4 text-red-500 animate-pulse flex-shrink-0"
-                                                             fill="currentColor"
-                                                             viewBox="0 0 20 20"
-                                                             title="Falta material personalizado">
-                                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                                        </svg>
-                                                    {% endif %}
-                                                </div>
-                                                <span class="text-[10px] text-blue-400">
-                                                    Mat:
-                                                    {% if item.variante %}
-                                                        {% for detalle in item.variante.detalles_material.all %}
-                                                            {{ detalle.material.tipo }} {{ detalle.material.color.nombre }}
-                                                            {% if not forloop.last %},{% endif %}
-                                                        {% endfor %}
-                                                    {% else %}
-                                                        {{ item.material_personalizado.tipo }} {{ item.material_personalizado.color }}
-                                                    {% endif %}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td class="px-4 py-2.5 text-center">{{ item.gramos_totales }} g</td>
-                                        <td class="px-4 py-2.5 text-center">
-                                            {% if item.variante %}
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">Catálogo</span>
-                                            {% else %}
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-wider">Personalizado</span>
-                                            {% endif %}
-                                        </td>
-                                        <td class="px-4 py-2.5 font-mono text-sm">{{ item.cantidad }} u.</td>
-                                        <td class="px-4 py-2.5">
-                                            {% if pedido.estado_pedido == 'En_Produccion' or pedido.estado_pedido == 'Listo' or pedido.estado_pedido == 'Entregado' %}
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-900/30 text-blue-400 border border-blue-800">
-                                                    <svg class="w-3 h-3 mr-1 animate-pulse"
-                                                         fill="currentColor"
-                                                         viewBox="0 0 20 20">
-                                                        <circle cx="10" cy="10" r="5" />
-                                                    </svg>
-                                                    {% if item.variante %}
-                                                        Del Catálogo
-                                                    {% else %}
-                                                        {{ item.impresora_asignada.nombre|default:"Sin máquina" }}
-                                                    {% endif %}
-                                                </span>
-                                            {% elif item.variante %}
-                                                <span class="text-xs text-gray-400 italic">De Stock</span>
-                                            {% else %}
-                                                <form method="post"
-                                                      action="{% url 'pedidos:asignar_impresora' item.id %}"
-                                                      class="flex items-center">
-                                                    {% csrf_token %}
-                                                    <select name="impresora_id"
-                                                            onchange="this.form.submit()"
-                                                            class="bg-gray-900 border border-gray-700 text-[11px] rounded p-1 text-gray-300">
-                                                        <option value="">Sin asignar...</option>
-                                                        {% if item.impresora_asignada %}
-                                                            <option value="{{ item.impresora_asignada.id }}" selected>{{ item.impresora_asignada.nombre }}</option>
+                                                        </div>
+                                                        {# Subtítulo #}
+                                                        {% if item.es_contenedor %}
+                                                            {% with n=item.componentes.count %}
+                                                                <span class="text-[10px] text-blue-400/70">{{ n }} componente{{ n|pluralize }} de producción</span>
+                                                            {% endwith %}
+                                                        {% elif item.variante %}
+                                                            <span class="text-[10px] text-blue-400">
+                                                                Mat:
+                                                                {% for detalle in item.variante.detalles_material.all %}
+                                                                    {{ detalle.material.tipo }} {{ detalle.material.color.nombre }}
+                                                                    {% if not forloop.last %},{% endif %}
+                                                                {% endfor %}
+                                                            </span>
                                                         {% endif %}
-                                                        {% for imp in impresoras %}
-                                                            {% if imp.id != item.impresora_asignada_id %}<option value="{{ imp.id }}">{{ imp.nombre }}</option>{% endif %}
-                                                        {% endfor %}
-                                                    </select>
-                                                </form>
-                                            {% endif %}
-                                        </td>
-                                        <td class="px-4 py-2.5 text-right text-white font-bold font-mono">RD$ {{ item.subtotal }}</td>
-                                        <td class="px-4 py-2.5 text-center">
-                                            {% if pedido.estado_pedido == 'En_Espera' %}
-                                                <div class="flex items-center justify-center gap-1">
-                                                    {% if not item.variante %}
-                                                        <button onclick="abrirModalEditarItem({{ item.id }}, '{% url 'pedidos:editar_item' item.id %}')"
-                                                                class="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded-lg">
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            {# ── Consumo Material ── #}
+                                            <td class="px-4 py-2.5 text-center text-xs">
+                                                {% if item.es_contenedor %}
+                                                    <span class="text-gray-600 italic text-[10px]">ver componentes ↓</span>
+                                                {% else %}
+                                                    {{ item.gramos_totales }} g
+                                                {% endif %}
+                                            </td>
+                                            {# ── Tipo badge ── #}
+                                            <td class="px-4 py-2.5 text-center">
+                                                {% if item.variante %}
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">Catálogo</span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-wider">Personalizado</span>
+                                                {% endif %}
+                                            </td>
+                                            {# ── Cantidad ── #}
+                                            <td class="px-4 py-2.5 font-mono text-sm">{{ item.cantidad }} u.</td>
+                                            {# ── Producción / Impresora ── #}
+                                            {# Los contenedores no tienen impresora propia — sus componentes sí #}
+                                            {# Los ítems de catálogo van directo de stock #}
+                                            <td class="px-4 py-2.5">
+                                                {% if item.es_contenedor %}
+                                                    <span class="text-xs text-gray-600 italic">— componentes</span>
+                                                {% elif item.variante %}
+                                                    {% if pedido.estado_pedido == 'En_Produccion' or pedido.estado_pedido == 'Listo' or pedido.estado_pedido == 'Entregado' %}
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                <circle cx="10" cy="10" r="5" />
+                                                            </svg>
+                                                            Del Catálogo
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="text-xs text-gray-400 italic">De Stock</span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </td>
+                                            {# ── Subtotal ── #}
+                                            <td class="px-4 py-2.5 text-right text-white font-bold font-mono">RD$ {{ item.subtotal }}</td>
+                                            {# ── Acciones ── #}
+                                            <td class="px-4 py-2.5 text-center">
+                                                {% if pedido.estado_pedido == 'En_Espera' %}
+                                                    <div class="flex items-center justify-center gap-1">
+                                                        {# Agregar componente — solo contenedores #}
+                                                        {% if item.es_contenedor %}
+                                                            <button onclick="abrirModalComponente({{ item.id }}, '{% url 'pedidos:agregar_componente' item.id %}')"
+                                                                    class="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded-lg"
+                                                                    title="Agregar componente">
+                                                                <svg class="w-3.5 h-3.5"
+                                                                     fill="none"
+                                                                     stroke="currentColor"
+                                                                     viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                                                </svg>
+                                                            </button>
+                                                        {% endif %}
+                                                        {# Catálogo: no se edita, solo se elimina #}
+                                                        <button onclick="eliminarItem({{ item.id }})"
+                                                                class="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg"
+                                                                title="Eliminar ítem">
                                                             <svg class="w-3.5 h-3.5"
                                                                  fill="none"
                                                                  stroke="currentColor"
                                                                  viewBox="0 0 24 24">
-                                                                <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                             </svg>
                                                         </button>
-                                                    {% endif %}
-                                                    <button onclick="eliminarItem({{ item.id }})"
-                                                            class="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg">
-                                                        <svg class="w-3.5 h-3.5"
-                                                             fill="none"
-                                                             stroke="currentColor"
-                                                             viewBox="0 0 24 24">
-                                                            <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            {% else %}
-                                                <span class="text-gray-700 text-xs">—</span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-gray-700 text-xs">—</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {# ══ FILAS DE COMPONENTES (ocultas por defecto) ══ #}
+                                        {% if item.es_contenedor %}
+                                            {% for comp in item.componentes.all %}
+                                                <tr class="comp-rows-{{ item.id }} hidden"
+                                                    style="background: rgba(59,130,246,0.03);
+                                                           border-left: 2px solid rgba(59,130,246,0.15)">
+                                                    {# Nombre componente (indentado) #}
+                                                    <td class="px-4 py-2 pl-12">
+                                                        <div class="flex flex-col">
+                                                            <div class="flex items-center gap-1.5">
+                                                                {% if comp.material_personalizado and comp.material_personalizado.stock_actual < comp.gramos_totales %}
+                                                                    <svg class="w-3 h-3 text-red-400 flex-shrink-0"
+                                                                         fill="currentColor"
+                                                                         viewBox="0 0 20 20">
+                                                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                                    </svg>
+                                                                    <span class="text-red-400/80 text-xs font-medium">{{ comp.descripcion }}</span>
+                                                                    <span class="text-[10px] text-red-400/60 font-mono">(stock: {{ comp.material_personalizado.stock_actual }}g)</span>
+                                                                {% else %}
+                                                                    <span class="text-gray-300 text-xs font-medium">{{ comp.descripcion }}</span>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    {# Material del componente #}
+                                                    <td class="px-4 py-2 text-xs text-blue-400/80">
+                                                        {% if comp.material_personalizado %}
+                                                            {{ comp.material_personalizado.marca }} {{ comp.material_personalizado.tipo }} {{ comp.material_personalizado.color }} · {{ comp.gramos_totales }}g
+                                                        {% else %}
+                                                            <span class="text-red-400/70 italic">Sin material</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    {# Tipo badge componente #}
+                                                    <td class="px-4 py-2 text-center">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold bg-gray-700/50 text-gray-500 border border-gray-600/30 uppercase">Comp.</span>
+                                                    </td>
+                                                    {# Cantidad #}
+                                                    <td class="px-4 py-2 font-mono text-xs text-gray-500">{{ comp.cantidad }} u.</td>
+                                                    {# Impresora del componente #}
+                                                    <td class="px-4 py-2">
+                                                        {% if pedido.estado_pedido == 'En_Produccion' or pedido.estado_pedido == 'Listo' or pedido.estado_pedido == 'Entregado' %}
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-900/30 text-blue-400 border border-blue-800">
+                                                                <svg class="w-2.5 h-2.5 mr-1 animate-pulse"
+                                                                     fill="currentColor"
+                                                                     viewBox="0 0 20 20">
+                                                                    <circle cx="10" cy="10" r="5" />
+                                                                </svg>
+                                                                {{ comp.impresora_asignada.nombre|default:"Sin máquina" }}
+                                                            </span>
+                                                        {% else %}
+                                                            <form method="post"
+                                                                  action="{% url 'pedidos:asignar_impresora' comp.id %}"
+                                                                  class="flex items-center">
+                                                                {% csrf_token %}
+                                                                <select name="impresora_id"
+                                                                        onchange="this.form.submit()"
+                                                                        class="bg-gray-900 border border-gray-700/50 text-[10px] rounded p-0.5 text-gray-400">
+                                                                    <option value="">Sin asignar...</option>
+                                                                    {% if comp.impresora_asignada %}
+                                                                        <option value="{{ comp.impresora_asignada.id }}" selected>{{ comp.impresora_asignada.nombre }}</option>
+                                                                    {% endif %}
+                                                                    {% for imp in impresoras %}
+                                                                        {% if imp.id != comp.impresora_asignada_id %}<option value="{{ imp.id }}">{{ imp.nombre }}</option>{% endif %}
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </form>
+                                                        {% endif %}
+                                                    </td>
+                                                    {# Subtotal componente #}
+                                                    <td class="px-4 py-2 text-right text-gray-500 font-mono text-xs">RD$ {{ comp.subtotal }}</td>
+                                                    {# Acciones componente #}
+                                                    <td class="px-4 py-2 text-center">
+                                                        {% if pedido.estado_pedido == 'En_Espera' %}
+                                                            <div class="flex items-center justify-center gap-1">
+                                                                <button onclick="abrirModalEditarItem({{ comp.id }}, '{% url 'pedidos:editar_item' comp.id %}')"
+                                                                        class="p-1 text-blue-400/60 hover:bg-blue-500/10 rounded-md"
+                                                                        title="Editar componente">
+                                                                    <svg class="w-3.5 h-3.5"
+                                                                         fill="none"
+                                                                         stroke="currentColor"
+                                                                         viewBox="0 0 24 24">
+                                                                        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                    </svg>
+                                                                </button>
+                                                                <button onclick="eliminarItem({{ comp.id }})"
+                                                                        class="p-1 text-red-400/60 hover:bg-red-500/10 rounded-md"
+                                                                        title="Eliminar componente">
+                                                                    <svg class="w-3.5 h-3.5"
+                                                                         fill="none"
+                                                                         stroke="currentColor"
+                                                                         viewBox="0 0 24 24">
+                                                                        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+                                                        {% else %}
+                                                            <span class="text-gray-700 text-xs">—</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% empty %}
+                                                <tr class="comp-rows-{{ item.id }} hidden"
+                                                    style="background: rgba(59,130,246,0.02)">
+                                                    <td colspan="7"
+                                                        class="px-12 py-3 text-center text-gray-600 text-xs italic">
+                                                        Sin componentes aún.
+                                                        {% if pedido.estado_pedido == 'En_Espera' %}
+                                                            <button onclick="abrirModalComponente({{ item.id }}, '{% url 'pedidos:agregar_componente' item.id %}')"
+                                                                    class="ml-2 text-blue-400/70 hover:text-blue-400 hover:underline font-medium transition-colors">
+                                                                + Agregar componente
+                                                            </button>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        {% endif %}
+                                    {% endif %}
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -276,7 +397,6 @@
                                 </button>
                             {% endif %}
                         </div>
-                        {# Solicitud del cliente #}
                         <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Solicitud del Cliente</p>
                         <div class="text-gray-400 text-xs bg-gray-900/30 p-2.5 rounded-lg border border-gray-700/30 italic mb-3 min-h-[60px]">
                             {% if pedido.descripcion %}
@@ -285,7 +405,6 @@
                                 <span class="text-gray-600">Sin descripción.</span>
                             {% endif %}
                         </div>
-                        {# Historial de notas #}
                         <p class="text-[10px] text-emerald-500 uppercase font-bold tracking-wider mb-1">Historial de Anotaciones</p>
                         <div class="space-y-2 max-h-[160px] overflow-y-auto pr-1 scrollbar-thin">
                             {% for nota in pedido.anotaciones.all %}
@@ -307,7 +426,6 @@
                                 </div>
                             {% endfor %}
                         </div>
-                        {# Multimedia #}
                         {% if pedido.solicitud %}
                             {% if pedido.solicitud.imagen_referencia or pedido.solicitud.enlace_referencia %}
                                 <div class="mt-3 pt-3 border-t border-gray-700/50">
@@ -385,7 +503,6 @@
                         </a>
                     </div>
                     <div class="p-4 space-y-4">
-                        {# Método de pago #}
                         <div>
                             <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2">Método elegido por el cliente</p>
                             {% if pedido.metodo_pago_preferido %}
@@ -433,7 +550,6 @@
                                 </div>
                             {% endif %}
                         </div>
-                        {# Comprobante — solo si es transferencia #}
                         {% if pedido.metodo_pago_preferido == 'Transferencia' %}
                             <div class="border-t border-gray-700 pt-3">
                                 <div class="flex items-center justify-between mb-2">
@@ -470,7 +586,6 @@
                                 {% endif %}
                             </div>
                         {% endif %}
-                        {# Saldo pendiente + registrar pago #}
                         <div class="border-t border-gray-700 pt-3">
                             <div class="text-center py-2">
                                 <p class="text-2xl font-bold font-mono {% if pedido.esta_pagado %}text-green-400{% else %}text-red-400{% endif %}">
@@ -479,14 +594,28 @@
                                 <p class="text-xs text-gray-500 uppercase mt-0.5 font-bold tracking-widest">Saldo Pendiente</p>
                             </div>
                             <button onclick="abrirModal('modalRegistrarPago')"
-                                    class="w-full mt-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold uppercase py-2.5 rounded-xl transition-all tracking-widest border border-gray-600 flex items-center justify-center gap-2">
+                                    class="w-full mt-2 bg-green-700 hover:bg-green-600 text-white text-xs font-bold uppercase py-2.5 rounded-xl transition-all tracking-widest border border-gray-600 flex items-center justify-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                 </svg>
                                 Registrar Pago
                             </button>
+                            {% if items %}
+                                <a href="{% url 'pedidos:generar_factura' pedido.id %}"
+                                   target="_blank"
+                                   class="w-full mt-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold uppercase py-2.5 rounded-xl transition-all tracking-widest border border-gray-600 flex items-center justify-center gap-2"
+                                   title="Descargar factura PDF">
+                                    <svg class="w-4 h-4 text-[#10b981]"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 13l2 2 4-4m-6 6h.01" />
+                                    </svg>
+                                    <span class="hidden sm:inline">Factura PDF</span>
+                                </a>
+                            {% endif %}
                         </div>
-                        {# Pagos registrados #}
                         {% if pagos %}
                             <div class="border-t border-gray-700 pt-3">
                                 <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2">Pagos registrados</p>
@@ -506,13 +635,13 @@
                     </div>
                 </div>
             </div>
-            {# fin col derecha #}
         </div>
         {# fin grid #}
         {# ── MODALES ── #}
-        {% include "pedidos/modals/item_catalogo.html" with modal_id="modalItemCatalogo" title="Item del Catálogo" description=" Añade un producto del catálogo al pedido " max_width="max-w-3xl" %}
-        {% include "pedidos/modals/item_personalizado.html" with modal_id="modalItemPersonalizado" title="Item Personalizado" description=" Añade un producto personalizado al pedido " max_width="max-w-2xl" %}
-        {% include "pedidos/modals/editar_notas.html" with modal_id="modalNotasPedido" title="Notas del Pedido" description=" Añade notas al pedido " max_width="max-w-2xl" %}
+        {% include "pedidos/modals/item_catalogo.html" with modal_id="modalItemCatalogo" title="Item del Catálogo" description="Añade un producto del catálogo al pedido" max_width="max-w-3xl" %}
+        {% include "pedidos/modals/item_contenedor.html" with modal_id="modalItemContenedor" title="Nuevo Producto Personalizado" description="Define el producto final y luego agrega sus componentes de producción" max_width="max-w-lg" %}
+        {% include "pedidos/modals/agregar_componente.html" with modal_id="modalAgregarComponente" title="Agregar Componente" description="Material, gramos y precio del componente de producción" max_width="max-w-2xl" %}
+        {% include "pedidos/modals/editar_notas.html" with modal_id="modalEditarNotas" title="Notas del Pedido" description="Añade notas al pedido" max_width="max-w-2xl" %}
         {% include "pedidos/modals/comprobante_cliente.html" with modal_id="modalComprobante" title="Comprobante del Cliente" description="Sube el comprobante de pago" max_width="max-w-lg" %}
         {% include "pedidos/modals/registrar_pago.html" with modal_id="modalRegistrarPago" title="Registrar Pago" description="Registra un pago para este pedido" max_width="max-w-lg" %}
         {% if pedido.estado_pedido == 'En_Produccion' %}
