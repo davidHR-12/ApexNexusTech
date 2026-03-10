@@ -1,5 +1,5 @@
 from django import forms
-from .models import Impresora, CardPublica, ConfiguracionSitio, ConfiguracionCalculadora
+from .models import Impresora, CardPublica, ConfiguracionSitio, ConfiguracionCalculadora, ConfiguracionFactura
 from apps.core.utils import TailwindModelForm
 
 
@@ -189,3 +189,27 @@ class ConfiguracionCalculadoraForm(forms.ModelForm):
             'margen_error_porcentaje', 'multiplicador_ganancia',
         ]
         widgets = {f: forms.NumberInput(attrs={'class': INPUT_CLASS, 'step': '0.01'}) for f in fields}
+    
+_INPUT  = "w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2.5 px-4 text-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] outline-none transition"
+_FILE   = "w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2 px-4 text-gray-400 focus:border-[#10b981] outline-none transition text-sm file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-[#10b981]/10 file:text-[#10b981] hover:file:bg-[#10b981]/20"
+
+
+class ConfiguracionFacturaForm(forms.ModelForm):
+    class Meta:
+        model  = ConfiguracionFactura
+        fields = [
+            'nombre_negocio', 'slogan', 'rnc',
+            'telefono', 'email', 'direccion',
+            'logo', 'footer_texto', 'nota_legal',
+        ]
+        widgets = {
+            'nombre_negocio': forms.TextInput(attrs={'class': _INPUT}),
+            'slogan':         forms.TextInput(attrs={'class': _INPUT}),
+            'rnc':            forms.TextInput(attrs={'class': _INPUT}),
+            'telefono':       forms.TextInput(attrs={'class': _INPUT}),
+            'email':          forms.EmailInput(attrs={'class': _INPUT}),
+            'direccion':      forms.TextInput(attrs={'class': _INPUT}),
+            'logo':           forms.ClearableFileInput(attrs={'class': _FILE}),
+            'footer_texto':   forms.Textarea(attrs={'class': _INPUT, 'rows': 2}),
+            'nota_legal':     forms.Textarea(attrs={'class': _INPUT, 'rows': 2}),
+        }

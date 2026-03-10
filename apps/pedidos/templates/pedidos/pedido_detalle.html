@@ -51,6 +51,19 @@
                                 <span class="hidden sm:inline">Actualizar</span>
                             </button>
                         {% endif %}
+                        <a href="{% url 'pedidos:generar_factura' pedido.id %}"
+                           target="_blank"
+                           class="flex items-center gap-1.5 px-3 py-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 hover:border-gray-500 text-white rounded-xl text-sm font-bold transition-all"
+                           title="Descargar factura PDF">
+                            <svg class="w-4 h-4 text-[#10b981]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 13l2 2 4-4m-6 6h.01" />
+                            </svg>
+                            <span class="hidden sm:inline">Factura PDF</span>
+                        </a>
                     {% else %}
                         <div class="text-gray-500 text-xs italic bg-gray-800/50 px-3 py-2 rounded-xl border border-gray-700">
                             Agregue ítems para cambiar estado

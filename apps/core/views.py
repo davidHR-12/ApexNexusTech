@@ -1,30 +1,34 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Sum, Q, Count
-from django.utils import timezone
-from decimal import Decimal, ROUND_HALF_UP
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse
-from django.contrib import messages
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
-
-
-import os
+# Librerías estándar de Python
 import json
-from django.conf import settings
+import os
+from decimal import Decimal, ROUND_HALF_UP
 
-from apps.pedidos.models import Pago, Pedido, ConfiguracionPago
+# Django: Núcleo y Utilidades
+from django.conf import settings
+from django.contrib import messages
+from django.db.models import Count, Q, Sum
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+
+# Django: Decoradores
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods, require_POST
+
+# Apps locales: Modelos y Decoradores externos
 from apps.finanzas.models import Gasto
 from apps.materiales.models import Material
+from apps.pedidos.models import ConfiguracionPago, Pago, Pedido
 from apps.productos.models import Categoria, Producto
 from apps.usuarios.decorators import admin_required
 
-from .models import Impresora, ConfiguracionSitio, CardPublica, ConfiguracionCalculadora
+# Directorio actual: Modelos y Formularios
 from .forms import (
-    ImpresoraForm, CardPublicaForm, EstadisticasForm, MaterialesForm,
-    ProductosDestacadosForm, ProcesoForm, ContactoForm, ConfiguracionCalculadoraForm
+    CardPublicaForm, ConfiguracionCalculadoraForm, ContactoForm,
+    EstadisticasForm, ImpresoraForm, MaterialesForm,
+    ProcesoForm, ProductosDestacadosForm
 )
-
+from .models import CardPublica, ConfiguracionCalculadora, ConfiguracionSitio, Impresora
 
 # ════════════════════════════════════════════════════════════════════
 # UTILIDADES PRIVADAS (Helper Functions)
@@ -221,42 +225,42 @@ def calcular_ajax(request):
         def d(key, default=0):
             return Decimal(str(data.get(key, default) or 0))
 
-        precio_kg               = d('precio_kg')
-        precio_kwh              = d('precio_kwh')
-        consumo_watts           = d('consumo_watts')
-        vida_util_horas         = d('vida_util_horas')
-        precio_repuestos        = d('precio_repuestos')
-        margen_error_pct        = d('margen_error_porcentaje')
-        tiempo_horas            = d('tiempo_horas')
-        tiempo_minutos          = d('tiempo_minutos')
-        gramos                  = d('gramos')
-        insumos                 = d('insumos')
-        multiplicador           = d('multiplicador', 4)
+        precio_kg= d('precio_kg')
+        precio_kwh= d('precio_kwh')
+        consumo_watts= d('consumo_watts')
+        vida_util_horas= d('vida_util_horas')
+        precio_repuestos= d('precio_repuestos')
+        margen_error_pct= d('margen_error_porcentaje')
+        tiempo_horas= d('tiempo_horas')
+        tiempo_minutos= d('tiempo_minutos')
+        gramos= d('gramos')
+        insumos= d('insumos')
+        multiplicador= d('multiplicador', 4)
 
         # Tiempo total en horas
         tiempo_total = tiempo_horas + (tiempo_minutos / Decimal('60'))
 
         # Cálculos
-        precio_material  = (gramos * precio_kg) / Decimal('1000')
-        precio_luz       = (consumo_watts * precio_kwh / Decimal('1000')) * tiempo_total
-        desgaste         = (tiempo_total * precio_repuestos / vida_util_horas) if vida_util_horas > 0 else Decimal('0')
-        base             = precio_material + precio_luz
-        margen_error     = base * (margen_error_pct / Decimal('100'))
-        costo_total      = base + desgaste + margen_error + insumos
-        total_cobrar     = costo_total * multiplicador
+        precio_material= (gramos * precio_kg) / Decimal('1000')
+        precio_luz= (consumo_watts * precio_kwh / Decimal('1000')) * tiempo_total
+        desgaste= (tiempo_total * precio_repuestos / vida_util_horas) if vida_util_horas > 0 else Decimal('0')
+        base= precio_material + precio_luz
+        margen_error= base * (margen_error_pct / Decimal('100'))
+        costo_total= base + desgaste + margen_error + insumos
+        total_cobrar= costo_total * multiplicador
 
         def fmt(val):
             return float(val.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
 
         return JsonResponse({
             'success': True,
-            'precio_material':  fmt(precio_material),
-            'precio_luz':       fmt(precio_luz),
+            'precio_material': fmt(precio_material),
+            'precio_luz': fmt(precio_luz),
             'desgaste_maquina': fmt(desgaste),
-            'margen_error':     fmt(margen_error),
-            'insumos':          fmt(insumos),
-            'costo_total':      fmt(costo_total),
-            'total_cobrar':     fmt(total_cobrar),
+            'margen_error': fmt(margen_error),
+            'insumos': fmt(insumos),
+            'costo_total': fmt(costo_total),
+            'total_cobrar': fmt(total_cobrar),
         })
 
     except Exception as e:
@@ -280,6 +284,30 @@ def configurar_calculadora(request):
 
     return render(request, 'core/configuraciones/config_calculadora.html', {'form': form})
 
+@admin_required
+def configurar_factura(request):
+    from apps.core.models import ConfiguracionFactura
+    from apps.core.forms import ConfiguracionFacturaForm
+
+    config = ConfiguracionFactura.obtener()
+
+    if request.method == "POST":
+        # ── Eliminar logo si el usuario presionó la X ──
+        eliminar_logo = request.POST.get("eliminar_logo") == "true"
+        if eliminar_logo and config.logo:
+            config.logo.delete(save=False)
+            config.logo = None
+            config.save(update_fields=["logo"])
+
+        form = ConfiguracionFacturaForm(request.POST, request.FILES, instance=config)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Datos de factura guardados correctamente.")
+            return redirect("core:configurar_factura")
+    else:
+        form = ConfiguracionFacturaForm(instance=config)
+
+    return render(request, "core/configuraciones/config_factura.html", {"form": form, "config": config})
 
 @admin_required
 def configuracion(request):

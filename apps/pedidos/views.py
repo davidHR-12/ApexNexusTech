@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse,HttpResponse
 from apps.usuarios.decorators import admin_required
 from django.views.decorators.http import require_POST
 from django.db.models import Q
@@ -9,6 +9,11 @@ from django.db import transaction as db_transaction
 from .forms import PedidoManualForm, ItemCatalogoForm, ItemPersonalizadoForm
 from .models import Pedido, ItemPedido, Impresora, SolicitudCotizacion, NotaPedido, Pago, ConfiguracionPago,PerdidaMaterial
 
+from apps.pedidos.factura_pdf import generar_factura_pdf
+
+@admin_required
+def factura_view(request, pedido_id):
+    return generar_factura_pdf(request, pedido_id)
 
 # ==========================================
 #  VISTAS DE LECTURA Y DASHBOARD

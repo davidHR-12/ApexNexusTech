@@ -1,0 +1,229 @@
+{% extends "core/base_admin.html" %}
+{% block content %}
+    <div class="space-y-6 max-w-7xl mx-auto">
+        {# Breadcrumb #}
+        <div class="mb-8">
+            <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest mb-3 gap-2">
+                <a href="{% url 'core:configuracion' %}"
+                   class="hover:text-white transition-colors">Configuraciones</a>
+                <span>/</span>
+                <span class="text-[#10b981]">Factura</span>
+            </nav>
+        </div>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center text-emerald-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" stroke-width="2" />
+                        <path d="M10 13l2 2 4-4" stroke-width="2" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-black text-white tracking-tight">Datos de Factura</h1>
+                    <p class="text-gray-400 mt-1 text-sm">
+                        Esta información aparecerá en el encabezado, pie y datos de contacto de cada factura PDF generada.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {# Flag oculto: la vista lo lee para saber si debe borrar el logo actual #}
+            <input type="hidden"
+                   name="eliminar_logo"
+                   id="eliminar_logo_input"
+                   value="false">
+            <div class="space-y-4">
+                {# ── Identidad del Negocio ── #}
+                <div class="bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-800 bg-[#334155]/20 flex items-center gap-3">
+                        <div class="w-8 h-8 bg-[#10b981]/10 border border-[#10b981]/20 rounded-xl flex items-center justify-center">
+                            <svg class="w-4 h-4 text-[#10b981]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                        </div>
+                        <h2 class="text-white font-bold">Identidad del Negocio</h2>
+                    </div>
+                    <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div class="sm:col-span-2">
+                            <label class="text-gray-400 text-xs uppercase font-bold mb-1.5 block tracking-wider">Nombre del Negocio</label>
+                            {{ form.nombre_negocio }}
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="text-gray-400 text-xs uppercase font-bold mb-1.5 block tracking-wider">Slogan</label>
+                            {{ form.slogan }}
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs uppercase font-bold mb-1.5 block tracking-wider">RNC / RIF</label>
+                            {{ form.rnc }}
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs uppercase font-bold mb-1.5 block tracking-wider">Teléfono</label>
+                            {{ form.telefono }}
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs uppercase font-bold mb-1.5 block tracking-wider">Email</label>
+                            {{ form.email }}
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs uppercase font-bold mb-1.5 block tracking-wider">Dirección</label>
+                            {{ form.direccion }}
+                        </div>
+                    </div>
+                </div>
+                {# ── Logo ── #}
+                <div class="bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-800 bg-[#334155]/20 flex items-center gap-3">
+                        <div class="w-8 h-8 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center">
+                            <svg class="w-4 h-4 text-blue-400"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <h2 class="text-white font-bold">Logo</h2>
+                    </div>
+                    <div class="p-6 flex items-center gap-6">
+                        {# Preview (grupo para hover sobre él) #}
+                        <div class="relative group/logo shrink-0">
+                            {# Imagen actual / preview de nueva selección #}
+                            <div id="logo-preview-wrapper"
+                                 class="w-40 h-16 bg-gray-900 rounded-xl border border-gray-700 overflow-visible flex items-center justify-center {% if not config.logo %}hidden{% endif %}">
+                                <img id="logo-preview-img"
+                                     src="{% if config.logo %}{{ config.logo.url }}{% endif %}"
+                                     alt="Logo"
+                                     class="max-w-full max-h-full object-contain p-2 pointer-events-none rounded-xl">
+                                <button type="button"
+                                        onclick="limpiarLogo()"
+                                        class="absolute -top-2 -right-2 w-5 h-5 bg-red-600 hover:bg-red-500 border-2 border-[#1e293b] text-white rounded-full flex items-center justify-center transition-all shadow-lg z-10"
+                                        title="Quitar logo">
+                                    <svg class="w-2.5 h-2.5"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            {# Placeholder vacío #}
+                            <div id="logo-placeholder"
+                                 class="w-40 h-16 bg-gray-900 rounded-xl border border-dashed border-gray-700 flex items-center justify-center {% if config.logo %}hidden{% endif %}">
+                                <span class="text-gray-600 text-xs">Sin logo</span>
+                            </div>
+                        </div>
+                        {# Input file estilizado + ayuda #}
+                        <div class="flex-1">
+                            <label class="text-gray-400 text-xs uppercase font-bold mb-1.5 block tracking-wider">Subir / reemplazar logo</label>
+                            <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 rounded-xl text-gray-300 text-sm font-medium transition-all">
+                                <svg class="w-4 h-4 text-blue-400"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                Elegir archivo
+                                <input id="logo-file-input"
+                                       type="file"
+                                       name="logo"
+                                       accept="image/*"
+                                       class="hidden"
+                                       onchange="onLogoFileChange(this)">
+                            </label>
+                            <p id="logo-filename"
+                               class="text-gray-600 text-[10px] mt-1.5 leading-relaxed">
+                                Recomendado: PNG con fondo transparente, ~300×100 px.
+                            </p>
+                            {% if form.logo.errors %}<p class="text-red-400 text-xs mt-1">{{ form.logo.errors.0 }}</p>{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {# ── Textos del PDF ── #}
+                <div class="bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-800 bg-[#334155]/20 flex items-center gap-3">
+                        <div class="w-8 h-8 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center">
+                            <svg class="w-4 h-4 text-amber-400"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <h2 class="text-white font-bold">Textos del PDF</h2>
+                    </div>
+                    <div class="p-6 space-y-5">
+                        <div>
+                            <label class="text-gray-400 text-xs uppercase font-bold mb-1.5 block tracking-wider">Texto de pie de factura</label>
+                            {{ form.footer_texto }}
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs uppercase font-bold mb-1.5 block tracking-wider">Nota legal / condiciones</label>
+                            {{ form.nota_legal }}
+                        </div>
+                    </div>
+                </div>
+                {# ── Footer ── #}
+                <div class="flex items-center justify-between gap-4 pt-2">
+                    <a href="{% url 'core:configuracion' %}"
+                       class="text-sm text-gray-500 hover:text-white transition flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Volver a configuraciones
+                    </a>
+                    <div class="flex gap-3">
+                        <a href="{% url 'core:configuracion' %}"
+                           class="px-4 py-2.5 rounded-xl border border-gray-700 text-gray-400 hover:text-white hover:border-gray-600 transition text-sm font-medium">
+                            Cancelar
+                        </a>
+                        <button type="submit"
+                                class="px-6 py-2.5 bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-xl transition-all shadow-lg shadow-[#10b981]/15 hover:scale-[1.02] active:scale-95 text-sm flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Guardar cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <script>
+    /**
+     * Usuario eligió un archivo nuevo →
+     * mostramos preview local y reseteamos el flag de eliminación.
+     */
+    function onLogoFileChange(input) {
+        if (!input.files || !input.files[0]) return;
+        const file    = input.files[0];
+        const reader  = new FileReader();
+
+        reader.onload = function (e) {
+            document.getElementById('logo-preview-img').src = e.target.result;
+            document.getElementById('logo-preview-wrapper').classList.remove('hidden');
+            document.getElementById('logo-placeholder').classList.add('hidden');
+            document.getElementById('logo-filename').textContent = file.name;
+            // Si el usuario sube un archivo nuevo no queremos eliminar
+            document.getElementById('eliminar_logo_input').value = 'false';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    /**
+     * Usuario presionó la X →
+     * ocultamos preview, limpiamos el input file,
+     * marcamos flag para que la vista borre el logo de la BD.
+     */
+    function limpiarLogo() {
+        document.getElementById('logo-preview-wrapper').classList.add('hidden');
+        document.getElementById('logo-placeholder').classList.remove('hidden');
+        document.getElementById('logo-preview-img').src = '';
+        document.getElementById('logo-file-input').value = '';
+        document.getElementById('logo-filename').textContent = 'Recomendado: PNG con fondo transparente, ~300×100 px.';
+        document.getElementById('eliminar_logo_input').value = 'true';
+    }
+    </script>
+{% endblock content %}

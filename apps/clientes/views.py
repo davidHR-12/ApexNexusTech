@@ -477,7 +477,7 @@ def checkout_paso_final(request):
                 'guest_telefono': form.cleaned_data['telefono'],
                 'guest_direccion': form.cleaned_data['direccion'],
                 'guest_ciudad': form.cleaned_data['ciudad'],
-                'descripcion': f"Pedido invitado: {form.cleaned_data['nombre']}",
+                'descripcion': f"Pedido de: {form.cleaned_data['nombre']} {form.cleaned_data['apellido']}",
             }
             try:
                 nuevo_pedido = _crear_pedido_con_items(datos_cliente, carrito)

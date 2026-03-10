@@ -11,7 +11,6 @@ urlpatterns = [
     path("dashboard/", views.dashboard_admin, name="dashboard_admin"),
     path('calculadora/', views.calculadora, name='calculadora'),
     path('calculadora/calcular/', views.calcular_ajax, name='calcular_ajax'),
-    path('calculadora/config/', views.configurar_calculadora, name='configurar_calculadora'),
 
     # Configuración
     path("configuracion/", views.configuracion, name="configuracion"),
@@ -25,5 +24,7 @@ urlpatterns = [
     path('configuracion/cards/<int:card_id>/editar/', views.editar_card, name='editar_card'),
     path('configuracion/cards/<int:card_id>/eliminar/', views.eliminar_card, name='eliminar_card'),
     path('configuracion/cards/reordenar/', views.reordenar_cards, name='reordenar_cards'),
+    path('configuracion/factura/', views.configurar_factura, name='configurar_factura'),
+    path('configuracion/calculadora/', views.configurar_calculadora, name='configurar_calculadora'),
 
 ]

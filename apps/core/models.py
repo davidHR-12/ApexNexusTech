@@ -278,3 +278,40 @@ class CardPublica(models.Model):
 
     def __str__(self):
         return f"[{self.get_seccion_display()}] {self.titulo}"
+
+
+
+class ConfiguracionFactura(models.Model):
+    """
+    Datos del negocio que aparecen en las facturas PDF.
+    """
+    nombre_negocio= models.CharField("Nombre del Negocio", max_length=150, default="Apex Nexus Technology")
+    slogan= models.CharField("Slogan / Subtítulo",  max_length=200, blank=True, default="Tecnología a la medida de tus ideas.")
+    rnc= models.CharField("RNC / RIF",           max_length=30,  blank=True, default="")
+    telefono= models.CharField("Teléfono",            max_length=30,  blank=True, default="809-401-1729")
+    email= models.EmailField("Email",               blank=True, default="info@ant.do")
+    direccion= models.CharField("Dirección",           max_length=250, blank=True, default="Servicio a domicilio / Entrega acordada")
+    logo= models.ImageField(
+        "Logo (PNG/JPG recomendado 300×100 px)",
+        upload_to="factura/", blank=True, null=True
+    )
+    footer_texto    = models.CharField(
+        "Texto de pie de factura", max_length=300, blank=True,
+        default="Gracias por confiar en nosotros. Ante cualquier duda, contáctenos por WhatsApp."
+    )
+    nota_legal      = models.CharField(
+        "Nota legal / condiciones", max_length=400, blank=True,
+        default="Esta factura es un documento informativo. El pago confirma la aceptación del servicio."
+    )
+
+    class Meta:
+        verbose_name = "Configuración Factura"
+        verbose_name_plural = "Configuración Factura"
+
+    @classmethod
+    def obtener(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def __str__(self):
+        return "Configuración de Factura"
