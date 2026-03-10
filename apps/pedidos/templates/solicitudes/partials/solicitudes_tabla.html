@@ -66,9 +66,8 @@
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
                                 {% if solicitud.pedido %}
-                                    {# ── Ya tiene pedido → solo Ver ── #}
                                     <a href="{% url 'pedidos:pedido_detalle' solicitud.pedido.id %}"
-                                       class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all">
+                                       class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all bg-blue-600 hover:bg-blue-700 text-white">
                                         <svg class="w-3.5 h-3.5"
                                              fill="none"
                                              stroke="currentColor"
@@ -78,12 +77,10 @@
                                         Ver Pedido #{{ solicitud.pedido.id }}
                                     </a>
                                 {% elif solicitud.estado == 'Rechazada' %}
-                                    {# ── Rechazada → solo etiqueta, sin acciones ── #}
                                     <span class="text-gray-600 text-xs italic">Sin acciones</span>
                                 {% else %}
-                                    {# ── Pendiente → Convertir + Rechazar ── #}
                                     <a href="{% url 'pedidos:convertir_solicitud' solicitud.id %}"
-                                       class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-500/20">
+                                       class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
                                         <svg class="w-3.5 h-3.5"
                                              fill="none"
                                              stroke="currentColor"
@@ -92,15 +89,13 @@
                                         </svg>
                                         Convertir
                                     </a>
-                                    {# Botón Rechazar con confirmación SweetAlert2 #}
                                     <form id="form-rechazar-{{ solicitud.id }}"
                                           method="POST"
                                           action="{% url 'pedidos:rechazar_solicitud' solicitud.id %}">
                                         {% csrf_token %}
                                         <button type="button"
                                                 onclick="confirmarRechazo({{ solicitud.id }}, '{{ solicitud.usuario.get_full_name|default:solicitud.usuario.email|escapejs }}')"
-                                                class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
-                                                title="Rechazar solicitud">
+                                                class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500">
                                             <svg class="w-3.5 h-3.5"
                                                  fill="none"
                                                  stroke="currentColor"

@@ -1,158 +1,300 @@
 {% extends "core/base_admin.html" %}
 {% load humanize %}
 {% block content %}
-    <div class="space-y-8 animate-fadeIn">
-        <div class="flex justify-between items-end">
+    <div class="space-y-6">
+        {# ── CABECERA ──────────────────────────────────────────────── #}
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-                <h1 class="text-3xl font-bold text-white">Panel de Control</h1>
-                <p class="text-gray-400 text-sm">Resumen operativo y financiero del negocio.</p>
+                <h1 class="text-2xl font-bold text-white">Centro de Operaciones</h1>
+                <p class="text-gray-500 text-sm mt-0.5">{% now "d/m/Y · h:i A" %}</p>
             </div>
-            <div class="text-right">
-                <p class="text-gray-500 text-[10px] uppercase font-bold tracking-widest">Última actualización</p>
-                <p class="text-white text-sm font-mono">{% now "d/m/Y h:i A" %}</p>
-            </div>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-[#1e293b] p-5 rounded-2xl border border-gray-800 shadow-sm hover:border-emerald-500/30 transition-all">
-                <div class="flex justify-between items-start">
-                    <p class="text-gray-400 text-[10px] uppercase font-bold tracking-widest">Ingresos Mes</p>
-                    <span class="p-1 bg-emerald-500/10 rounded text-emerald-500">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zM12 4v16m8-8H4" />
-                        </svg>
-                    </span>
-                </div>
-                <p class="text-2xl font-bold text-[#10b981] mt-2">RD$ {{ ingresos_mes|intcomma }}</p>
-            </div>
-            <div class="bg-[#1e293b] p-5 rounded-2xl border border-gray-800 shadow-sm hover:border-red-500/30 transition-all">
-                <div class="flex justify-between items-start">
-                    <p class="text-gray-400 text-[10px] uppercase font-bold tracking-widest">Gastos Mes</p>
-                    <span class="p-1 bg-red-500/10 rounded text-red-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </span>
-                </div>
-                <p class="text-2xl font-bold text-red-400 mt-2">RD$ {{ gastos_mes|intcomma }}</p>
-            </div>
-            <div class="bg-[#1e293b] p-5 rounded-2xl border-2 {% if utilidad_neta >= 0 %}border-blue-500/30 bg-blue-500/5{% else %}border-orange-500/30 bg-orange-500/5{% endif %} shadow-sm">
-                <p class="text-gray-400 text-[10px] uppercase font-bold tracking-widest">Utilidad Neta</p>
-                <p class="text-2xl font-bold {% if utilidad_neta >= 0 %}text-blue-400{% else %}text-orange-400{% endif %} mt-2">
-                    RD$ {{ utilidad_neta|intcomma }}
-                </p>
-            </div>
-            <div class="bg-[#1e293b] p-5 rounded-2xl border border-gray-800 shadow-sm hover:border-purple-500/30 transition-all">
-                <div class="flex justify-between items-start">
-                    <p class="text-gray-400 text-[10px] uppercase font-bold tracking-widest">Pedidos Activos</p>
-                    <span class="p-1 bg-purple-500/10 rounded text-purple-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                        </svg>
-                    </span>
-                </div>
-                <p class="text-2xl font-bold text-white mt-2">{{ pedidos_activos }}</p>
+            <div class="flex gap-2">
+                <a href="{% url 'pedidos:pedidos_lista' %}"
+                   class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#10b981] hover:bg-emerald-400 text-white text-xs font-bold transition-all shadow-lg shadow-emerald-900/30">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Nuevo Pedido
+                </a>
+                <a href="{% url 'reportes:dashboard' %}"
+                   class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-700 hover:border-[#10b981]/40 text-gray-400 hover:text-[#10b981] text-xs font-bold transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Ver Reportes
+                </a>
             </div>
         </div>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <div class="lg:col-span-2 space-y-6">
-                <div class="bg-[#1e293b] p-6 rounded-2xl border border-gray-800 shadow-xl min-h-[400px]">
-                    <h3 class="text-white font-bold mb-6 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-emerald-500"
+        {# ── CONTADORES DE ESTADO ─────────────────────────────────── #}
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <a href="{% url 'pedidos:pedidos_lista' %}?estado=En_Espera"
+               class="bg-[#1e293b] border border-amber-500/20 rounded-2xl p-4 hover:border-amber-500/50 transition-all group">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-amber-400/70 text-[10px] uppercase font-bold tracking-wider">En Espera</span>
+                    <span class="w-2 h-2 rounded-full bg-amber-400 {% if total_en_espera > 0 %}animate-pulse{% endif %}"></span>
+                </div>
+                <p class="text-3xl font-black text-white group-hover:text-amber-400 transition-colors">{{ total_en_espera }}</p>
+                <p class="text-gray-600 text-xs mt-1">pago pendiente</p>
+            </a>
+            <a href="{% url 'pedidos:pedidos_lista' %}?estado=Confirmado"
+               class="bg-[#1e293b] border border-blue-500/20 rounded-2xl p-4 hover:border-blue-500/50 transition-all group">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-blue-400/70 text-[10px] uppercase font-bold tracking-wider">Confirmados</span>
+                    <span class="w-2 h-2 rounded-full bg-blue-400 {% if total_confirmado > 0 %}animate-pulse{% endif %}"></span>
+                </div>
+                <p class="text-3xl font-black text-white group-hover:text-blue-400 transition-colors">{{ total_confirmado }}</p>
+                <p class="text-gray-600 text-xs mt-1">listos para producción</p>
+            </a>
+            <a href="{% url 'pedidos:pedidos_lista' %}?estado=En_Produccion"
+               class="bg-[#1e293b] border border-purple-500/20 rounded-2xl p-4 hover:border-purple-500/50 transition-all group">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-purple-400/70 text-[10px] uppercase font-bold tracking-wider">En Producción</span>
+                    <span class="w-2 h-2 rounded-full bg-purple-400 {% if total_produccion > 0 %}animate-pulse{% endif %}"></span>
+                </div>
+                <p class="text-3xl font-black text-white group-hover:text-purple-400 transition-colors">{{ total_produccion }}</p>
+                <p class="text-gray-600 text-xs mt-1">imprimiendo ahora</p>
+            </a>
+            <a href="{% url 'pedidos:pedidos_lista' %}?estado=Listo"
+               class="bg-[#1e293b] border border-cyan-500/20 rounded-2xl p-4 hover:border-cyan-500/50 transition-all group">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-cyan-400/70 text-[10px] uppercase font-bold tracking-wider">Listos</span>
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 {% if total_listo > 0 %}animate-pulse{% endif %}"></span>
+                </div>
+                <p class="text-3xl font-black text-white group-hover:text-cyan-400 transition-colors">{{ total_listo }}</p>
+                <p class="text-gray-600 text-xs mt-1">esperan entrega</p>
+            </a>
+        </div>
+        {# ── FILA PRINCIPAL ───────────────────────────────────────── #}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {# ── Pedidos activos (columna grande) ── #}
+            <div class="lg:col-span-2 bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-800/50 flex items-center justify-between">
+                    <h2 class="text-white font-bold text-sm">Pedidos activos</h2>
+                    <a href="{% url 'pedidos:pedidos_lista' %}"
+                       class="text-[#10b981] text-xs hover:underline">Ver todos</a>
+                </div>
+                {% if total_activos == 0 %}
+                    <div class="flex flex-col items-center justify-center py-14 gap-2">
+                        <svg class="w-8 h-8 text-gray-700"
                              fill="none"
                              stroke="currentColor"
                              viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Gestión de Negocio
-                    </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <a href="{% url 'productos:productos_index' %}"
-                           class="p-4 bg-gray-900/50 rounded-xl border border-gray-800 hover:border-emerald-500/50 transition-all group">
-                            <p class="text-emerald-400 font-bold text-sm group-hover:translate-x-1 transition-transform">
-                                → Gestionar Catálogo de Productos
-                            </p>
-                            <p class="text-gray-500 text-xs mt-1">Añade piezas base o variantes de stock.</p>
-                        </a>
-                        <a href="{% url 'pedidos:pedidos_lista' %}"
-                           class="p-4 bg-gray-900/50 rounded-xl border border-gray-800 hover:border-blue-500/50 transition-all group">
-                            <p class="text-blue-400 font-bold text-sm group-hover:translate-x-1 transition-transform">→ Registrar Venta</p>
-                            <p class="text-gray-500 text-xs mt-1">Crea un nuevo pedido y asigna cliente.</p>
-                        </a>
+                        <p class="text-gray-600 text-sm">No hay pedidos activos en este momento.</p>
                     </div>
-                    <div class="mt-8 border-t border-gray-800 pt-8 flex flex-col items-center justify-center text-center">
-                        <p class="text-gray-500 text-sm font-medium">Próximamente</p>
-                        <p class="text-gray-600 text-[11px] uppercase tracking-widest mt-1 italic">🤔 Aqui esta muy vacio</p>
+                {% else %}
+                    {# Tabla compacta de pedidos #}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="px-5 py-3 text-left text-gray-600 text-[10px] font-bold uppercase">#</th>
+                                    <th class="px-5 py-3 text-left text-gray-600 text-[10px] font-bold uppercase">Cliente</th>
+                                    <th class="px-5 py-3 text-left text-gray-600 text-[10px] font-bold uppercase">Estado</th>
+                                    <th class="px-5 py-3 text-right text-gray-600 text-[10px] font-bold uppercase">Total</th>
+                                    <th class="px-5 py-3 text-left text-gray-600 text-[10px] font-bold uppercase">Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-800/50">
+                                {# Listo primero (requieren acción: entregar) #}
+                                {% for pedido in pedidos_por_estado.Listo %}
+                                    <tr class="hover:bg-gray-800/20 transition-colors">
+                                        <td class="px-5 py-3">
+                                            <a href="{% url 'pedidos:pedido_detalle' pedido.id %}"
+                                               class="text-[#10b981] font-mono font-bold hover:underline">#{{ pedido.id|stringformat:"04d" }}</a>
+                                        </td>
+                                        <td class="px-5 py-3 text-gray-300">{{ pedido.nombre_cliente }}</td>
+                                        <td class="px-5 py-3">
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-400">Listo ✓</span>
+                                        </td>
+                                        <td class="px-5 py-3 text-right font-mono text-white text-xs">RD$ {{ pedido.precio_total|floatformat:0 }}</td>
+                                        <td class="px-5 py-3 text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d/m/Y" }}</td>
+                                    </tr>
+                                {% endfor %}
+                                {# En producción #}
+                                {% for pedido in pedidos_por_estado.En_Produccion %}
+                                    <tr class="hover:bg-gray-800/20 transition-colors">
+                                        <td class="px-5 py-3">
+                                            <a href="{% url 'pedidos:pedido_detalle' pedido.id %}"
+                                               class="text-[#10b981] font-mono font-bold hover:underline">#{{ pedido.id|stringformat:"04d" }}</a>
+                                        </td>
+                                        <td class="px-5 py-3 text-gray-300">{{ pedido.nombre_cliente }}</td>
+                                        <td class="px-5 py-3">
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-400">Producción</span>
+                                        </td>
+                                        <td class="px-5 py-3 text-right font-mono text-white text-xs">RD$ {{ pedido.precio_total|floatformat:0 }}</td>
+                                        <td class="px-5 py-3 text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d/m/Y" }}</td>
+                                    </tr>
+                                {% endfor %}
+                                {# Confirmados #}
+                                {% for pedido in pedidos_por_estado.Confirmado %}
+                                    <tr class="hover:bg-gray-800/20 transition-colors">
+                                        <td class="px-5 py-3">
+                                            <a href="{% url 'pedidos:pedido_detalle' pedido.id %}"
+                                               class="text-[#10b981] font-mono font-bold hover:underline">#{{ pedido.id|stringformat:"04d" }}</a>
+                                        </td>
+                                        <td class="px-5 py-3 text-gray-300">{{ pedido.nombre_cliente }}</td>
+                                        <td class="px-5 py-3">
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-400">Confirmado</span>
+                                        </td>
+                                        <td class="px-5 py-3 text-right font-mono text-white text-xs">RD$ {{ pedido.precio_total|floatformat:0 }}</td>
+                                        <td class="px-5 py-3 text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d/m/Y" }}</td>
+                                    </tr>
+                                {% endfor %}
+                                {# En espera (menos urgente) #}
+                                {% for pedido in pedidos_por_estado.En_Espera %}
+                                    <tr class="hover:bg-gray-800/20 transition-colors opacity-70">
+                                        <td class="px-5 py-3">
+                                            <a href="{% url 'pedidos:pedido_detalle' pedido.id %}"
+                                               class="text-[#10b981] font-mono font-bold hover:underline">#{{ pedido.id|stringformat:"04d" }}</a>
+                                        </td>
+                                        <td class="px-5 py-3 text-gray-300">{{ pedido.nombre_cliente }}</td>
+                                        <td class="px-5 py-3">
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400">En Espera</span>
+                                        </td>
+                                        <td class="px-5 py-3 text-right font-mono text-white text-xs">RD$ {{ pedido.precio_total|floatformat:0 }}</td>
+                                        <td class="px-5 py-3 text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d/m/Y" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                </div>
+                {% endif %}
             </div>
-            <div class="bg-[#1e293b] p-6 rounded-2xl border border-gray-800 shadow-xl">
-                <div class="flex justify-between items-start mb-6">
-                    <div>
-                        <p class="text-gray-400 text-[10px] uppercase font-bold tracking-widest">Capacidad Inventario</p>
-                        <p class="text-3xl font-bold text-blue-400 mt-1">
-                            {{ total_kg|floatformat:1 }} <span class="text-lg font-light">kg</span>
-                        </p>
+            {# ── Columna derecha: Solicitudes + Stock ── #}
+            <div class="flex flex-col gap-5">
+                {# Solicitudes pendientes #}
+                <div class="bg-[#1e293b] border {% if solicitudes_count > 0 %}border-amber-500/30{% else %}border-gray-800{% endif %} rounded-2xl overflow-hidden">
+                    <div class="px-5 py-4 border-b border-gray-800/50 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-white font-bold text-sm">Solicitudes</h2>
+                            {% if solicitudes_count > 0 %}
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-black">{{ solicitudes_count }}</span>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'pedidos:solicitudes_list' %}"
+                           class="text-[#10b981] text-xs hover:underline">Ver todas</a>
                     </div>
-                    <div class="p-2 bg-blue-500/10 rounded-lg text-blue-400">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                        </svg>
-                    </div>
-                </div>
-                <div class="space-y-4">
-                    <h3 class="text-gray-400 text-[11px] font-bold uppercase tracking-widest flex items-center gap-2 mb-4">
-                        <span class="flex h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
-                        Alertas de Stock Crítico
-                    </h3>
-                    {% for m in alertas_stock %}
-                        <div class="group bg-gray-900/40 border border-gray-800 hover:border-red-500/30 rounded-2xl p-3 transition-all">
-                            <div class="flex justify-between items-start mb-2">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-1 h-8 rounded-full"
-                                         style="background-color: {{ m.color.codigo_hex|default:'#3b82f6' }}"></div>
-                                    <div class="flex flex-col">
-                                        <span class="text-gray-200 text-xs font-bold">{{ m.marca.nombre|truncatechars:12 }}</span>
-                                        <span class="text-gray-500 text-[9px] uppercase">{{ m.color.nombre }}</span>
+                    {% if solicitudes_pendientes %}
+                        <div class="divide-y divide-gray-800/50">
+                            {% for s in solicitudes_pendientes %}
+                                <a href="{% url 'pedidos:solicitudes_list' %}"
+                                   class="flex items-center justify-between px-5 py-3 hover:bg-amber-500/5 transition-colors">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-white text-xs font-medium truncate">{{ s.descripcion|truncatechars:40 }}</p>
+                                        <p class="text-gray-500 text-[10px]">{{ s.usuario.get_full_name_or_user }} · {{ s.fecha_solicitud|date:"d/m" }}</p>
                                     </div>
-                                </div>
-                                <div class="text-right flex flex-col items-end gap-1">
-                                    <span class="text-xs font-mono font-bold text-red-400">{{ m.stock_actual|floatformat:0 }}g</span>
-                                    {% if m.enlace_compra %}
-                                        <a href="{{ m.enlace_compra }}"
-                                           target="_blank"
-                                           class="px-2 py-0.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/20 rounded text-[9px] font-bold uppercase transition-all">
-                                            Comprar
-                                        </a>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="w-full bg-gray-800 rounded-full h-1 overflow-hidden">
-                                <div class="bg-red-500 h-full"
-                                     style="width: {% widthratio m.stock_actual m.stock_minimo 100 %}%"></div>
-                            </div>
+                                    <svg class="w-3.5 h-3.5 text-gray-600 flex-shrink-0 ml-2"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </a>
+                            {% endfor %}
                         </div>
-                    {% empty %}
-                        <div class="text-center py-10 bg-gray-900/20 rounded-2xl border border-dashed border-gray-800">
-                            <svg class="w-8 h-8 text-gray-700 mx-auto mb-2"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <p class="text-gray-600 text-xs italic">Suministros al día</p>
-                        </div>
-                    {% endfor %}
-                    {% if materiales.count > 5 %}
-                        <a href="{% url 'materiales:lista_materiales' %}"
-                           class="w-full mt-4 py-2.5 rounded-xl bg-gray-800/50 hover:bg-gray-800 text-gray-500 hover:text-white transition-all text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 border border-gray-800">
-                            Inventario Completo
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                            </svg>
-                        </a>
+                    {% else %}
+                        <p class="text-gray-600 text-xs text-center py-6">Sin solicitudes pendientes.</p>
                     {% endif %}
                 </div>
+                {# Stock crítico #}
+                <div class="bg-[#1e293b] border {% if alertas_stock %}border-red-500/20{% else %}border-gray-800{% endif %} rounded-2xl overflow-hidden flex-1">
+                    <div class="px-5 py-4 border-b border-gray-800/50 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-white font-bold text-sm">Stock crítico</h2>
+                            {% if alertas_stock %}<span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>{% endif %}
+                        </div>
+                        <p class="text-gray-600 text-xs font-mono">{{ total_kg|floatformat:1 }}kg total</p>
+                    </div>
+                    {% if alertas_stock %}
+                        <div class="divide-y divide-gray-800/50">
+                            {% for m in alertas_stock %}
+                                <div class="px-5 py-3">
+                                    <div class="flex items-center justify-between mb-1.5">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full flex-shrink-0"
+                                                  style="background-color: {{ m.color.codigo_hex|default:'#64748b' }}"></span>
+                                            <p class="text-white text-xs font-medium">{{ m.tipo }} {{ m.color }}</p>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-red-400 font-mono text-xs font-bold">{{ m.stock_actual|floatformat:0 }}g</span>
+                                            {% if m.enlace_compra %}
+                                                <a href="{{ m.enlace_compra }}"
+                                                   target="_blank"
+                                                   class="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/20 transition-all"
+                                                   onclick="event.stopPropagation()">Reponer</a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {# Barra de progreso stock/mínimo #}
+                                    <div class="w-full bg-gray-800 rounded-full h-1">
+                                        <div class="bg-red-500 h-1 rounded-full"
+                                             style="width: {% widthratio m.stock_actual m.stock_minimo 100 %}%"></div>
+                                    </div>
+                                    <p class="text-gray-600 text-[10px] mt-0.5">mín: {{ m.stock_minimo|floatformat:0 }}g</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="flex flex-col items-center justify-center py-8 gap-2">
+                            <svg class="w-6 h-6 text-emerald-500/50"
+                                 fill="currentColor"
+                                 viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                            <p class="text-gray-600 text-xs">Inventario en orden.</p>
+                        </div>
+                    {% endif %}
+                    <div class="px-5 py-3 border-t border-gray-800/50">
+                        <a href="{% url 'materiales:lista_materiales' %}"
+                           class="text-gray-500 hover:text-[#10b981] text-xs transition-colors">Ver inventario completo →</a>
+                    </div>
+                </div>
             </div>
+        </div>
+        {# ── ACCESOS RÁPIDOS ──────────────────────────────────────── #}
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <a href="{% url 'productos:productos_index' %}"
+               class="bg-[#1e293b] border border-gray-800 rounded-xl p-4 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all group">
+                <svg class="w-5 h-5 text-gray-600 group-hover:text-emerald-400 transition-colors mb-2"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                <p class="text-gray-400 group-hover:text-white text-xs font-bold transition-colors">Catálogo</p>
+            </a>
+            <a href="{% url 'materiales:lista_materiales' %}"
+               class="bg-[#1e293b] border border-gray-800 rounded-xl p-4 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all group">
+                <svg class="w-5 h-5 text-gray-600 group-hover:text-blue-400 transition-colors mb-2"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+                <p class="text-gray-400 group-hover:text-white text-xs font-bold transition-colors">Materiales</p>
+            </a>
+            <a href="{% url 'core:calculadora' %}"
+               class="bg-[#1e293b] border border-gray-800 rounded-xl p-4 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all group">
+                <svg class="w-5 h-5 text-gray-600 group-hover:text-purple-400 transition-colors mb-2"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <p class="text-gray-400 group-hover:text-white text-xs font-bold transition-colors">Calculadora</p>
+            </a>
+            <a href="{% url 'finanzas:gastos' %}"
+               class="bg-[#1e293b] border border-gray-800 rounded-xl p-4 hover:border-red-500/30 hover:bg-red-500/5 transition-all group">
+                <svg class="w-5 h-5 text-gray-600 group-hover:text-red-400 transition-colors mb-2"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <p class="text-gray-400 group-hover:text-white text-xs font-bold transition-colors">Gastos</p>
+            </a>
         </div>
     </div>
 {% endblock content %}

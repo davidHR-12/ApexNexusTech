@@ -29,6 +29,7 @@ urlpatterns = [
     path("administrador/", include("apps.finanzas.urls")),
     path("administrador/", include("apps.materiales.urls")),
     path("administrador/", include("apps.pedidos.urls")),
+    path("administrador/", include("apps.reportes.urls")),
     path("administrador/", include("apps.productos.urls")),
     # path("gestion/", include("apps.gestion.urls")),
     path("", include("apps.clientes.urls")),  # Dirije a la raiz de clientes

@@ -1,0 +1,180 @@
+{% extends "core/base_admin.html" %}
+{% load static %}
+{% load humanize %}
+{% block content %}
+    <div class="space-y-6">
+        {# ── CABECERA ─────────────────────────────────────────────── #}
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <a href="{% url 'reportes:dashboard' %}"
+                   class="text-[#10b981] text-xs font-bold flex items-center gap-1.5 mb-1.5 hover:underline">
+                    <svg class="w-3.5 h-3.5"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                    </svg>
+                    Volver al dashboard
+                </a>
+                <h1 class="text-2xl font-bold text-white">Reporte de Inventario</h1>
+            </div>
+            <a href="{% url 'reportes:exportar_inventario' %}"
+               class="self-start sm:self-auto flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400 text-xs font-bold transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Exportar Excel
+            </a>
+        </div>
+        {# ── KPIs ─────────────────────────────────────────────────── #}
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-5">
+                <p class="text-gray-500 text-xs uppercase font-bold mb-2">Materiales activos</p>
+                <p class="text-2xl font-black text-white">{{ total_activos }}</p>
+            </div>
+            <div class="bg-[#1e293b] border {% if total_criticos > 0 %}border-red-500/20{% else %}border-gray-800{% endif %} rounded-2xl p-5">
+                <p class="text-gray-500 text-xs uppercase font-bold mb-2">Stock crítico</p>
+                <p class="text-2xl font-black {% if total_criticos > 0 %}text-red-400{% else %}text-white{% endif %}">
+                    {{ total_criticos }}
+                </p>
+            </div>
+            <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-5 col-span-2">
+                <p class="text-gray-500 text-xs uppercase font-bold mb-2">Valor total inventario</p>
+                <p class="text-2xl font-black text-emerald-400 font-mono">RD$ {{ valor_total_inventario|floatformat:2 }}</p>
+            </div>
+        </div>
+        {# ── FILTROS ──────────────────────────────────────────────── #}
+        <form method="get" class="flex flex-wrap items-center gap-2">
+            {# Filtro estado #}
+            <select name="estado"
+                    onchange="this.form.submit()"
+                    class="bg-[#0f172a] border border-gray-700 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#10b981] transition appearance-none">
+                <option value="" {% if not filtro_estado %}selected{% endif %}>Todos los estados</option>
+                <option value="critico"
+                        {% if filtro_estado == 'critico' %}selected{% endif %}>Solo críticos</option>
+                <option value="ok" {% if filtro_estado == 'ok' %}selected{% endif %}>Solo OK</option>
+            </select>
+            {# Filtro tipo #}
+            <select name="tipo"
+                    onchange="this.form.submit()"
+                    class="bg-[#0f172a] border border-gray-700 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#10b981] transition appearance-none">
+                <option value="" {% if not filtro_tipo %}selected{% endif %}>Todos los tipos</option>
+                {% for tipo in tipos_disponibles %}
+                    <option value="{{ tipo }}" {% if filtro_tipo == tipo %}selected{% endif %}>{{ tipo }}</option>
+                {% endfor %}
+            </select>
+            {# Limpiar filtros #}
+            {% if filtro_estado or filtro_tipo %}
+                <a href="{% url 'reportes:inventario' %}"
+                   class="px-3 py-2 rounded-xl border border-gray-700 text-gray-500 hover:text-white text-xs transition-all">
+                    ✕ Limpiar
+                </a>
+            {% endif %}
+            {# Indicador de resultados #}
+            <span class="text-gray-600 text-xs ml-auto">
+                Mostrando {{ total_filtrados }} material{{ total_filtrados|pluralize:"es" }}
+                {% if filtro_estado or filtro_tipo %}de {{ total_activos }} totales{% endif %}
+            </span>
+        </form>
+        {# ── TABLA ────────────────────────────────────────────────── #}
+        <div class="bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-800/50 flex items-center justify-between">
+                <h2 class="text-white font-bold text-sm">
+                    Inventario
+                    {% if paginator.num_pages > 1 %}
+                        <span class="text-gray-500 font-normal text-xs">— página {{ page_obj.number }} de {{ paginator.num_pages }}</span>
+                    {% endif %}
+                </h2>
+                <p class="text-gray-600 text-xs">50 por página</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr>
+                            <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Material</th>
+                            <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Marca</th>
+                            <th class="px-5 py-3 text-right text-gray-500 text-xs font-bold uppercase">Stock (g)</th>
+                            <th class="px-5 py-3 text-right text-gray-500 text-xs font-bold uppercase">Mínimo (g)</th>
+                            <th class="px-5 py-3 text-right text-gray-500 text-xs font-bold uppercase">Costo/g</th>
+                            <th class="px-5 py-3 text-right text-gray-500 text-xs font-bold uppercase">Valor total</th>
+                            <th class="px-5 py-3 text-center text-gray-500 text-xs font-bold uppercase">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800/50">
+                        {% for m in page_obj %}
+                            <tr class="hover:bg-gray-800/20 transition-colors {% if m.necesita_reposicion %}bg-red-500/5{% endif %}">
+                                <td class="px-5 py-3">
+                                    <p class="text-white font-medium text-sm">{{ m.tipo }} {{ m.color }}</p>
+                                </td>
+                                <td class="px-5 py-3 text-gray-500 text-xs">{{ m.marca }}</td>
+                                <td class="px-5 py-3 text-right font-mono {% if m.necesita_reposicion %}text-red-400 font-bold{% else %}text-white{% endif %}">
+                                    {{ m.stock_actual|floatformat:0 }}g
+                                </td>
+                                <td class="px-5 py-3 text-right font-mono text-gray-500 text-xs">{{ m.stock_minimo|floatformat:0 }}g</td>
+                                <td class="px-5 py-3 text-right font-mono text-gray-400 text-xs">RD$ {{ m.costo_por_gramo|floatformat:4 }}</td>
+                                {# Valor real: stock × costo_por_gramo (property en Material) #}
+                                <td class="px-5 py-3 text-right font-mono text-gray-300 text-xs">RD$ {{ m.valor_inventario|floatformat:2 }}</td>
+                                <td class="px-5 py-3 text-center">
+                                    {% if m.necesita_reposicion %}
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-400">Reponer</span>
+                                    {% else %}
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400">OK</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="px-5 py-10 text-center text-gray-600">
+                                    Sin materiales que coincidan con los filtros seleccionados.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {# ── PAGINACIÓN ────────────────────────────────────────── #}
+            {% if paginator.num_pages > 1 %}
+                <div class="px-5 py-4 border-t border-gray-800/50 flex items-center justify-between gap-4">
+                    <p class="text-gray-500 text-xs">
+                        {{ page_obj.start_index }}–{{ page_obj.end_index }}
+                        de {{ total_filtrados }} materiales
+                    </p>
+                    <div class="flex items-center gap-1">
+                        {# Anterior #}
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}{% if filtro_estado %}&estado={{ filtro_estado }}{% endif %}{% if filtro_tipo %}&tipo={{ filtro_tipo }}{% endif %}"
+                               class="px-3 py-1.5 rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-600 text-xs transition-all">
+                                ← Anterior
+                            </a>
+                        {% endif %}
+                        {# Números de página #}
+                        {% for num in paginator.page_range %}
+                            {% if num == page_obj.number %}
+                                <span class="px-3 py-1.5 rounded-lg bg-[#10b981] text-white text-xs font-bold">{{ num }}</span>
+                            {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                                <a href="?page={{ num }}{% if filtro_estado %}&estado={{ filtro_estado }}{% endif %}{% if filtro_tipo %}&tipo={{ filtro_tipo }}{% endif %}"
+                                   class="px-3 py-1.5 rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-600 text-xs transition-all">
+                                    {{ num }}
+                                </a>
+                            {% elif num == 1 or num == paginator.num_pages %}
+                                <a href="?page={{ num }}{% if filtro_estado %}&estado={{ filtro_estado }}{% endif %}{% if filtro_tipo %}&tipo={{ filtro_tipo }}{% endif %}"
+                                   class="px-3 py-1.5 rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-600 text-xs transition-all">
+                                    {{ num }}
+                                </a>
+                            {% elif num == page_obj.number|add:"-3" or num == page_obj.number|add:"3" %}
+                                <span class="text-gray-600 text-xs px-1">…</span>
+                            {% endif %}
+                        {% endfor %}
+                        {# Siguiente #}
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if filtro_estado %}&estado={{ filtro_estado }}{% endif %}{% if filtro_tipo %}&tipo={{ filtro_tipo }}{% endif %}"
+                               class="px-3 py-1.5 rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-600 text-xs transition-all">
+                                Siguiente →
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}

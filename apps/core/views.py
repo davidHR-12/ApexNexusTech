@@ -163,43 +163,64 @@ def gestionar_media_huerfana(request):
 @admin_required
 def dashboard_admin(request):
     """
-    Dashboard principal del administrador.
-    Muestra resumen de ingresos, gastos, utilidad y alertas de stock.
+    Centro de Operaciones — landing page del administrador.
+    Muestra el estado actual del negocio para tomar decisiones inmediatas.
+    Sin KPIs financieros (esos viven en reportes:dashboard).
     """
-    ahora = timezone.now()
-    
-    # Calcular métricas del mes
-    ingresos_mes = Pago.objects.filter(
-        fecha_pago__month=ahora.month, 
-        fecha_pago__year=ahora.year
-    ).aggregate(total=Sum("monto"))["total"] or Decimal("0.00")
+    from apps.pedidos.models import Pedido, SolicitudCotizacion
+    from apps.materiales.models import Material
+    from django.db.models import F
 
-    gastos_mes = Gasto.objects.filter(
-        fecha__month=ahora.month, 
-        fecha__year=ahora.year
-    ).aggregate(total=Sum("monto"))["total"] or Decimal("0.00")
+    # ── Pedidos activos agrupados por estado ──────────────────────
+    estados_activos = ['En_Espera', 'Confirmado', 'En_Produccion', 'Listo']
+    pedidos_activos = (
+        Pedido.objects
+        .filter(estado_pedido__in=estados_activos)
+        .select_related('usuario')
+        .order_by('fecha_creacion')
+    )
 
-    # Información de materiales
-    materiales = Material.objects.all()
-    total_gramos = materiales.aggregate(Sum("stock_actual"))["stock_actual__sum"] or 0
-    
-    # Alertas de stock
-    alertas_stock = [m for m in materiales if m.stock_actual <= m.stock_minimo]
-    materiales_ok = [m for m in materiales if m.stock_actual > m.stock_minimo]
+    pedidos_por_estado = {
+        'En_Espera':     [],
+        'Confirmado':    [],
+        'En_Produccion': [],
+        'Listo':         [],
+    }
+    for p in pedidos_activos:
+        pedidos_por_estado[p.estado_pedido].append(p)
+
+    # ── Solicitudes pendientes ────────────────────────────────────
+    solicitudes_pendientes = (
+        SolicitudCotizacion.objects
+        .filter(estado='Pendiente')
+        .select_related('usuario')
+        .order_by('-fecha_solicitud')[:6]
+    )
+    solicitudes_count = SolicitudCotizacion.objects.filter(estado='Pendiente').count()
+
+    # ── Alertas de stock ──────────────────────────────────────────
+    materiales = Material.objects.filter(activo=True).select_related('tipo', 'color', 'marca')
+    total_gramos = sum(m.stock_actual for m in materiales)
+    alertas_stock = [m for m in materiales if m.necesita_reposicion]
 
     context = {
-        "ingresos_mes": ingresos_mes,
-        "gastos_mes": gastos_mes,
-        "utilidad_neta": ingresos_mes - gastos_mes,
-        "pedidos_activos": Pedido.objects.exclude(
-            estado_pedido__in=["Entregado", "Cancelado"]
-        ).count(),
-        "total_kg": total_gramos / 1000,
-        "materiales": materiales,
-        "alertas_stock": alertas_stock[:5],
-        "materiales_ok": materiales_ok[:5],
+        'segment': 'dashboard_admin',
+        'kpis': {'solicitudes_nuevas': solicitudes_count},  # para el badge del sidebar
+        # Pedidos operativos
+        'pedidos_por_estado':  pedidos_por_estado,
+        'total_en_espera':     len(pedidos_por_estado['En_Espera']),
+        'total_confirmado':    len(pedidos_por_estado['Confirmado']),
+        'total_produccion':    len(pedidos_por_estado['En_Produccion']),
+        'total_listo':         len(pedidos_por_estado['Listo']),
+        'total_activos':       len(pedidos_activos),
+        # Solicitudes
+        'solicitudes_pendientes': solicitudes_pendientes,
+        'solicitudes_count':      solicitudes_count,
+        # Inventario
+        'alertas_stock':  alertas_stock[:5],
+        'total_kg':       total_gramos / 1000,
     }
-    return render(request, "core/dashboard_admin.html", context)
+    return render(request, 'core/dashboard_admin.html', context)
 
 @admin_required
 def calculadora(request):
