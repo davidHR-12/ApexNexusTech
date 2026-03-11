@@ -110,7 +110,7 @@
                                     <th class="px-4 py-2.5">Cant.</th>
                                     <th class="px-4 py-2.5">Producción</th>
                                     <th class="px-4 py-2.5 text-right">Subtotal</th>
-                                    <th class="px-4 py-2.5 text-right">Acc.</th>
+                                    <th class="px-4 py-2.5 text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-700">
@@ -180,11 +180,7 @@
                                             </td>
                                             {# ── Consumo Material ── #}
                                             <td class="px-4 py-2.5 text-center text-xs">
-                                                {% if item.es_contenedor %}
-                                                    <span class="text-gray-600 italic text-[10px]">ver componentes ↓</span>
-                                                {% else %}
-                                                    {{ item.gramos_totales }} g
-                                                {% endif %}
+                                                <span class="text-white text-[12px] font-mono">{{ item.gramos_totales }}g</span>
                                             </td>
                                             {# ── Tipo badge ── #}
                                             <td class="px-4 py-2.5 text-center">
@@ -224,7 +220,7 @@
                                                         {# Agregar componente — solo contenedores #}
                                                         {% if item.es_contenedor %}
                                                             <button onclick="abrirModalComponente({{ item.id }}, '{% url 'pedidos:agregar_componente' item.id %}')"
-                                                                    class="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded-lg"
+                                                                    class="p-2 text-blue-400 hover:bg-blue-600 hover:text-white transition-all rounded-lg"
                                                                     title="Agregar componente">
                                                                 <svg class="w-3.5 h-3.5"
                                                                      fill="none"
@@ -236,13 +232,13 @@
                                                         {% endif %}
                                                         {# Catálogo: no se edita, solo se elimina #}
                                                         <button onclick="eliminarItem({{ item.id }})"
-                                                                class="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg"
+                                                                class="p-2 text-red-400 rounded-lg hover:bg-red-600 hover:text-white transition-all"
                                                                 title="Eliminar ítem">
                                                             <svg class="w-3.5 h-3.5"
                                                                  fill="none"
                                                                  stroke="currentColor"
                                                                  viewBox="0 0 24 24">
-                                                                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                             </svg>
                                                         </button>
                                                     </div>
@@ -278,7 +274,8 @@
                                                     {# Material del componente #}
                                                     <td class="px-4 py-2 text-xs text-blue-400/80">
                                                         {% if comp.material_personalizado %}
-                                                            {{ comp.material_personalizado.marca }} {{ comp.material_personalizado.tipo }} {{ comp.material_personalizado.color }} · {{ comp.gramos_totales }}g
+                                                            <p>{{ comp.material_personalizado.marca }} {{ comp.material_personalizado.tipo }}</p>
+                                                            <p>{{ comp.material_personalizado.color }} · {{ comp.gramos_totales }}g</p>
                                                         {% else %}
                                                             <span class="text-red-400/70 italic">Sin material</span>
                                                         {% endif %}
@@ -326,7 +323,7 @@
                                                         {% if pedido.estado_pedido == 'En_Espera' %}
                                                             <div class="flex items-center justify-center gap-1">
                                                                 <button onclick="abrirModalEditarItem({{ comp.id }}, '{% url 'pedidos:editar_item' comp.id %}')"
-                                                                        class="p-1 text-blue-400/60 hover:bg-blue-500/10 rounded-md"
+                                                                        class="p-2 text-blue-400 hover:bg-blue-600 hover:text-white transition-all rounded-lg"
                                                                         title="Editar componente">
                                                                     <svg class="w-3.5 h-3.5"
                                                                          fill="none"
@@ -336,13 +333,13 @@
                                                                     </svg>
                                                                 </button>
                                                                 <button onclick="eliminarItem({{ comp.id }})"
-                                                                        class="p-1 text-red-400/60 hover:bg-red-500/10 rounded-md"
+                                                                        class="p-2 text-red-400 hover:bg-red-600 hover:text-white transition-all rounded-lg"
                                                                         title="Eliminar componente">
                                                                     <svg class="w-3.5 h-3.5"
                                                                          fill="none"
                                                                          stroke="currentColor"
                                                                          viewBox="0 0 24 24">
-                                                                        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                                     </svg>
                                                                 </button>
                                                             </div>

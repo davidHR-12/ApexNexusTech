@@ -214,7 +214,7 @@ def dashboard_admin(request):
         'total_listo':         len(pedidos_por_estado['Listo']),
         'total_activos':       len(pedidos_activos),
         # Solicitudes
-        'solicitudes_pendientes': solicitudes_pendientes,
+        'solicitudes_pendientes': solicitudes_pendientes[:5],
         'solicitudes_count':      solicitudes_count,
         # Inventario
         'alertas_stock':  alertas_stock[:5],
