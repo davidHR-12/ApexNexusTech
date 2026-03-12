@@ -199,11 +199,20 @@ def generar_factura_pdf(request, pedido_id):
         pedido.usuario.get_full_name() if getattr(pedido, "usuario_id", None)
         else getattr(pedido, "guest_nombre", "—")
     ) or "—"
-    email_cliente = (
-        pedido.usuario.email if getattr(pedido, "usuario_id", None)
-        else getattr(pedido, "guest_email", "—")
-    ) or "—"
-    tel_cliente = getattr(pedido, "guest_telefono", "") or ""
+    email_cliente = None
+    if getattr(pedido, "usuario_id", None):
+        u = pedido.usuario
+        # Si es manual y el email es ficticio, no lo mostramos
+        if not (getattr(u, "is_manual", False) and u.email.startswith("manual_")):
+            email_cliente = u.email
+    else:
+        email_cliente = getattr(pedido, "guest_email", None)
+
+    email_cliente = email_cliente or None
+    if getattr(pedido, "usuario_id", None):
+        tel_cliente = getattr(pedido.usuario, "telefono", "") or ""
+    else:
+        tel_cliente = getattr(pedido, "guest_telefono", "") or ""
 
     badge = Table(
         [[Paragraph(pedido.get_estado_pedido_display().upper(), S["badge"])]],
@@ -218,10 +227,11 @@ def generar_factura_pdf(request, pedido_id):
     ]))
 
     izq2 = [
-        Paragraph("DATOS DEL CLIENTE", S["sec"]),
-        Paragraph(nombre_cliente, S["cli_nom"]),
-        Paragraph(email_cliente, S["cli_sub"]),
+    Paragraph("DATOS DEL CLIENTE", S["sec"]),
+    Paragraph(nombre_cliente, S["cli_nom"]),
     ]
+    if email_cliente:
+        izq2.append(Paragraph(email_cliente, S["cli_sub"]))
     if tel_cliente:
         izq2.append(Paragraph(tel_cliente, S["cli_sub"]))
 

@@ -1,11 +1,12 @@
 {% load humanize %}
+{% load tailwind_tags %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    {% tailwind_css %}
     <link rel="icon"
           type="image/x-icon"
           href="{% static 'img/Logo-figura.ico' %}">
@@ -16,55 +17,6 @@
         Inicio - A.N.T
       {% endblock title %}
     </title>
-    <style>
-      body { font-family: 'Inter', sans-serif; }
-
-      input:-webkit-autofill,
-      input:-webkit-autofill:hover,
-      input:-webkit-autofill:focus,
-      textarea:-webkit-autofill,
-      select:-webkit-autofill {
-        -webkit-box-shadow: 0 0 0px 1000px #0f172a inset;
-        -webkit-text-fill-color: #ffffff;
-        transition: background-color 9999s ease-in-out 0s;
-      }
-
-      /* ── Menú móvil ── */
-      #mobile-menu {
-        transition: all 0.3s ease-in-out;
-        max-height: 0;
-        overflow: hidden;
-      }
-      #mobile-menu.open {
-        max-height: 500px;
-        padding-bottom: 1.5rem;
-      }
-
-      /* ── Cart Drawer ── */
-      #cart-drawer {
-        transform: translateX(100%);
-        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      #cart-drawer.open {
-        transform: translateX(0);
-      }
-      #cart-overlay {
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.35s ease;
-      }
-      #cart-overlay.open {
-        opacity: 1;
-        pointer-events: auto;
-      }
-
-      /* Badge pulse cuando hay items */
-      @keyframes badgePulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.2); }
-      }
-      .badge-pulse { animation: badgePulse 2.5s ease-in-out infinite; }
-    </style>
   </head>
   <body class="bg-[#0f172a] text-white flex flex-col min-h-screen">
     {# ════════ NAVBAR ════════ #}

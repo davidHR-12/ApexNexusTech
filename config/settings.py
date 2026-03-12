@@ -58,11 +58,18 @@ INSTALLED_APPS = [
     'apps.finanzas',
     'apps.reportes',
     "django_htmx",
+    'tailwind',
+    'theme',
+    'django_browser_reload',    
 ]
+
+TAILWIND_APP_NAME = 'theme' 
+INTERNAL_IPS = ['127.0.0.1']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django_browser_reload.middleware.BrowserReloadMiddleware',
     "django_htmx.middleware.HtmxMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

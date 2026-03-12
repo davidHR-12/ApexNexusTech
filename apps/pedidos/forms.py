@@ -214,6 +214,7 @@ class ComponenteItemForm(TailwindModelForm):
         self.fields['descripcion'].required = True
         self.fields['descripcion'].label    = 'Nombre del componente'
         self.fields['gramos_por_unidad'].required = True
+        self.fields['gramos_por_unidad'].initial = ""
         self.fields['precio_unitario'].required    = True
 
     def clean_precio_unitario(self):

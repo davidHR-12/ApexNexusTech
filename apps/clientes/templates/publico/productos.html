@@ -111,13 +111,6 @@
     {# ── Grid (target HTMX) ── #}
     <div id="productos-grid">{% include "publico/partials/productos_tabla.html" %}</div>
   </section>
-  <style>
-.pill-on  { background:#10b981; border-color:#10b981; color:#fff; }
-.pill-off { background:transparent; border-color:#374151; color:#9ca3af; }
-.pill-off:hover { border-color:rgba(16,185,129,0.4); color:#e5e7eb; }
-.htmx-indicator { display:none; }
-.htmx-request .htmx-indicator { display:flex; }
-  </style>
   <script>
 const form = document.getElementById('filtros-form');
 

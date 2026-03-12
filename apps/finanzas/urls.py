@@ -12,4 +12,6 @@ urlpatterns = [
     path('gastos/eliminar/<int:gasto_id>/', views.eliminar_gasto, name='eliminar_gasto'),
     path("gastos/api/<int:gasto_id>/", views.gasto_detalle_api, name="gasto_detalle_api"),
     path('gastos/por-mes/', views.gastos_por_mes, name='gastos_por_mes'),
+    path("gastos/exportar/", views.exportar_gastos_excel, name="exportar_gastos"),
+
 ]

@@ -1,11 +1,10 @@
 {% extends "core/base_admin.html" %}
 {% load humanize %}
 {% load static %}
-
 {% block content %}
-<div class="p-6">
+  <div class="p-6">
     {# KPIs (Igual que antes) #}
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
       <div class="md:col-span-1">
         <h1 class="text-3xl font-bold text-white tracking-tight">Pedidos</h1>
         <p class="text-gray-400 text-sm mt-1">Gestión de producción y ventas</p>
@@ -28,9 +27,13 @@
           <p class="text-2xl font-bold text-blue-400">{{ kpis.produccion }}</p>
         </div>
         <div class="p-3 bg-blue-500/10 rounded-xl text-blue-400">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z">
-            </path>
+          <svg class="w-6 h-6"
+               fill="none"
+               viewBox="0 0 24 24"
+               stroke-width="1.5"
+               stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v3m6-3v3m-7.5 3h9l-1.5 3h-6l-1.5-3Zm3 3v2.25M12 18.75V21m-4.5-2.25H6.75a2.25 2.25 0 0 1-2.25-2.25V13.5m15 0V16.5a2.25 2.25 0 0 1-2.25 2.25H16.5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 18.75h16.5M4.5 21h15" /></path>
           </svg>
         </div>
       </div>
@@ -46,18 +49,11 @@
         </div>
       </div>
     </div>
-
     {# CONTENEDOR DE FILTROS (con ID para OOB) #}
-    <div id="barra-filtros-pedidos-container">
-        {% include "pedidos/partials/barra_filtros.html" %}
-    </div>
-
+    <div id="barra-filtros-pedidos-container">{% include "pedidos/partials/barra_filtros.html" %}</div>
     {# CONTENEDOR DE TABLA #}
-    <div id="pedidos-container" class="space-y-6">
-        {% include "pedidos/partials/pedido_tabla.html" %}
-    </div>
-</div>
-
-{% include "pedidos/modals/crear_pedido.html" with modal_id="modalNuevoPedido" title="Nuevo Pedido" description="Completa la información del nuevo pedido." max_width="max-w-xl" %}
-{% include "pedidos/modals/cliente_express.html" with modal_id="modalClienteExpress" title="Registro Express de Cliente" description="Completa la información del nuevo cliente." max_width="max-w-md" %}
+    <div id="pedidos-container" class="space-y-6">{% include "pedidos/partials/pedido_tabla.html" %}</div>
+  </div>
+  {% include "pedidos/modals/crear_pedido.html" with modal_id="modalNuevoPedido" title="Nuevo Pedido" description="Completa la información del nuevo pedido." max_width="max-w-xl" %}
+  {% include "pedidos/modals/cliente_express.html" with modal_id="modalClienteExpress" title="Registro Express de Cliente" description="Completa la información del nuevo cliente." max_width="max-w-md" %}
 {% endblock %}

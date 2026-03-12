@@ -216,7 +216,7 @@ def dashboard(request):
 
     # ── 6. Materiales con stock bajo ─────────────────────────────
     todos_materiales = Material.objects.filter(activo=True).select_related('tipo', 'color', 'marca')
-    materiales_bajos = sorted([m for m in todos_materiales if m.necesita_reposicion], key=lambda m: m.stock_actual)[:8]
+    materiales_bajos = sorted([m for m in todos_materiales if m.necesita_reposicion], key=lambda m: m.stock_actual)[:5]
     total_gramos     = sum(m.stock_actual for m in todos_materiales)
     total_kg         = float(total_gramos) / 1000
 
@@ -224,7 +224,7 @@ def dashboard(request):
     ultimos_pedidos = (
         Pedido.objects
         .select_related('usuario')
-        .order_by('-fecha_creacion')[:8]
+        .order_by('-fecha_creacion')[:5]
     )
 
     # ── 8. Gastos por categoría (mes actual) ─────────────────────
