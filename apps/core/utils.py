@@ -7,12 +7,12 @@ class TailwindModelForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         BASE    = "w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white outline-none focus:border-[#10b981] transition-all"
-        FILE    = (
+        FILE = (
             "w-full bg-[#0f172a] border border-gray-700 rounded-xl py-2 px-4 text-gray-400 "
             "focus:border-[#10b981] outline-none transition text-sm "
-            "file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 "
-            "file:text-sm file:font-bold file:bg-[#10b981]/10 file:text-[#10b981] "
-            "hover:file:bg-[#10b981]/20"
+            "file:mr-4 file:py-2 file:px-5 file:rounded-lg file:border-0 file:cursor-pointer "
+            "file:text-sm file:font-bold file:bg-[#10b981] file:text-white "
+            "hover:file:bg-[#059669] file:transition-colors file:shadow-sm"
         )
         CHECK   = "rounded border-gray-700 text-[#10b981] focus:ring-[#10b981] bg-gray-900"
 

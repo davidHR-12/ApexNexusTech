@@ -515,3 +515,20 @@ body {
     transform: translate(0, 0) skew(5deg);
   }
 }
+/* ── File input button ── */
+input[type="file"]::file-selector-button {
+  margin-right: 1rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  border: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  background-color: #10b981;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background-color: #059669;
+}
