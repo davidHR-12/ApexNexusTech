@@ -25,6 +25,26 @@
                 </a>
             </div>
         </div>
+        {% if recordatorio_reporte %}
+            <div class="flex items-center gap-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 mb-2">
+                <div class="p-2 bg-amber-500/20 rounded-xl flex-shrink-0">
+                    <svg class="w-4 h-4 text-amber-400"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-amber-300 font-bold text-sm">Inicio de mes — ¿Ya descargaste los reportes del mes anterior?</p>
+                    <p class="text-amber-400/60 text-xs mt-0.5">Exporta ventas e inventario antes de que el período se mezcle.</p>
+                </div>
+                <a href="{% url 'reportes:dashboard' %}"
+                   class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-black rounded-xl transition-all flex-shrink-0">
+                    Ir a Reportes →
+                </a>
+            </div>
+        {% endif %}
         {# ── CONTADORES DE ESTADO ─────────────────────────────────── #}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <a href="{% url 'pedidos:pedidos_lista' %}?estado=En_Espera"

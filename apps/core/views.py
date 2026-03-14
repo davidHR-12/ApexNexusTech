@@ -1,34 +1,40 @@
 # Librerías estándar de Python
 import json
 import os
+from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
 # Django: Núcleo y Utilidades
 from django.conf import settings
 from django.contrib import messages
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
 
 # Django: Decoradores
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
+from django.contrib.auth import update_session_auth_hash
+from django.utils.http import urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.urls import reverse
 
 # Apps locales: Modelos y Decoradores externos
 from apps.finanzas.models import Gasto
-from apps.materiales.models import Material
-from apps.pedidos.models import ConfiguracionPago, Pago, Pedido
+from apps.pedidos.models import ConfiguracionPago
 from apps.productos.models import Categoria, Producto
 from apps.usuarios.decorators import admin_required
+from apps.usuarios.utils import email_verification_token
 
 # Directorio actual: Modelos y Formularios
 from .forms import (
     CardPublicaForm, ConfiguracionCalculadoraForm, ContactoForm,
     EstadisticasForm, ImpresoraForm, MaterialesForm,
-    ProcesoForm, ProductosDestacadosForm
+    ProcesoForm, ProductosDestacadosForm,PerfilForm, CambioPasswordForm
 )
 from .models import CardPublica, ConfiguracionCalculadora, ConfiguracionSitio, Impresora
+from apps.usuarios.models import Usuario
 
 # ════════════════════════════════════════════════════════════════════
 # UTILIDADES PRIVADAS (Helper Functions)
@@ -169,7 +175,6 @@ def dashboard_admin(request):
     """
     from apps.pedidos.models import Pedido, SolicitudCotizacion
     from apps.materiales.models import Material
-    from django.db.models import F
 
     # ── Pedidos activos agrupados por estado ──────────────────────
     estados_activos = ['En_Espera', 'Confirmado', 'En_Produccion', 'Listo']
@@ -197,6 +202,8 @@ def dashboard_admin(request):
         .order_by('-fecha_solicitud')[:6]
     )
     solicitudes_count = SolicitudCotizacion.objects.filter(estado='Pendiente').count()
+    hoy = date.today()
+    recordatorio_reporte = hoy.day <= 3
 
     # ── Alertas de stock ──────────────────────────────────────────
     materiales = Material.objects.filter(activo=True).select_related('tipo', 'color', 'marca')
@@ -205,7 +212,8 @@ def dashboard_admin(request):
 
     context = {
         'segment': 'dashboard_admin',
-        'kpis': {'solicitudes_nuevas': solicitudes_count},  # para el badge del sidebar
+        'kpis': {'solicitudes_nuevas': solicitudes_count, 'recordatorio_reporte': recordatorio_reporte},
+        'recordatorio_reporte': recordatorio_reporte,
         # Pedidos operativos
         'pedidos_por_estado':  pedidos_por_estado,
         'total_en_espera':     len(pedidos_por_estado['En_Espera']),
@@ -611,3 +619,117 @@ def reordenar_cards(request):
         return JsonResponse({'ok': False, 'error': 'JSON inválido'}, status=400)
     except Exception as e:
         return JsonResponse({'ok': False, 'error': str(e)}, status=500)
+
+@admin_required
+def mi_perfil(request):
+    """
+    Página de perfil del usuario autenticado.
+ 
+    accion=perfil   → guarda nombre/teléfono. Si el email cambió,
+                      lo almacena en pending_email y envía verificación.
+                      El email actual NO cambia hasta confirmar.
+    accion=password → cambia contraseña validando la actual.
+    """
+    user          = request.user
+    perfil_form   = PerfilForm(instance=user)
+    password_form = CambioPasswordForm(user=user)
+ 
+    if request.method == "POST":
+        accion = request.POST.get("accion")
+ 
+        # ── Guardar datos del perfil ──────────────────────────────
+        if accion == "perfil":
+            perfil_form = PerfilForm(request.POST, instance=user)
+            if perfil_form.is_valid():
+                email_actual = user.email
+                email_nuevo = perfil_form.cleaned_data["email_nuevo"]
+                print(f"DEBUG: email_actual={email_actual!r}, email_nuevo={email_nuevo!r}, igual={email_nuevo == email_actual}")
+
+ 
+                # Guardar campos que NO son email (guardamos manualmente para controlar email)
+                user.first_name = perfil_form.cleaned_data["first_name"]
+                user.last_name  = perfil_form.cleaned_data["last_name"]
+                user.telefono   = perfil_form.cleaned_data["telefono"]
+ 
+                if email_nuevo and email_nuevo != email_actual:
+                    # Guardar en pending_email — no tocar email ni username todavía
+                    user.pending_email = email_nuevo
+                    user.save(update_fields=["first_name", "last_name", "telefono", "pending_email"])
+ 
+                    # Enviar verificación al nuevo correo
+                    token = email_verification_token.make_token(user)
+                    uid   = urlsafe_base64_encode(force_bytes(user.pk))
+                    link  = request.build_absolute_uri(
+                        reverse("core:confirmar_email_nuevo",
+                                kwargs={"uidb64": uid, "token": token})
+                    )
+                    from apps.clientes.emails import enviar_confirmacion_email_nuevo
+                    enviar_confirmacion_email_nuevo(user, email_nuevo, link)
+ 
+                    messages.info(
+                        request,
+                        f"Se envió un enlace de confirmación a {email_nuevo}. "
+                        f"Tu email actual ({email_actual}) sigue activo hasta que confirmes el cambio."
+                    )
+                else:
+                    # Solo nombre/teléfono cambiaron
+                    user.save(update_fields=["first_name", "last_name", "telefono"])
+                    messages.success(request, "Perfil actualizado correctamente.")
+ 
+                return redirect("core:mi_perfil")
+ 
+        # ── Cambiar contraseña ────────────────────────────────────
+        elif accion == "password":
+            password_form = CambioPasswordForm(user=user, data=request.POST)
+            if password_form.is_valid():
+                user.set_password(password_form.cleaned_data["password_nuevo"])
+                user.save()
+                update_session_auth_hash(request, user)   # mantiene la sesión activa
+                messages.success(request, "Contraseña actualizada correctamente.")
+                return redirect("core:mi_perfil")
+ 
+    return render(request, "core/configuraciones/mi_perfil.html", {
+        "segment":       "configuracion",
+        "perfil_form":   perfil_form,
+        "password_form": password_form,
+    })
+ 
+ 
+@admin_required
+def confirmar_email_nuevo(request, uidb64, token):
+    """
+    Confirma el cambio de email pendiente.
+    Una vez verificado, mueve pending_email → email y limpia pending_email.
+    """
+    try:
+        uid  = urlsafe_base64_decode(uidb64).decode()
+        user = Usuario.objects.get(pk=uid)
+    except Exception:
+        user = None
+ 
+    if user and email_verification_token.check_token(user, token) and user.pending_email:
+        nuevo_email = user.pending_email
+ 
+        # Verificar que nadie más haya tomado ese email mientras esperaba
+        if Usuario.objects.filter(email=nuevo_email).exclude(pk=user.pk).exists():
+            messages.error(
+                request,
+                "El correo ya fue registrado por otra cuenta. Por favor elige uno diferente."
+            )
+            user.pending_email = None
+            user.save(update_fields=["pending_email"])
+            return redirect("core:mi_perfil")
+ 
+        user.email         = nuevo_email
+        user.username      = nuevo_email   # username == email en este sistema
+        user.pending_email = None
+        # is_email_verified: superusers la tienen True por el save() del modelo,
+        # clientes la recuperan aquí
+        user.is_email_verified = True
+        user.save()
+ 
+        messages.success(request, f"Email actualizado a {nuevo_email} correctamente.")
+        return redirect("core:mi_perfil")
+ 
+    # Enlace inválido o ya usado
+    return render(request, "core/configuraciones/confirmar_email_invalido.html", status=400)

@@ -1,0 +1,85 @@
+<div class="max-h-[60vh] overflow-y-auto pr-2 custom-scroll">
+  {% if materiales %}
+    {# Seleccionar todos #}
+    <div class="flex items-center gap-3 p-3 mb-4 bg-gray-800/20 border border-gray-800/50 rounded-xl">
+      <label class="relative flex items-center cursor-pointer">
+        <input type="checkbox" id="selectAllMateriales"
+               class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-700 bg-gray-800
+                      checked:bg-emerald-600 checked:border-emerald-600 transition-all"
+               onclick="toggleSelectAllMateriales(this)">
+        <span class="absolute text-white opacity-0 peer-checked:opacity-100 top-1/2 left-1/2
+                     transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+          </svg>
+        </span>
+      </label>
+      <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Seleccionar todos</span>
+    </div>
+  {% endif %}
+
+  <div class="space-y-3 pb-20">
+    {% for m in materiales %}
+      <div class="flex items-center justify-between p-4 bg-gray-900/40 border border-gray-800
+                  rounded-2xl hover:border-emerald-500/30 transition-all group">
+        <div class="flex items-center gap-4">
+          {# Checkbox #}
+          <label class="relative flex items-center cursor-pointer">
+            <input type="checkbox"
+                   name="materiales_ids"
+                   value="{{ m.id }}"
+                   class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-700
+                          bg-gray-800 checked:bg-emerald-500 checked:border-emerald-500 transition-all"
+                   onchange="toggleBatchButtonMateriales()">
+            <span class="absolute text-white opacity-0 peer-checked:opacity-100 top-1/2 left-1/2
+                         transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+            </span>
+          </label>
+
+          {# Dot de color #}
+          <span class="w-3 h-3 rounded-full flex-shrink-0"
+                style="background-color: {{ m.color.codigo_hex|default:'#64748b' }}"></span>
+
+          {# Datos #}
+          <div>
+            <p class="text-white font-bold text-sm">{{ m.tipo }} {{ m.color }}</p>
+            <p class="text-gray-500 text-xs">{{ m.marca }} · {{ m.stock_actual|floatformat:0 }}g disponibles</p>
+          </div>
+        </div>
+
+        <button onclick="reactivarMaterial('{{ m.id }}')"
+                class="px-3 py-1.5 bg-gray-800 text-gray-400 border border-gray-700 rounded-xl
+                       text-[10px] font-bold hover:bg-emerald-500 hover:text-white transition-all">
+          Activar
+        </button>
+      </div>
+    {% empty %}
+      <div class="py-10 text-center border-2 border-dashed border-gray-800/50 rounded-2xl bg-gray-900/20">
+        <svg class="w-8 h-8 text-gray-700 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p class="text-gray-400 font-bold text-sm uppercase tracking-tight">Sin materiales archivados</p>
+        <p class="text-gray-600 text-xs mt-1">No hay materiales desactivados en este momento.</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  {# Acción masiva fija al fondo #}
+  <div id="batchActionMateriales" class="hidden absolute bottom-4 left-0 right-0 px-6">
+    <button onclick="reactivarMultiplesMateriales()"
+            class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl
+                   shadow-2xl shadow-emerald-900/40 flex items-center justify-center gap-3
+                   transition-all transform hover:scale-[1.02]">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003
+                 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+      Activar <span id="selectedCountMateriales">0</span> seleccionados
+    </button>
+  </div>
+</div>

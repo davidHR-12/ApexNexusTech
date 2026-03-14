@@ -60,6 +60,12 @@ class Usuario(AbstractUser):
         verbose_name="Cliente manual (Sin login)"
     )
 
+    pending_email = models.EmailField(
+        blank=True,
+        null=True,
+        verbose_name="Email pendiente de verificación",
+    )
+
     # Configuramos Django para que pida el email al iniciar sesión
     USERNAME_FIELD = "email"
     # Campos que pide el comando createsuperuser aparte del email y password

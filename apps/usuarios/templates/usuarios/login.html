@@ -27,31 +27,27 @@
     {% csrf_token %}
     {% for field in form %}
       <div>
-        <label class="text-gray-400 text-sm block mb-2">{{ field.label }}</label>
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-gray-400 text-sm">{{ field.label }}</label>
+          {# Enlace "¿Olvidaste tu contraseña?" solo en el campo password #}
+          {% if field.name == "password" %}
+            <a href="{% url 'usuarios:password_reset' %}"
+               class="text-xs text-gray-600 hover:text-[#10b981] transition">
+              ¿Olvidaste tu contraseña?
+            </a>
+          {% endif %}
+        </div>
         {% if field.name == "password" %}
           <div class="relative">
             {{ field }}
-            {# Botón ojo #}
             <button type="button"
                     id="toggle-password"
                     class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-[#10b981] transition">
-              {# Ojo cerrado (default) #}
-              <svg id="eye-closed"
-                   xmlns="http://www.w3.org/2000/svg"
-                   class="h-5 w-5"
-                   fill="none"
-                   viewBox="0 0 24 24"
-                   stroke="currentColor">
+              <svg id="eye-closed" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.657.402-3.22 1.125-4.575M9.88 9.88a3 3 0 104.243 4.243" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18" />
               </svg>
-              {# Ojo abierto #}
-              <svg id="eye-open"
-                   xmlns="http://www.w3.org/2000/svg"
-                   class="h-5 w-5 hidden"
-                   fill="none"
-                   viewBox="0 0 24 24"
-                   stroke="currentColor">
+              <svg id="eye-open" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
@@ -65,11 +61,7 @@
     {% endfor %}
     <div id="caps-warning"
          class="mt-2 hidden items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-400">
-      <svg xmlns="http://www.w3.org/2000/svg"
-           class="h-4 w-4 flex-shrink-0"
-           fill="none"
-           viewBox="0 0 24 24"
-           stroke="currentColor">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 4h.01M5.07 19h13.86c1.1 0 1.79-1.2 1.24-2.12L13.24 4.88c-.55-.92-1.93-.92-2.48 0L3.83 16.88c-.55.92.14 2.12 1.24 2.12z" />
       </svg>
       <span>Bloq Mayús está activado</span>
@@ -102,7 +94,6 @@
 {% endblock auth_content %}
 {% block extra_js %}
   <script>
-      // Detectar Mayúsculas activadas
       document.addEventListener("DOMContentLoaded", () => {
           const passwordInput = document.getElementById("id_password");
           const warning = document.getElementById("caps-warning");
@@ -110,17 +101,11 @@
           if (!passwordInput) return;
 
           passwordInput.addEventListener("keydown", (e) => {
-              warning.classList.toggle(
-                  "hidden",
-                  !e.getModifierState("CapsLock")
-              );
-              warning.classList.toggle(
-                  "flex",
-                  e.getModifierState("CapsLock")
-              );
+              warning.classList.toggle("hidden", !e.getModifierState("CapsLock"));
+              warning.classList.toggle("flex", e.getModifierState("CapsLock"));
           });
       });
-      // Deshabilitar el botón de reenvío tras el primer clic
+
       const reenviarForm = document.querySelector('form[action*="reenviar_verificacion"]');
       if (reenviarForm) {
           reenviarForm.addEventListener('submit', function() {
@@ -131,7 +116,6 @@
           });
       }
 
-      // Mostrar/ocultar contraseña
       document.addEventListener("DOMContentLoaded", () => {
           const passwordInput = document.getElementById("id_password");
           const toggleBtn = document.getElementById("toggle-password");
@@ -142,14 +126,12 @@
 
           toggleBtn.addEventListener("click", () => {
               const isPassword = passwordInput.type === "password";
-
               passwordInput.type = isPassword ? "text" : "password";
               eyeOpen.classList.toggle("hidden", !isPassword);
               eyeClosed.classList.toggle("hidden", isPassword);
           });
       });
 
-      // Selecciona todos los mensajes y los oculta tras 5 segundos
       setTimeout(function() {
           let messages = document.querySelectorAll(".animate-pulse");
           messages.forEach((msg) => {

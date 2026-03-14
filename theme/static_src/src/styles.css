@@ -532,3 +532,21 @@ input[type="file"]::file-selector-button {
 input[type="file"]::file-selector-button:hover {
   background-color: #059669;
 }
+/* Ocultar el contenedor de ícono nativo de SweetAlert2 */
+.swal2-icon {
+    border: none !important;
+    background: transparent !important;
+    margin: 0 !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+.swal2-icon.swal2-warning,
+.swal2-icon.swal2-error,
+.swal2-icon.swal2-success,
+.swal2-icon.swal2-info,
+.swal2-icon.swal2-question {
+    border: none !important;
+    background: none !important;
+    color: transparent !important;
+}

@@ -26,5 +26,7 @@ urlpatterns = [
     path('configuracion/cards/reordenar/', views.reordenar_cards, name='reordenar_cards'),
     path('configuracion/factura/', views.configurar_factura, name='configurar_factura'),
     path('configuracion/calculadora/', views.configurar_calculadora, name='configurar_calculadora'),
+    path("configuracion/mi-perfil/", views.mi_perfil, name="mi_perfil"),
+    path("configuracion/confirmar-email/<str:uidb64>/<str:token>/", views.confirmar_email_nuevo, name="confirmar_email_nuevo"),
 
 ]

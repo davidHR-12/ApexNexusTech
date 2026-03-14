@@ -454,7 +454,6 @@ def crear_pedido_manual(request):
     if form.is_valid():
         nuevo_pedido = form.save(commit=False)
         nuevo_pedido.peso_estimado_g = 0
-        nuevo_pedido.tiempo_estimado_h = 0
         nuevo_pedido.precio_total = 0
         nuevo_pedido.save()
         messages.success(

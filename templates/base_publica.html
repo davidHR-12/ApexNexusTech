@@ -68,7 +68,7 @@
             <div class="h-6 w-[1px] bg-gray-800 mx-2"></div>
             {# Botón carrito con badge #}
             <button onclick="abrirCarrito()"
-                    class="relative p-2 text-gray-400 hover:text-[#10b981] hover:bg-gray-800/50 rounded-xl transition-all">
+                    class="relative p-2 text-gray-400 cursor-pointer hover:text-[#10b981] hover:bg-gray-800/50 rounded-xl transition-all">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
@@ -280,7 +280,7 @@
               {% if config.instagram_url %}
                 <li class="flex items-center gap-2">
                   <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.5 13.5h-9V8.5h9v5z" />
+                    <path d="M7.75 2C4.574 2 2 4.574 2 7.75v8.5C2 19.426 4.574 22 7.75 22h8.5C19.426 22 22 19.426 22 16.25v-8.5C22 4.574 19.426 2 16.25 2h-8.5zm0 2h8.5C18.284 4 20 5.716 20 7.75v8.5c0 2.034-1.716 3.75-3.75 3.75h-8.5C5.716 20 4 18.284 4 16.25v-8.5C4 5.716 5.716 4 7.75 4zm9.25 1.5a.75.75 0 100 1.5.75.75 0 000-1.5zM12 7a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6z" />
                   </svg>
                   <a href="{{ config.instagram_url }}"
                      target="_blank"

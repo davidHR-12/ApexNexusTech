@@ -1,4 +1,8 @@
 {% extends "core/base_admin.html" %}
+{% block title %}
+    Dashboard de Reportes - A.N.T
+{% endblock title %}
+{% load humanize %}
 {% load static %}
 {% load l10n %}
 {% block content %}
@@ -26,6 +30,34 @@
                 </a>
             </div>
         </div>
+        {% if mostrar_recordatorio_reporte %}
+            <div class="mb-6 flex items-start gap-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5">
+                <div class="p-2 bg-amber-500/20 rounded-xl flex-shrink-0">
+                    <svg class="w-5 h-5 text-amber-400"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-amber-300 font-bold text-sm">📊 Inicio de mes — ¿Descargaste el reporte de {{ mes_anterior_label }}?</p>
+                    <p class="text-amber-400/70 text-xs mt-1">
+                        Es un buen momento para exportar ventas e inventario del mes anterior antes de que el período se mezcle.
+                    </p>
+                </div>
+                <div class="flex gap-2 flex-shrink-0">
+                    <a href="{% url 'reportes:exportar_ventas' %}?desde={{ inicio_ant }}&hasta={{ fin_ant }}"
+                       class="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-xl transition-all whitespace-nowrap">
+                        ⬇ Ventas
+                    </a>
+                    <a href="{% url 'reportes:exportar_inventario' %}"
+                       class="px-3 py-2 bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 text-xs font-bold rounded-xl border border-amber-500/30 transition-all whitespace-nowrap">
+                        ⬇ Inventario
+                    </a>
+                </div>
+            </div>
+        {% endif %}
         {# ── KPI CARDS ─────────────────────────────────── #}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {# Ingresos #}
@@ -41,7 +73,7 @@
                         </svg>
                     </div>
                 </div>
-                <p class="text-2xl font-black text-[#10b981] font-mono">RD$ {{ kpis.ingresos_mes|floatformat:0 }}</p>
+                <p class="text-2xl font-black text-[#10b981] font-mono">RD$ {{ kpis.ingresos_mes|floatformat:0|intcomma }}</p>
                 {% if kpis.ingresos_var is not None %}
                     <p class="text-xs mt-1.5 {% if kpis.ingresos_var >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
                         {% if kpis.ingresos_var >= 0 %}
@@ -66,7 +98,7 @@
                         </svg>
                     </div>
                 </div>
-                <p class="text-2xl font-black text-white font-mono">RD$ {{ kpis.gastos_mes|floatformat:0 }}</p>
+                <p class="text-2xl font-black text-white font-mono">RD$ {{ kpis.gastos_mes|floatformat:0|intcomma }}</p>
                 {% if kpis.gastos_var is not None %}
                     <p class="text-xs mt-1.5 {% if kpis.gastos_var <= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
                         {% if kpis.gastos_var >= 0 %}
@@ -92,7 +124,7 @@
                     </div>
                 </div>
                 <p class="text-2xl font-black font-mono {% if kpis.ganancia_mes >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
-                    RD$ {{ kpis.ganancia_mes|floatformat:0 }}
+                    RD$ {{ kpis.ganancia_mes|floatformat:0|intcomma }}
                 </p>
                 {% if kpis.ganancia_var is not None %}
                     <p class="text-xs mt-1.5 {% if kpis.ganancia_var >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
@@ -101,7 +133,7 @@
                         {% else %}
                             ▼
                         {% endif %}
-                        {{ kpis.ganancia_var|floatformat:1 }}% vs mes anterior
+                        {{ kpis.ganancia_var|floatformat:1|intcomma }}% vs mes anterior
                     </p>
                 {% endif %}
             </div>
@@ -143,7 +175,7 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="text-amber-300 font-bold text-lg">RD$ {{ kpis.saldo_pendiente_total|floatformat:0 }}</p>
+                    <p class="text-amber-300 font-bold text-lg">RD$ {{ kpis.saldo_pendiente_total|floatformat:0|intcomma }}</p>
                     <p class="text-amber-200/60 text-xs">Saldo pendiente por cobrar</p>
                 </div>
             </div>
@@ -158,7 +190,7 @@
                 </div>
                 <div>
                     <p class="{% if kpis.materiales_criticos > 0 %}text-red-300{% else %}text-emerald-300{% endif %} font-bold text-lg">
-                        {{ kpis.materiales_criticos }} material{{ kpis.materiales_criticos|pluralize:"es" }}
+                        {{ kpis.materiales_criticos|intcomma }} material{{ kpis.materiales_criticos|pluralize:"es" }}
                     </p>
                     <p class="text-gray-400 text-xs">
                         {% if kpis.materiales_criticos > 0 %}
@@ -254,7 +286,7 @@
                                 </div>
                                 <div class="text-right">
                                     <p class="text-red-400 font-mono text-sm font-bold">{{ m.stock_actual|floatformat:0 }}g</p>
-                                    <p class="text-gray-600 text-xs">mín: {{ m.stock_minimo|floatformat:0 }}g</p>
+                                    <p class="text-gray-600 text-xs">mín: {{ m.stock_minimo|floatformat:0|intcomma }}g</p>
                                 </div>
                             </div>
                         {% endfor %}
@@ -302,7 +334,7 @@
                                         {{ pedido.get_estado_pedido_display }}
                                     </span>
                                 </td>
-                                <td class="px-5 py-3 text-right font-mono font-bold text-white">RD$ {{ pedido.precio_total|floatformat:0 }}</td>
+                                <td class="px-5 py-3 text-right font-mono font-bold text-white">RD$ {{ pedido.precio_total|floatformat:0|intcomma }}</td>
                                 <td class="px-5 py-3 text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d/m/Y" }}</td>
                             </tr>
                         {% empty %}

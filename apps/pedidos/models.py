@@ -65,25 +65,6 @@ class SolicitudCotizacion(models.Model):
         auto_now_add=True, verbose_name="Fecha de solicitud"
     )
 
-    # Respuesta del admin
-    precio_cotizado = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        verbose_name="Precio cotizado",
-    )
-    tiempo_estimado = models.CharField(
-        max_length=100,
-        blank=True,
-        help_text="Ej: 2-3 días hábiles",
-        verbose_name="Tiempo estimado",
-    )
-    notas_admin = models.TextField(blank=True, verbose_name="Notas del administrador")
-    fecha_respuesta = models.DateTimeField(
-        null=True, blank=True, verbose_name="Fecha de respuesta"
-    )
-
     def convertir_a_pedido(self):
         """Crea un pedido a partir de esta solicitud aceptada"""
         if self.estado != "Aceptada":
@@ -93,9 +74,7 @@ class SolicitudCotizacion(models.Model):
             usuario=self.usuario,
             solicitud=self,
             descripcion=f"Pedido personalizado: {self.descripcion}",
-            precio_total=self.precio_cotizado or 0,
             peso_estimado_g=0,
-            tiempo_estimado_h=0,  # Esto luego lo editas en el admin
             estado_pedido="En_Espera",
         )
 
@@ -104,7 +83,7 @@ class SolicitudCotizacion(models.Model):
             pedido=nuevo_pedido,
             descripcion=self.descripcion[:300],  # Cortamos por si es muy largo
             cantidad=1,
-            precio_unitario=self.precio_cotizado or 0,
+            precio_unitario=0,
             gramos_por_unidad=0,
         )
 
@@ -174,26 +153,9 @@ class Pedido(models.Model):
         default=0,
         verbose_name="Peso estimado (gramos)",
     )
-    tiempo_estimado_h = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0,
-        verbose_name="Tiempo estimado (horas)",
-    )
 
-    # Costos
-    precio_kwh_usado = models.DecimalField(  # posiblemente se pueda quitar
-        max_digits=10,
-        decimal_places=2,
-        default=15.00,
-        help_text="Costo de energía por kWh",
-        verbose_name="Precio kWh",
-    )
     costo_material = models.DecimalField(
         max_digits=12, decimal_places=2, default=0, verbose_name="Costo de material"
-    )
-    costo_energia = models.DecimalField(  # posiblemente se pueda quitar
-        max_digits=12, decimal_places=2, default=0, verbose_name="Costo de energía"
     )
     otros_costos = models.DecimalField(
         max_digits=12,
@@ -265,16 +227,6 @@ class Pedido(models.Model):
     guest_ciudad = models.CharField(
         max_length=100, blank=True, verbose_name="Ciudad (Invitado)"
     )
-
-    @property
-    def costo_total_produccion(self):
-        """Costo total de producción (sin margen)"""
-        return self.costo_material + self.costo_energia + self.otros_costos
-
-    @property
-    def ganancia(self):
-        """Ganancia del pedido"""
-        return self.precio_total - self.costo_total_produccion
 
     @property
     def margen_porcentaje(self):

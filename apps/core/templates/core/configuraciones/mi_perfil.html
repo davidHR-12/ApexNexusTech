@@ -1,0 +1,182 @@
+{% extends "core/base_admin.html" %}
+{% block title %}Mi Perfil — A.N.T{% endblock %}
+{% block content %}
+  <div class="space-y-6 max-w-7xl mx-auto">
+    {# Breadcrumb #}
+    <div class="mb-8">
+      <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest mb-3 gap-2">
+        <a href="{% url 'core:configuracion' %}"
+           class="hover:text-white transition-colors">Configuraciones</a>
+        <span>/</span>
+        <span class="text-[#10b981]">Mi Perfil</span>
+      </nav>
+    </div>
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-16 h-16 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center text-emerald-500">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-white">Mi Perfil</h1>
+          <p class="text-gray-500 text-sm mt-0.5">Gestiona tu información personal y acceso.</p>
+        </div>
+      </div>
+    </div>
+    {# ── AVISO: email pendiente de confirmación ── #}
+    {% if request.user.pending_email %}
+      <div class="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+        <svg class="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5.07 19h13.86c1.1 0 1.79-1.2 1.24-2.12L13.24 4.88c-.55-.92-1.93-.92-2.48 0L3.83 16.88c-.55.92.14 2.12 1.24 2.12z" />
+        </svg>
+        <div class="flex-1 text-sm">
+          <p class="text-amber-300 font-bold">Confirmación pendiente</p>
+          <p class="text-amber-400/70 mt-0.5">
+            Se envió un enlace de confirmación a
+            <strong class="text-amber-300">{{ request.user.pending_email }}</strong>.
+            Tu email actual <strong class="text-amber-300">{{ request.user.email }}</strong>
+            seguirá activo hasta que confirmes el cambio.
+          </p>
+        </div>
+      </div>
+    {% endif %}
+    {# ── SECCIÓN 1: Datos personales ── #}
+    <div class="bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-800/60">
+        <h2 class="text-white font-bold text-sm">Datos personales</h2>
+        <p class="text-gray-500 text-xs mt-0.5">
+          Si cambias tu email, recibirás un enlace de confirmación en la nueva dirección antes de que surta efecto.
+        </p>
+      </div>
+      <form method="post" class="p-6 space-y-5">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="perfil">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-gray-400 text-xs font-bold uppercase tracking-wider block mb-2">Nombre</label>
+            {{ perfil_form.first_name }}
+            {% if perfil_form.first_name.errors %}
+              <p class="text-red-400 text-xs mt-1">{{ perfil_form.first_name.errors.0 }}</p>
+            {% endif %}
+          </div>
+          <div>
+            <label class="text-gray-400 text-xs font-bold uppercase tracking-wider block mb-2">Apellido</label>
+            {{ perfil_form.last_name }}
+            {% if perfil_form.last_name.errors %}
+              <p class="text-red-400 text-xs mt-1">{{ perfil_form.last_name.errors.0 }}</p>
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <label class="text-gray-400 text-xs font-bold uppercase tracking-wider block mb-2">
+            Email
+            {% if request.user.pending_email %}
+              <span class="ml-2 text-amber-400 normal-case font-normal text-xs">(pendiente: {{ request.user.pending_email }})</span>
+            {% endif %}
+          </label>
+          {{ perfil_form.email_nuevo }}
+          {% if perfil_form.email_nuevo.errors %}
+            <p class="text-red-400 text-xs mt-1">{{ perfil_form.email_nuevo.errors.0 }}</p>
+          {% endif %}
+        </div>
+        <div>
+          <label class="text-gray-400 text-xs font-bold uppercase tracking-wider block mb-2">Teléfono</label>
+          {{ perfil_form.telefono }}
+          {% if perfil_form.telefono.errors %}
+            <p class="text-red-400 text-xs mt-1">{{ perfil_form.telefono.errors.0 }}</p>
+          {% endif %}
+        </div>
+        {% if perfil_form.non_field_errors %}
+          <p class="text-red-400 text-sm">{{ perfil_form.non_field_errors.0 }}</p>
+        {% endif %}
+        <div class="flex justify-end pt-2">
+          <button type="submit"
+                  class="px-6 py-2.5 bg-[#10b981] hover:bg-emerald-400 text-white text-sm font-bold rounded-xl transition-all">
+            Guardar cambios
+          </button>
+        </div>
+      </form>
+    </div>
+    {# ── SECCIÓN 2: Cambiar contraseña ── #}
+    <div class="bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-800/60">
+        <h2 class="text-white font-bold text-sm">Cambiar contraseña</h2>
+        <p class="text-gray-500 text-xs mt-0.5">Necesitas escribir tu contraseña actual para confirmar.</p>
+      </div>
+      <form method="post" class="p-6 space-y-5">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="password">
+        {% for field in password_form %}
+          <div>
+            <label class="text-gray-400 text-xs font-bold uppercase tracking-wider block mb-2">{{ field.label }}</label>
+            <div class="relative">
+              {{ field }}
+              <button type="button"
+                      data-toggle="{{ field.id_for_label }}"
+                      class="toggle-pw absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-[#10b981] transition">
+                <svg class="h-4 w-4 eye-closed"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.657.402-3.22 1.125-4.575M9.88 9.88a3 3 0 104.243 4.243" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18" />
+                </svg>
+                <svg class="h-4 w-4 eye-open hidden"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </button>
+            </div>
+            {% if field.errors %}<p class="text-red-400 text-xs mt-1">{{ field.errors.0 }}</p>{% endif %}
+          </div>
+        {% endfor %}
+        {% if password_form.non_field_errors %}
+          <p class="text-red-400 text-sm">{{ password_form.non_field_errors.0 }}</p>
+        {% endif %}
+        <div class="flex justify-end pt-2">
+          <button type="submit"
+                  class="px-6 py-2.5 bg-[#334155] hover:bg-[#475569] text-white text-sm font-bold rounded-xl transition-all border border-gray-700">
+            Actualizar contraseña
+          </button>
+        </div>
+      </form>
+    </div>
+    {# ── Info de cuenta ── #}
+    <div class="bg-[#1e293b] border border-gray-800 rounded-2xl px-6 py-4 flex items-center justify-between">
+      <div>
+        <p class="text-gray-500 text-xs uppercase font-bold tracking-wider">Rol</p>
+        <p class="text-white text-sm font-medium mt-0.5">
+          {% if request.user.is_superuser %}
+            Administrador
+          {% else %}
+            Cliente
+          {% endif %}
+        </p>
+      </div>
+      <div class="text-right">
+        <p class="text-gray-500 text-xs uppercase font-bold tracking-wider">Email activo</p>
+        <p class="text-[#10b981] text-sm font-mono mt-0.5">{{ request.user.email }}</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% block extra_js %}
+  <script>
+  document.querySelectorAll('.toggle-pw').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.toggle);
+      if (!input) return;
+      input.type = input.type === 'password' ? 'text' : 'password';
+      btn.querySelector('.eye-open').classList.toggle('hidden');
+      btn.querySelector('.eye-closed').classList.toggle('hidden');
+    });
+  });
+  </script>
+{% endblock %}

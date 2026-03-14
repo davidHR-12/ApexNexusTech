@@ -88,12 +88,20 @@
     <a href="{% url 'reportes:dashboard' %}"
        data-tooltip="Reportes"
        class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if segment == 'reportes' %}bg-[#334155] text-[#10b981]{% else %}text-gray-300 hover:bg-[#334155] hover:text-[#10b981]{% endif %}">
-      <svg class="w-5 h-5 flex-shrink-0"
-           fill="none"
-           stroke="currentColor"
-           viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
+      <div class="relative">
+        <svg class="w-5 h-5 flex-shrink-0"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        {% if kpis.recordatorio_reporte %}
+          <span class="absolute -top-1 -right-1 flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
+          </span>
+        {% endif %}
+      </div>
       <span class="nav-text whitespace-nowrap">Reportes</span>
     </a>
     {# Gastos — listado operativo y análisis detallado #}

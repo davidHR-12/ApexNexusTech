@@ -2,6 +2,9 @@ from django import forms
 from .models import Impresora, CardPublica, ConfiguracionSitio, ConfiguracionCalculadora, ConfiguracionFactura
 from apps.core.utils import TailwindModelForm
 
+from apps.usuarios.models import Usuario
+import re
+
 
 # ════════════════════════════════════════════════════════════════════
 # IMPRESORAS
@@ -152,3 +155,85 @@ class ConfiguracionFacturaForm(TailwindModelForm):
             'footer_texto': forms.Textarea(attrs={'rows': 2}),
             'nota_legal':   forms.Textarea(attrs={'rows': 2}),
         }
+
+
+_FIELD_CLASS = (
+    "w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 "
+    "text-white outline-none focus:border-[#10b981] transition-all"
+)
+class PerfilForm(forms.ModelForm):
+    # Campo independiente — NO parte del model field directo
+    email_nuevo = forms.EmailField(
+        required=False,
+        label="Email",
+        widget=forms.EmailInput(attrs={"class": _FIELD_CLASS, "placeholder": "tu@correo.com"}),
+    )
+
+    class Meta:
+        model = Usuario
+        fields = ["first_name", "last_name", "telefono"]  # ← email FUERA
+        widgets = {
+            "first_name": forms.TextInput(attrs={"class": _FIELD_CLASS, "placeholder": "Tu nombre"}),
+            "last_name":  forms.TextInput(attrs={"class": _FIELD_CLASS, "placeholder": "Tu apellido"}),
+            "telefono":   forms.TextInput(attrs={"class": _FIELD_CLASS, "placeholder": "809-000-0000"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Pre-poblar con el email actual
+        if self.instance and self.instance.pk:
+            self.fields["email_nuevo"].initial = self.instance.email
+
+    def clean_email_nuevo(self):
+        email = self.cleaned_data.get("email_nuevo", "").strip().lower()
+        if email and email != self.instance.email.lower():
+            if Usuario.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+                raise forms.ValidationError("Este correo ya está registrado en otra cuenta.")
+            if Usuario.objects.filter(pending_email=email).exclude(pk=self.instance.pk).exists():
+                raise forms.ValidationError("Este correo ya está siendo verificado por otra cuenta.")
+        return email
+
+    def clean_telefono(self):
+        telefono = self.cleaned_data.get("telefono", "")
+        if telefono and not re.match(r'^[0-9-]+$', telefono):
+            raise forms.ValidationError("El teléfono solo debe contener números y guiones.")
+        return telefono
+ 
+ 
+class CambioPasswordForm(forms.Form):
+    """
+    Cambio de contraseña con validación de la actual.
+    """
+    password_actual  = forms.CharField(
+        label="Contraseña actual",
+        widget=forms.PasswordInput(attrs={"class": _FIELD_CLASS, "placeholder": "••••••••"}),
+    )
+    password_nuevo   = forms.CharField(
+        label="Nueva contraseña",
+        widget=forms.PasswordInput(attrs={"class": _FIELD_CLASS, "placeholder": "Mínimo 8 caracteres"}),
+    )
+    password_confirm = forms.CharField(
+        label="Confirmar nueva contraseña",
+        widget=forms.PasswordInput(attrs={"class": _FIELD_CLASS, "placeholder": "Repite la nueva contraseña"}),
+    )
+ 
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+ 
+    def clean_password_actual(self):
+        pw = self.cleaned_data.get("password_actual")
+        if not self.user.check_password(pw):
+            raise forms.ValidationError("La contraseña actual no es correcta.")
+        return pw
+ 
+    def clean(self):
+        cleaned = super().clean()
+        nuevo   = cleaned.get("password_nuevo")
+        confirm = cleaned.get("password_confirm")
+        if nuevo and confirm and nuevo != confirm:
+            raise forms.ValidationError("Las nuevas contraseñas no coinciden.")
+        if nuevo and len(nuevo) < 8:
+            raise forms.ValidationError("La nueva contraseña debe tener al menos 8 caracteres.")
+        return cleaned
+ 

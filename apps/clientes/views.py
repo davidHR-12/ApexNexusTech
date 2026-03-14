@@ -8,6 +8,8 @@ from apps.pedidos.models import SolicitudCotizacion, Pedido, ItemPedido
 from apps.productos.models import Producto, VarianteProducto
 from apps.clientes.models import PerfilCliente
 from apps.core.models import CardPublica
+from apps.clientes.emails import enviar_confirmacion_pedido_guest
+
 
 
 # Importación de Formularios
@@ -381,9 +383,6 @@ def crear_pedido_catalogo(request, variante_id):
         descripcion=f"Pedido Web: {variante.producto.nombre}",
         precio_total=0,       
         peso_estimado_g=0,    
-        tiempo_estimado_h=0,  
-        costo_material=0,
-        costo_energia=0,
         otros_costos=0
     )
     
@@ -414,7 +413,6 @@ def _procesar_pedido_desde_carrito(usuario, carrito):
             estado_pedido='En_Espera',
             descripcion="Pedido Web: Varios productos del catálogo",
             peso_estimado_g=0,      
-            tiempo_estimado_h=0,    
             precio_total=0          
         )
 
@@ -500,6 +498,7 @@ def checkout_paso_final(request):
                 nuevo_pedido = _crear_pedido_con_items(datos_cliente, carrito)
                 request.session['carrito'] = {}
                 request.session['ultimo_pedido_id'] = nuevo_pedido.id
+                enviar_confirmacion_pedido_guest(nuevo_pedido)
                 messages.success(request, "¡Pedido realizado con éxito!")
                 return redirect('clientes:pedido_confirmado_invitado')
             except Exception as e:
@@ -528,7 +527,6 @@ def _crear_pedido_con_items(datos_cliente, carrito):
         pedido = Pedido.objects.create(
             estado_pedido='En_Espera',
             peso_estimado_g=0,
-            tiempo_estimado_h=0,
             precio_total=0,
             **datos_cliente,
         )
@@ -566,7 +564,6 @@ def _procesar_pedido_guest(data, carrito):
             estado_pedido='En_Espera',
             descripcion="Pedido Web (Invitado): Varios productos del catálogo",
             peso_estimado_g=0,
-            tiempo_estimado_h=0,
             precio_total=0,
         )
 

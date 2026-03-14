@@ -1,0 +1,83 @@
+{% extends "emails/email_base.html" %}
+{% block titulo %}{% if es_reenvio %}Reenvío: {% endif %}Verifica tu cuenta{% endblock %}
+
+{% block email_content %}
+  <!-- HEADER -->
+  <div class="header">
+    {% if logo_url %}
+      <img src="{{ logo_url }}" alt="{{ config.nombre_negocio }}" class="logo">
+    {% else %}
+      <div class="logo-text">{{ config.nombre_negocio }}</div>
+      {% if config.slogan %}<div class="logo-sub">{{ config.slogan }}</div>{% endif %}
+    {% endif %}
+    <div class="badge-info">✉ &nbsp;{% if es_reenvio %}Nuevo enlace de verificación{% else %}Activa tu cuenta{% endif %}</div>
+    <h1>¡Bienvenido{% if user.first_name %}, {{ user.first_name }}{% endif %}!</h1>
+    <p>
+      {% if es_reenvio %}
+        Aquí tienes un nuevo enlace para activar tu cuenta.
+      {% else %}
+        Gracias por registrarte. Solo falta un paso.
+      {% endif %}
+    </p>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- Mensaje principal -->
+    <div class="steps" style="margin-bottom: 8px;">
+      {% if es_reenvio %}
+        <p style="font-size:14px; color:#cbd5e1; line-height:1.6;">
+          Solicitaste un nuevo enlace de verificación. Haz clic en el botón de abajo para activar tu cuenta.
+          Este enlace es válido por <strong style="color:#e2e8f0;">24 horas</strong>.
+        </p>
+      {% else %}
+        <p style="font-size:14px; color:#cbd5e1; line-height:1.6;">
+          Para completar tu registro y poder iniciar sesión, haz clic en el botón de abajo.
+          El enlace es válido por <strong style="color:#e2e8f0;">24 horas</strong>.
+        </p>
+        {% if pedidos_vinculados %}
+        <div style="margin-top:14px; padding: 12px 14px; background-color:#10b981/10; border: 1px solid #10b981; border-radius:10px;">
+          <p style="font-size:13px; color:#10b981; font-weight:700;">
+            ✓ Pedidos anteriores vinculados
+          </p>
+          <p style="font-size:12px; color:#94a3b8; margin-top:4px;">
+            Encontramos pedidos realizados con este correo y los vinculamos automáticamente a tu nueva cuenta.
+          </p>
+        </div>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <!-- CTA -->
+    <div class="btn-wrap">
+      <a href="{{ link }}" class="btn-primary">
+        Verificar mi cuenta →
+      </a>
+    </div>
+
+    <!-- Alternativa texto plano -->
+    <div style="background-color:#0f172a; border:1px solid #334155; border-radius:10px; padding:14px 16px; margin-top: 8px;">
+      <p style="font-size:11px; color:#64748b; margin-bottom:6px; font-weight:700; text-transform:uppercase; letter-spacing:1px;">
+        ¿El botón no funciona? Copia este enlace:
+      </p>
+      <p style="font-size:11px; color:#10b981; word-break:break-all; font-family:'Courier New', monospace;">
+        {{ link }}
+      </p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Info de seguridad -->
+    <p style="font-size:12px; color:#475569; text-align:center; line-height:1.7;">
+      Si no creaste una cuenta en <strong style="color:#94a3b8;">{{ config.nombre_negocio }}</strong>,
+      puedes ignorar este correo con seguridad.<br>
+      Nadie más puede activar tu cuenta sin este enlace.
+    </p>
+
+  </div>
+{% endblock %}
+
+{% block footer_extra %}
+  Este correo fue enviado automáticamente. Por favor no respondas a este mensaje.<br><br>
+{% endblock %}

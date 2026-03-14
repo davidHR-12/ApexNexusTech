@@ -199,6 +199,11 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+        "apps.clientes": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
 }
 

@@ -17,6 +17,7 @@ urlpatterns = [
     # Gestión de Materiales
     path("materiales/<int:material_id>/editar/", views.editar_material, name="editar_material"),
     path("materiales/<int:material_id>/eliminar/", views.eliminar_material, name="eliminar_material"),
+    path("materiales/<int:material_id>/toggle-activo/", views.toggle_material_activo, name="toggle_material_activo"),
     
     # Atributos (Marcas, Colores, Tipos)
     path("materiales/gestionar-atributo/<str:modelo_tipo>/<int:objeto_id>/", views.gestionar_atributo, name="gestionar_atributo"),
@@ -25,4 +26,5 @@ urlpatterns = [
     # API IDs (JSON
     path("api/materiales/<int:material_id>/", views.obtener_material_json, name="obtener_material_json"),
     path("api/materiales/<int:material_id>/precio/", views.obtener_precio_material, name="obtener_precio_material"),
+    path("materiales/api/archivados/", views.obtener_materiales_archivados,  name="materiales_archivados"),
 ]

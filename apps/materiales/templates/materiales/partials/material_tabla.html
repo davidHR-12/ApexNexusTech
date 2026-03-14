@@ -44,17 +44,12 @@
                                 <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase border border-emerald-500/20">Óptimo</span>
                             {% endif %}
                         </td>
-                        <td class="p-4 text-center ">
+                        <td class="p-4 text-center">
                             {% if m.enlace_compra %}
                                 <a href="{{ m.enlace_compra }}"
                                    target="_blank"
                                    class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke-width="1.5"
-                                         stroke="currentColor"
-                                         class="size-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
                                     </svg>
                                 </a>
@@ -64,6 +59,7 @@
                         </td>
                         <td class="p-4 text-center">
                             <div class="flex items-center gap-2 justify-center">
+                                {# Editar #}
                                 <button onclick="abrirEditar('{{ m.id }}')"
                                         class="p-2 bg-gray-800 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
                                         title="Editar">
@@ -71,9 +67,19 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                     </svg>
                                 </button>
+                                {# Archivar (desactivar sin borrar) #}
+                                <button onclick="confirmarDesactivarMaterial('{{ m.id }}', '{{ m.tipo.nombre }} {{ m.marca.nombre }} {{ m.color.nombre }}')"
+                                        class="p-2 bg-gray-800 text-amber-400 rounded-lg hover:bg-amber-500 hover:text-white transition-all"
+                                        title="Archivar material">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                                    </svg>
+                                </button>
+                                {# Eliminar (archiva si tiene historial) #}
                                 <button onclick="confirmarEliminarMaterial('{{ m.id }}', '{{ m.tipo.nombre }} {{ m.marca.nombre }}')"
                                         class="p-2 bg-gray-800 text-red-400 rounded-lg hover:bg-red-600 hover:text-white transition-all"
-                                        title="Eliminar o Desactivar">
+                                        title="Eliminar">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
@@ -83,12 +89,9 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="6" class="p-12 text-center">
+                        <td colspan="7" class="p-12 text-center">
                             <div class="flex flex-col items-center">
-                                <svg class="w-12 h-12 text-gray-700 mb-4"
-                                     fill="none"
-                                     stroke="currentColor"
-                                     viewBox="0 0 24 24">
+                                <svg class="w-12 h-12 text-gray-700 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                                 </svg>
                                 <p class="text-gray-500 italic font-medium">No hay materiales registrados.</p>
@@ -108,7 +111,6 @@
         </p>
     </div>
     <nav class="flex items-center gap-1" aria-label="Paginación">
-        {# Botón Anterior #}
         {% if materiales.has_previous %}
             <a href="?page={{ materiales.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
                hx-get="{% url 'materiales:lista_materiales' %}?page={{ materiales.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
@@ -126,39 +128,27 @@
                 </svg>
             </span>
         {% endif %}
-        {# Números de Página #}
         <div class="flex items-center gap-1">
             {% for i in materiales.paginator.page_range %}
                 {% if materiales.number == i %}
-                    {# Página Activa #}
-                    <span class="px-3.5 py-1.5 text-sm font-bold bg-blue-600 text-white rounded-lg shadow-lg shadow-blue-900/20">
-                        {{ i }}
-                    </span>
+                    <span class="px-3.5 py-1.5 text-sm font-bold bg-blue-600 text-white rounded-lg shadow-lg shadow-blue-900/20">{{ i }}</span>
                 {% elif i > materiales.number|add:'-6' and i < materiales.number|add:'6' %}
-                    {# Páginas cercanas #}
                     <a href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
                        hx-get="{% url 'materiales:lista_materiales' %}?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
                        hx-target="#materiales-container"
                        hx-push-url="true"
-                       class="px-3.5 py-1.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all">
-                        {{ i }}
-                    </a>
+                       class="px-3.5 py-1.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all">{{ i }}</a>
                 {% elif i == 1 or i == materiales.paginator.num_pages %}
-                    {# Primera y última siempre visibles #}
                     <a href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
                        hx-get="{% url 'materiales:lista_materiales' %}?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
                        hx-target="#materiales-container"
                        hx-push-url="true"
-                       class="px-3.5 py-1.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all">
-                        {{ i }}
-                    </a>
+                       class="px-3.5 py-1.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all">{{ i }}</a>
                 {% elif i == materiales.number|add:'-6' or i == materiales.number|add:'6' %}
-                    {# Elipsis #}
                     <span class="px-2 text-gray-600">...</span>
                 {% endif %}
             {% endfor %}
         </div>
-        {# Botón Siguiente #}
         {% if materiales.has_next %}
             <a href="?page={{ materiales.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
                hx-get="{% url 'materiales:lista_materiales' %}?page={{ materiales.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"

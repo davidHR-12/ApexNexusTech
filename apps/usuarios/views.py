@@ -11,8 +11,6 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.urls import reverse
-from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
 from django.core.exceptions import PermissionDenied
 from .utils import email_verification_token
 
@@ -22,6 +20,9 @@ from .forms import LoginForm, RegistroForm
 from .forms import RegistroExpressClienteForm
 from .decorators import admin_required
 from django.http import JsonResponse
+
+from apps.clientes.emails import enviar_email_verificacion
+
 
 @admin_required
 def api_crear_cliente_express(request):
@@ -40,7 +41,6 @@ def api_crear_cliente_express(request):
     return JsonResponse({'success': False}, status=405)
 
 # Vista de registro
-# En apps/usuarios/views.py
 
 def registro_view(request):
     """
@@ -89,27 +89,7 @@ def registro_view(request):
                 link = request.build_absolute_uri(
                     reverse("usuarios:verificar_email", kwargs={"uidb64": uid, "token": token})
                 )
-
-                subject = "Verifica tu cuenta"
-                from_email = settings.EMAIL_HOST_USER
-                to = [user.email]
-
-                html_content = f"""
-                <html>
-                <body style="font-family: Arial, sans-serif;">
-                    <h2>¡Bienvenido!</h2>
-                    <p>Gracias por registrarte. Hemos vinculado tus pedidos anteriores realizados con este correo a tu nueva cuenta.</p>
-                    <p>Para activar tu cuenta haz clic en el botón:</p>
-                    <a href="{link}" style="display:inline-block; padding:12px 20px; background-color:#22c55e; color:white; text-decoration:none; border-radius:6px; font-weight:bold;">
-                        Verificar cuenta
-                    </a>
-                </body>
-                </html>
-                """
-
-                email = EmailMultiAlternatives(subject, "", from_email, to)
-                email.attach_alternative(html_content, "text/html")
-                email.send()
+                enviar_email_verificacion(user, link)
 
                 messages.success(request, "Cuenta creada. ¡Tus pedidos anteriores han sido vinculados! Revisa tu correo para verificar tu cuenta.")
             else:
@@ -176,27 +156,7 @@ def reenviar_verificacion(request):
                     "usuarios:verificar_email", kwargs={"uidb64": uid, "token": token}
                 )
             )
-
-            subject = "Reenvío de verificación de cuenta"
-            from_email = settings.EMAIL_HOST_USER
-
-            html_content = f"""
-            <html>
-                <body style="font-family: Arial, sans-serif;">
-                    <h2>Verifica tu cuenta</h2>
-                    <p>Haz clic en el botón para activar tu cuenta:</p>
-                    <a href="{link}" style="display:inline-block; padding:12px 20px; background-color:#22c55e; color:white; text-decoration:none; border-radius:6px; font-weight:bold;">
-                        Verificar cuenta
-                    </a>
-                </body>
-            </html>
-            """
-
-            email_msg = EmailMultiAlternatives(
-                subject, "", from_email, [user.email])
-            email_msg.attach_alternative(html_content, "text/html")
-            email_msg.send()
-
+            enviar_email_verificacion(user, link, es_reenvio=True)
             # 3. ACTUALIZAR la base de datos con el momento del envío
             user.last_verification_email = ahora
             user.save(update_fields=["last_verification_email"])

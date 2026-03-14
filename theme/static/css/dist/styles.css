@@ -666,6 +666,9 @@
   .inline-flex {
     display: inline-flex;
   }
+  .table {
+    display: table;
+  }
   .aspect-square {
     aspect-ratio: 1 / 1;
   }
@@ -1421,6 +1424,9 @@
   }
   .border-\[\#10b981\]\/30 {
     border-color: color-mix(in oklab, #10b981 30%, transparent);
+  }
+  .border-amber-500 {
+    border-color: var(--color-amber-500);
   }
   .border-amber-500\/10 {
     border-color: color-mix(in srgb, oklch(76.9% 0.188 70.08) 10%, transparent);
@@ -2343,12 +2349,6 @@
   .bg-slate-900 {
     background-color: var(--color-slate-900);
   }
-  .bg-slate-900\/50 {
-    background-color: color-mix(in srgb, oklch(20.8% 0.042 265.755) 50%, transparent);
-    @supports (color: color-mix(in lab, red, red)) {
-      background-color: color-mix(in oklab, var(--color-slate-900) 50%, transparent);
-    }
-  }
   .bg-teal-500\/10 {
     background-color: color-mix(in srgb, oklch(70.4% 0.14 182.503) 10%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
@@ -2360,12 +2360,6 @@
   }
   .bg-white {
     background-color: var(--color-white);
-  }
-  .bg-white\/5 {
-    background-color: color-mix(in srgb, #fff 5%, transparent);
-    @supports (color: color-mix(in lab, red, red)) {
-      background-color: color-mix(in oklab, var(--color-white) 5%, transparent);
-    }
   }
   .bg-white\/10 {
     background-color: color-mix(in srgb, #fff 10%, transparent);
@@ -2971,6 +2965,12 @@
   }
   .text-amber-400 {
     color: var(--color-amber-400);
+  }
+  .text-amber-400\/60 {
+    color: color-mix(in srgb, oklch(82.8% 0.189 84.429) 60%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      color: color-mix(in oklab, var(--color-amber-400) 60%, transparent);
+    }
   }
   .text-amber-400\/70 {
     color: color-mix(in srgb, oklch(82.8% 0.189 84.429) 70%, transparent);
@@ -3618,6 +3618,13 @@
       }
     }
   }
+  .group-hover\:bg-\[\#10b981\] {
+    &:is(:where(.group):hover *) {
+      @media (hover: hover) {
+        background-color: #10b981;
+      }
+    }
+  }
   .group-hover\:bg-amber-500 {
     &:is(:where(.group):hover *) {
       @media (hover: hover) {
@@ -3805,11 +3812,6 @@
   .peer-checked\:border-red-500 {
     &:is(:where(.peer):checked ~ *) {
       border-color: var(--color-red-500);
-    }
-  }
-  .peer-checked\:bg-\[\#10b981\] {
-    &:is(:where(.peer):checked ~ *) {
-      background-color: #10b981;
     }
   }
   .peer-checked\:bg-emerald-600 {
@@ -4110,6 +4112,16 @@
       }
     }
   }
+  .hover\:border-amber-500\/40 {
+    &:hover {
+      @media (hover: hover) {
+        border-color: color-mix(in srgb, oklch(76.9% 0.188 70.08) 40%, transparent);
+        @supports (color: color-mix(in lab, red, red)) {
+          border-color: color-mix(in oklab, var(--color-amber-500) 40%, transparent);
+        }
+      }
+    }
+  }
   .hover\:border-amber-500\/50 {
     &:hover {
       @media (hover: hover) {
@@ -4333,13 +4345,6 @@
       }
     }
   }
-  .hover\:bg-\[\#10b981\]\/20 {
-    &:hover {
-      @media (hover: hover) {
-        background-color: color-mix(in oklab, #10b981 20%, transparent);
-      }
-    }
-  }
   .hover\:bg-\[\#059669\] {
     &:hover {
       @media (hover: hover) {
@@ -4354,6 +4359,27 @@
       }
     }
   }
+  .hover\:bg-\[\#475569\] {
+    &:hover {
+      @media (hover: hover) {
+        background-color: #475569;
+      }
+    }
+  }
+  .hover\:bg-amber-400 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-amber-400);
+      }
+    }
+  }
+  .hover\:bg-amber-500 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-amber-500);
+      }
+    }
+  }
   .hover\:bg-amber-500\/5 {
     &:hover {
       @media (hover: hover) {
@@ -4361,6 +4387,33 @@
         @supports (color: color-mix(in lab, red, red)) {
           background-color: color-mix(in oklab, var(--color-amber-500) 5%, transparent);
         }
+      }
+    }
+  }
+  .hover\:bg-amber-500\/20 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: color-mix(in srgb, oklch(76.9% 0.188 70.08) 20%, transparent);
+        @supports (color: color-mix(in lab, red, red)) {
+          background-color: color-mix(in oklab, var(--color-amber-500) 20%, transparent);
+        }
+      }
+    }
+  }
+  .hover\:bg-amber-500\/40 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: color-mix(in srgb, oklch(76.9% 0.188 70.08) 40%, transparent);
+        @supports (color: color-mix(in lab, red, red)) {
+          background-color: color-mix(in oklab, var(--color-amber-500) 40%, transparent);
+        }
+      }
+    }
+  }
+  .hover\:bg-amber-600 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-amber-600);
       }
     }
   }
@@ -4673,16 +4726,6 @@
       }
     }
   }
-  .hover\:bg-red-500\/20 {
-    &:hover {
-      @media (hover: hover) {
-        background-color: color-mix(in srgb, oklch(63.7% 0.237 25.331) 20%, transparent);
-        @supports (color: color-mix(in lab, red, red)) {
-          background-color: color-mix(in oklab, var(--color-red-500) 20%, transparent);
-        }
-      }
-    }
-  }
   .hover\:bg-red-600 {
     &:hover {
       @media (hover: hover) {
@@ -4749,6 +4792,13 @@
     &:hover {
       @media (hover: hover) {
         color: var(--color-amber-300);
+      }
+    }
+  }
+  .hover\:text-amber-400 {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-amber-400);
       }
     }
   }
@@ -5082,11 +5132,6 @@
   .sm\:px-6 {
     @media (width >= 40rem) {
       padding-inline: calc(var(--spacing) * 6);
-    }
-  }
-  .sm\:text-left {
-    @media (width >= 40rem) {
-      text-align: left;
     }
   }
   .sm\:text-2xl {
@@ -5809,6 +5854,18 @@ input[type="file"]::file-selector-button {
 }
 input[type="file"]::file-selector-button:hover {
   background-color: #059669;
+}
+.swal2-icon {
+  border: none !important;
+  background: transparent !important;
+  margin: 0 !important;
+  width: auto !important;
+  height: auto !important;
+}
+.swal2-icon.swal2-warning, .swal2-icon.swal2-error, .swal2-icon.swal2-success, .swal2-icon.swal2-info, .swal2-icon.swal2-question {
+  border: none !important;
+  background: none !important;
+  color: transparent !important;
 }
 @property --tw-translate-x {
   syntax: "*";
