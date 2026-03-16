@@ -25,15 +25,16 @@ urlpatterns = [
     # Rutas de nuestras aplicaciones
     path("administrador/", include("apps.core.urls")),
     path("", include("apps.usuarios.urls")),
-    path("administrador/", include("apps.reportes.urls")),
     path("administrador/", include("apps.finanzas.urls")),
     path("administrador/", include("apps.materiales.urls")),
     path("administrador/", include("apps.pedidos.urls")),
+    path("administrador/", include("apps.reportes.urls")),
     path("administrador/", include("apps.productos.urls")),
-    # path("gestion/", include("apps.gestion.urls")),
     path("", include("apps.clientes.urls")),  # Dirije a la raiz de clientes
     # Ruta para 404 a modo de prueba
     path('404/', TemplateView.as_view(template_name='404.html'), name='404'),
 ] + static(
     settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
 )  # Para que funcione la subida de archivos
+if settings.DEBUG:
+    urlpatterns += [path('__reload__/', include('django_browser_reload.urls'))]

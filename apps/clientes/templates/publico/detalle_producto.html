@@ -7,52 +7,72 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div class="space-y-6">
                 <div class="aspect-square bg-gray-900/50 rounded-[2.5rem] overflow-hidden border border-gray-800 shadow-2xl flex items-center justify-center p-6">
+                    {# Si hay galería pero no principal, cargamos la primera de la galería por defecto #}
                     {% if producto.imagen %}
                         <img id="mainImage"
                              src="{{ producto.imagen.url }}"
                              alt="{{ producto.nombre }}"
-                             class="max-w-full max-h-full object-contain transition-all duration-300 transform scale-100">
+                             class="w-full h-full object-cover transition-all duration-300">
+                    {% elif galeria %}
+                        <img id="mainImage"
+                             src="{{ galeria.0.imagen.url }}"
+                             alt="{{ producto.nombre }}"
+                             class="w-full h-full object-cover transition-all duration-300">
                     {% else %}
-                        <div class="flex flex-col items-center text-gray-700 italic text-xs">
-                            <svg class="w-24 h-24 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        {# Solo si NO hay ni principal NI galería mostramos el icono #}
+                        <div id="noImagePlaceholder"
+                             class="flex flex-col items-center text-gray-700 italic text-xs">
+                            <svg class="w-24 h-24 text-gray-600"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                </path>
                             </svg>
                             Sin imagen
                         </div>
+                        {# Dejamos un img oculto para que JS tenga dónde escribir si luego se requiere #}
+                        <img id="mainImage" src="" class="hidden w-full h-full object-cover">
                     {% endif %}
                 </div>
-                {% if galeria %}
+                {% if producto.imagen or galeria %}
                     <div id="thumbnailContainer" class="grid grid-cols-4 sm:grid-cols-5 gap-4">
-                        <button onclick="changeImage('{{ producto.imagen.url }}', this)"
-                                class="thumb-btn aspect-square rounded-2xl overflow-hidden border-2 border-[#10b981] bg-gray-900/50 p-1 transition-all">
-                            <img src="{{ producto.imagen.url }}" loading="lazy" class="w-full h-full object-contain">
-                        </button>
+                        {% if producto.imagen %}
+                            <button onclick="changeImage('{{ producto.imagen.url }}', this)"
+                                    class="thumb-btn aspect-square rounded-2xl overflow-hidden border-2 border-[#10b981] bg-gray-900/50 p-1 transition-all">
+                                <img src="{{ producto.imagen.url }}"
+                                     loading="lazy"
+                                     class="w-full h-full object-cover">
+                            </button>
+                        {% endif %}
                         {% for img in galeria %}
                             <button onclick="changeImage('{{ img.imagen.url }}', this)"
-                                    class="thumb-btn aspect-square rounded-2xl overflow-hidden border-2 border-transparent hover:border-gray-600 bg-gray-900/50 p-1 transition-all">
-                                <img src="{{ img.imagen.url }}" loading="lazy" class="w-full h-full object-contain">
+                                    class="thumb-btn aspect-square rounded-2xl overflow-hidden border-2 {% if not producto.imagen and forloop.first %}border-[#10b981]{% else %}border-transparent{% endif %} hover:border-gray-600 bg-gray-900/50 p-1 transition-all">
+                                <img src="{{ img.imagen.url }}"
+                                     loading="lazy"
+                                     class="w-full h-full object-cover">
                             </button>
                         {% endfor %}
                     </div>
                 {% endif %}
             </div>
-
             <div class="flex flex-col justify-center lg:pl-6">
                 <nav class="flex mb-6 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">
-                    <a href="{% url 'clientes:productos' %}" class="hover:text-[#10b981] transition-colors">Catálogo</a>
+                    <a href="{% url 'clientes:productos' %}"
+                       class="hover:text-[#10b981] transition-colors">Catálogo</a>
                     <span class="mx-3 opacity-30">/</span>
                     <span class="text-[#10b981]">{{ producto.categoria.nombre }}</span>
                 </nav>
                 <h1 class="text-4xl md:text-6xl font-black mb-6 text-white leading-tight">{{ producto.nombre }}</h1>
-                
                 <div class="bg-[#1e293b]/50 backdrop-blur-sm p-6 rounded-3xl border border-gray-800 mb-8">
                     <p class="text-gray-400 leading-relaxed text-lg">
                         {{ producto.descripcion|default:"Esta pieza es fabricada mediante impresión 3D de alta precisión." }}
                     </p>
                 </div>
-
                 <div class="mb-8">
-                    <label class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4 block">Selecciona Material / Acabado</label>
+                    <label class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4 block">
+                        Selecciona Material / Acabado
+                    </label>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {% for v in variantes %}
                             <button type="button"
@@ -64,7 +84,11 @@
                                 <span class="text-white font-bold text-sm mb-1 group-hover:text-[#10b981]">{{ v }}</span>
                                 <div class="flex justify-between items-center mt-2">
                                     <span class="text-[10px] {% if v.stock_disponible > 0 %}text-emerald-400{% else %}text-amber-500{% endif %} font-bold uppercase">
-                                        {% if v.stock_disponible > 0 %} Stock: {{ v.stock_disponible }} {% else %} Bajo Pedido {% endif %}
+                                        {% if v.stock_disponible > 0 %}
+                                            Stock: {{ v.stock_disponible }}
+                                        {% else %}
+                                            Bajo Pedido
+                                        {% endif %}
                                     </span>
                                     <span class="text-white font-black text-sm font-mono">RD$ {{ v.precio_final|floatformat:0 }}</span>
                                 </div>
@@ -72,28 +96,43 @@
                         {% endfor %}
                     </div>
                 </div>
-
                 <div class="border-l-4 border-[#10b981] pl-6 py-2 bg-gradient-to-r from-[#10b981]/10 to-transparent rounded-r-2xl mb-10">
                     <p class="text-gray-500 text-[10px] uppercase font-bold mb-1 tracking-widest">Inversión Estimada</p>
                     <p class="text-5xl font-black text-white" id="displayPrecio">RD$ {{ variantes.0.precio_final|floatformat:0 }}</p>
                 </div>
-
                 <div class="flex flex-col mb-6">
                     <label class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3 block">Cantidad</label>
                     <div class="flex items-center gap-4 bg-[#1e293b]/50 w-fit p-2 rounded-2xl border border-gray-800">
-                        <button type="button" onclick="updateQty(-1)" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-800 text-white hover:bg-gray-700 transition-all font-bold">-</button>
-                        <input type="number" id="prodQuantity" value="1" min="1" class="bg-transparent text-center text-white font-black w-12 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                        <button type="button" onclick="updateQty(1)" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-800 text-white hover:bg-gray-700 transition-all font-bold">+</button>
+                        <button type="button"
+                                onclick="updateQty(-1)"
+                                class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-800 text-white hover:bg-gray-700 transition-all font-bold">
+                            -
+                        </button>
+                        <input type="number"
+                               id="prodQuantity"
+                               value="1"
+                               min="1"
+                               class="bg-transparent text-center text-white font-black w-12 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                        <button type="button"
+                                onclick="updateQty(1)"
+                                class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-800 text-white hover:bg-gray-700 transition-all font-bold">
+                            +
+                        </button>
                     </div>
                 </div>
-
                 <div class="flex flex-col sm:grid sm:grid-cols-2 gap-4">
-                    <a id="btnWhatsapp" href="#" target="_blank" class="flex items-center justify-center gap-2 bg-[#1e293b] text-white py-5 rounded-2xl font-bold border border-gray-700 hover:bg-gray-800 transition-all">
+                    <a id="btnWhatsapp"
+                       href="#"
+                       target="_blank"
+                       class="flex items-center justify-center gap-2 bg-[#1e293b] text-white py-5 rounded-2xl font-bold border border-gray-700 hover:bg-gray-800 transition-all">
                         Consultar WhatsApp
                     </a>
-                    <button type="button" onclick="enviarAlCarrito()" class="flex items-center justify-center gap-2 bg-[#10b981] text-white py-5 rounded-2xl font-black text-lg hover:bg-[#059669] transition-all hover:scale-[1.02] shadow-xl shadow-[#10b981]/20">
+                    <button type="button"
+                            onclick="enviarAlCarrito()"
+                            class="flex items-center justify-center gap-2 bg-[#10b981] text-white py-5 rounded-2xl font-black text-lg hover:bg-[#059669] transition-all hover:scale-[1.02] shadow-xl shadow-[#10b981]/20">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
                         </svg>
                         Añadir al Carrito
                     </button>
@@ -101,22 +140,36 @@
             </div>
         </div>
     </section>
-
     <script>
     // Variable global para el ID de variante
     let varianteSeleccionadaId = "{{ variantes.0.id }}";
 
     function changeImage(src, btn) {
-        const mainImg = document.getElementById('mainImage');
-        if(!mainImg) return;
-        mainImg.classList.add('opacity-0', 'scale-95');
-        setTimeout(() => {
-            mainImg.src = src;
-            mainImg.classList.remove('opacity-0', 'scale-95');
-        }, 200);
-        document.querySelectorAll('.thumb-btn').forEach(b => b.classList.replace('border-[#10b981]', 'border-transparent'));
-        btn.classList.replace('border-transparent', 'border-[#10b981]');
-    }
+    const mainImg = document.getElementById('mainImage');
+    const placeholder = document.getElementById('noImagePlaceholder');
+    
+    if(!mainImg) return;
+
+    // Si existe el placeholder de "Sin imagen", lo ocultamos y mostramos la imagen
+    if(placeholder) placeholder.classList.add('hidden');
+    mainImg.classList.remove('hidden');
+
+    // Efecto de transición
+    mainImg.classList.add('opacity-0', 'scale-95');
+    
+    setTimeout(() => {
+        mainImg.src = src;
+        mainImg.classList.remove('opacity-0', 'scale-95');
+    }, 200);
+
+    // Actualizar bordes de las miniaturas
+    document.querySelectorAll('.thumb-btn').forEach(b => {
+        b.classList.remove('border-[#10b981]');
+        b.classList.add('border-transparent');
+    });
+    btn.classList.remove('border-transparent');
+    btn.classList.add('border-[#10b981]');
+}
 
     function updateQty(val) {
         const input = document.getElementById('prodQuantity');
@@ -136,8 +189,8 @@
         if(displayPrecio) displayPrecio.innerText = `RD$ ${precio}`;
         
         // Actualizar Link de WhatsApp
-        const numeroWA = "1809XXXXXXX"; 
-        const mensaje = encodeURIComponent(`¡Hola! Me interesa: *{{ producto.nombre|escapejs }}* (Variante: ${nombreVariante})`);
+        const numeroWA = "{{ config.whatsapp_numero }}";
+        const mensaje = encodeURIComponent(`¡Hola! Me interesa: ${nombreVariante}`);
         const btnWa = document.getElementById('btnWhatsapp');
         if(btnWa) btnWa.href = `https://wa.me/${numeroWA}?text=${mensaje}`;
 

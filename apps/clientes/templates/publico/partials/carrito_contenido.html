@@ -1,0 +1,149 @@
+{% if es_htmx %}
+    {% if carrito %}
+        <span id="cart-badge-desktop"
+              hx-swap-oob="true"
+              class="badge-pulse absolute -top-1 -right-1 bg-[#10b981] text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg shadow-[#10b981]/40">
+            {{ carrito|length }}
+        </span>
+        <span id="cart-badge-mobile"
+              hx-swap-oob="true"
+              class="absolute -top-1 -right-1 bg-[#10b981] text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
+            {{ carrito|length }}
+        </span>
+        <span id="cart-badge-header"
+              hx-swap-oob="true"
+              class="bg-[#10b981] text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+            {{ carrito|length }}
+        </span>
+    {% else %}
+        <span id="cart-badge-desktop" hx-swap-oob="true" class="hidden"></span>
+        <span id="cart-badge-mobile"  hx-swap-oob="true" class="hidden"></span>
+        <span id="cart-badge-header"  hx-swap-oob="true" class="hidden"></span>
+    {% endif %}
+{% endif %}
+{# ── Contenido principal del drawer ── #}
+<div class="flex-1 overflow-y-auto p-4 space-y-3" id="cart-items-list">
+    {% if carrito %}
+        {% for id, item in carrito.items %}
+            <div class="group flex items-center gap-3 bg-[#1e293b] border border-gray-800 p-3 rounded-2xl hover:border-gray-700 transition-colors">
+                {# Imagen #}
+                <div class="w-14 h-14 bg-gray-900 rounded-xl p-1.5 shrink-0 flex items-center justify-center overflow-hidden">
+                    {% if item.imagen %}
+                        <img src="{{ item.imagen }}"
+                             class="w-full h-full object-contain"
+                             alt="{{ item.nombre }}">
+                    {% else %}
+                        <svg class="w-6 h-6 text-gray-700"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    {% endif %}
+                </div>
+                {# Info #}
+                <div class="flex-1 min-w-0">
+                    <p class="text-white text-sm font-bold truncate">{{ item.nombre }}</p>
+                    <p class="text-gray-500 text-xs font-mono mt-0.5">RD$ {{ item.precio|floatformat:0 }} c/u</p>
+                    <div class="flex items-center justify-between mt-2">
+                        {# Controles cantidad con HTMX #}
+                        <div class="flex items-center gap-1 bg-gray-900 rounded-lg px-1 py-0.5 border border-gray-700">
+                            <button hx-get="{% url 'clientes:actualizar_carrito' id 'restar' %}"
+                                    hx-target="#cart-contenido"
+                                    hx-swap="innerHTML"
+                                    class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-400 transition-colors font-black text-sm rounded cursor-pointer">
+                                −
+                            </button>
+                            <span class="text-[#10b981] font-mono font-bold text-xs w-5 text-center">{{ item.cantidad }}</span>
+                            <button hx-get="{% url 'clientes:actualizar_carrito' id 'sumar' %}"
+                                    hx-target="#cart-contenido"
+                                    hx-swap="innerHTML"
+                                    class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-[#10b981] transition-colors font-black text-sm rounded cursor-pointer">
+                                +
+                            </button>
+                        </div>
+                        {# Subtotal #}
+                        <span class="text-white font-mono font-bold text-sm">
+                            RD$ {{ item.precio|floatformat:0|add:"0" }}
+                            {# Calculamos subtotal en template: precio * cantidad #}
+                        </span>
+                    </div>
+                </div>
+                {# Eliminar #}
+                <button hx-get="{% url 'clientes:actualizar_carrito' id 'eliminar' %}"
+                        hx-target="#cart-contenido"
+                        hx-swap="innerHTML"
+                        class="p-1.5 text-gray-700 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100 shrink-0 cursor-pointer"
+                        title="Eliminar">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+            </div>
+        {% endfor %}
+    {% else %}
+        {# Carrito vacío #}
+        <div class="flex flex-col items-center justify-center h-full py-20 text-center px-4">
+            <div class="w-16 h-16 bg-gray-800/50 border border-gray-700/50 rounded-2xl flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-gray-600"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+            </div>
+            <p class="text-gray-300 font-bold text-sm mb-1">Tu carrito está vacío</p>
+            <p class="text-gray-600 text-xs mb-6 leading-relaxed">Explora el catálogo y añade las piezas que te interesen</p>
+            <a href="{% url 'clientes:productos' %}"
+               onclick="cerrarCarrito()"
+               class="px-5 py-2.5 bg-[#10b981] text-white text-sm font-bold rounded-xl hover:bg-[#059669] transition-colors">
+                Ver Catálogo
+            </a>
+        </div>
+    {% endif %}
+</div>
+{# ── Footer con total (solo si hay items) ── #}
+{% if carrito %}
+    <div class="shrink-0 border-t border-gray-800 p-5 space-y-4 bg-[#0a1020]"
+         id="cart-footer">
+        <div class="flex items-end justify-between">
+            <div>
+                <p class="text-gray-500 text-[10px] uppercase font-bold tracking-widest mb-1">Total estimado</p>
+                <p class="text-[#10b981] text-2xl font-black font-mono">
+                    RD$ <span id="drawerTotal">—</span>
+                </p>
+            </div>
+            <p class="text-gray-600 text-[10px] text-right leading-relaxed max-w-[110px]">
+                El total final se confirma al procesar el pedido
+            </p>
+        </div>
+        <a href="{% url 'clientes:checkout_express' %}"
+           class="flex items-center justify-center gap-2 w-full bg-[#10b981] text-white py-4 rounded-2xl font-black text-base hover:bg-[#059669] transition-all shadow-lg shadow-[#10b981]/20 hover:scale-[1.01]">
+            Terminar Pedido
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+        </a>
+        <button onclick="cerrarCarrito()"
+                class="w-full text-center text-gray-500 text-sm hover:text-gray-300 transition-colors py-1">
+            Seguir comprando
+        </button>
+    </div>
+    {# ── Data para JS: calcular total ── #}
+    <script id="carrito-data" type="application/json">
+    {
+      {% for id, item in carrito.items %}
+        "{{ id }}": { "precio": {{ item.precio }}, "cantidad": {{ item.cantidad }} }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    }
+    </script>
+    <script>
+    (function () {
+      const data = JSON.parse(document.getElementById('carrito-data').textContent);
+      let total = 0;
+      Object.values(data).forEach(i => { total += i.precio * i.cantidad; });
+      const el = document.getElementById('drawerTotal');
+      if (el) el.textContent = total.toLocaleString('es-DO', { minimumFractionDigits: 2 });
+    })();
+    </script>
+{% endif %}

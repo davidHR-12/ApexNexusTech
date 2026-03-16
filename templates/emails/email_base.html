@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block titulo %}Correo{% endblock %} — {{ config.nombre_negocio }}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: #0f172a;
+      color: #e2e8f0;
+      padding: 32px 16px;
+    }
+    .wrapper { max-width: 580px; margin: 0 auto; }
+
+    /* Header */
+    .header {
+      background-color: #1e293b;
+      border-radius: 16px 16px 0 0;
+      padding: 32px 40px 24px;
+      border-bottom: 3px solid #10b981;
+      text-align: center;
+    }
+    .header img.logo { max-height: 48px; margin-bottom: 10px; }
+    .logo-text  { font-size: 28px; font-weight: 900; color: #fff; letter-spacing: -1px; }
+    .logo-sub   { font-size: 9px; font-weight: 700; color: #10b981; letter-spacing: 4px; text-transform: uppercase; margin-top: 2px; }
+    .badge-ok   { display: inline-block; margin-top: 20px; background-color: #10b981; color: #fff; font-size: 13px; font-weight: 700; padding: 6px 18px; border-radius: 999px; }
+    .badge-info { display: inline-block; margin-top: 20px; background-color: #3b82f6; color: #fff; font-size: 13px; font-weight: 700; padding: 6px 18px; border-radius: 999px; }
+    .header h1  { font-size: 22px; font-weight: 800; color: #fff; margin-top: 12px; }
+    .header p   { color: #94a3b8; font-size: 14px; margin-top: 6px; }
+
+    /* Body */
+    .body { background-color: #1e293b; padding: 32px 40px; }
+    .section-label { font-size: 10px; font-weight: 700; color: #10b981; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+
+    /* Pedido card */
+    .pedido-card { background-color: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .pedido-card .num { font-size: 26px; font-weight: 900; color: #10b981; font-family: 'Courier New', monospace; }
+    .pedido-card .fecha { font-size: 12px; color: #64748b; text-align: right; }
+
+    /* Tabla items */
+    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+    .items-table thead tr { background-color: #0f172a; }
+    .items-table thead th { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; padding: 10px 12px; text-align: left; }
+    .items-table thead th:last-child { text-align: right; }
+    .items-table tbody tr { border-bottom: 1px solid #1e293b; }
+    .items-table tbody tr:nth-child(even) { background-color: #0f172a; }
+    .items-table tbody td { font-size: 13px; color: #cbd5e1; padding: 10px 12px; vertical-align: top; }
+    .items-table tbody td:last-child { text-align: right; font-family: 'Courier New', monospace; color: #fff; font-weight: 700; white-space: nowrap; }
+    .items-table .qty { color: #10b981; font-weight: 700; font-size: 12px; }
+
+    /* Total */
+    .total-row { background-color: #0f172a; border-radius: 10px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin-top: 4px; margin-bottom: 28px; }
+    .total-row .label  { font-size: 13px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+    .total-row .amount { font-size: 20px; font-weight: 900; color: #10b981; font-family: 'Courier New', monospace; }
+
+    /* Info blocks */
+    .divider { height: 1px; background-color: #334155; margin: 24px 0; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+    .info-block { background-color: #0f172a; border: 1px solid #1e3a5f; border-radius: 10px; padding: 12px 14px; }
+    .info-block .info-label { font-size: 9px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
+    .info-block .info-value { font-size: 13px; color: #e2e8f0; font-weight: 600; }
+
+    /* Steps — kept for reference but templates use inline table layout */
+    .steps { background-color: #0f172a; border: 1px solid #1e3a5f; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; }
+
+    /* CTA button */
+    .btn-primary { display: inline-block; padding: 14px 32px; background-color: #10b981; color: #ffffff !important; font-size: 15px; font-weight: 800; text-decoration: none; border-radius: 12px; letter-spacing: 0.3px; }
+    .btn-primary:hover { background-color: #059669; }
+    .btn-wrap { text-align: center; margin: 28px 0; }
+
+    /* Footer */
+    .footer { background-color: #0f172a; border-radius: 0 0 16px 16px; padding: 20px 40px; text-align: center; border-top: 1px solid #1e293b; }
+    .footer p { font-size: 11px; color: #475569; line-height: 1.8; }
+    .footer .accent { color: #10b981; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  {% block email_content %}{% endblock %}
+
+  <!-- Footer común -->
+  <div class="footer">
+    <p>
+      {% block footer_extra %}{% endblock %}
+      <span class="accent">{{ config.nombre_negocio }}</span>
+      {% if config.slogan %}&nbsp;·&nbsp; {{ config.slogan }}{% endif %}<br>
+      {% if config.telefono %}{{ config.telefono }}{% endif %}
+      {% if config.email %}&nbsp;·&nbsp; {{ config.email }}{% endif %}<br>
+      República Dominicana
+    </p>
+  </div>
+</div>
+</body>
+</html>

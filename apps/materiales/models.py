@@ -4,6 +4,7 @@ Modelos para la gestión de inventario de materiales de impresión 3D
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.db.models.functions import Lower
+from decimal import Decimal
 
 # =============================
 # ATRIBUTOS DE MATERIALES
@@ -164,6 +165,11 @@ class Material(models.Model):
     def necesita_reposicion(self):
         """Verifica si el stock está por debajo del mínimo"""
         return self.stock_actual <= self.stock_minimo
+
+    @property
+    def valor_inventario(self):
+        """Valor monetario del stock actual (stock_actual × costo_por_gramo)."""
+        return (self.stock_actual * self.costo_por_gramo).quantize(Decimal("0.01"))
 
     def delete(self, *args, **kwargs):
         # Añadimos la opción de forzar el borrado (usado en fusiones)

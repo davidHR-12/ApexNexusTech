@@ -1,13 +1,16 @@
 {% extends "core/base_admin.html" %}
+{% block title %}
+  Dashboard de Gastos - A.N.T
+{% endblock title %}
 {% load static %}
 {% block content %}
   <div class="space-y-6">
     <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest gap-2">
-      <a href="{% url 'finanzas:gastos' %}"
-        class="hover:text-white transition-colors">Gastos</a>
+      <a href="{% url 'finanzas:gastos' %}" class="hover:text-white transition-colors">Gastos</a>
       <span>/</span>
       <span class="text-[#10b981]">Dashboard Financiero</span>
     </nav>
+
     {# ENCABEZADO #}
     <div id="dashboard-container" data-url-gastos="{% url 'finanzas:gastos_por_mes' %}">
       <h1 class="text-3xl font-bold text-white">Dashboard Financiero</h1>
@@ -15,30 +18,22 @@
     </div>
 
     {# TARJETAS KPI #}
-    
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      {# Total Gastos #}
       <div class="bg-gradient-to-br from-red-900/20 to-red-900/5 border border-red-500/20 rounded-2xl p-6">
         <p class="text-red-400/70 text-xs uppercase font-bold tracking-wider mb-2">Total de Gastos</p>
         <p class="text-3xl font-bold text-white" id="kpiTotalGastos">-RD$ 0.00</p>
-        <p class="text-gray-500 text-xs mt-3" id="kpiCountGastos">0 gastos</p>
+        <p class="text-gray-500 text-xs mt-3" id="kpiCountGastos">0 meses</p>
       </div>
-
-      {# Promedio Mensual #}
       <div class="bg-gradient-to-br from-yellow-900/20 to-yellow-900/5 border border-yellow-500/20 rounded-2xl p-6">
         <p class="text-yellow-400/70 text-xs uppercase font-bold tracking-wider mb-2">Promedio Mensual</p>
         <p class="text-3xl font-bold text-white" id="kpiPromedioDiario">-RD$ 0.00</p>
         <p class="text-gray-500 text-xs mt-3">Por mes</p>
       </div>
-
-      {# Mayor Gasto #}
       <div class="bg-gradient-to-br from-orange-900/20 to-orange-900/5 border border-orange-500/20 rounded-2xl p-6">
         <p class="text-orange-400/70 text-xs uppercase font-bold tracking-wider mb-2">Mes de Mayor Gasto</p>
         <p class="text-3xl font-bold text-white" id="kpiMayorMes">-RD$ 0.00</p>
-        <p class="text-gray-500 text-xs mt-3" id="kpiMayorMesNombre">-</p>
+        <p class="text-gray-500 text-xs mt-3" id="kpiMayorMesNombre">—</p>
       </div>
-
-      {# Meses Analizados #}
       <div class="bg-gradient-to-br from-blue-900/20 to-blue-900/5 border border-blue-500/20 rounded-2xl p-6">
         <p class="text-blue-400/70 text-xs uppercase font-bold tracking-wider mb-2">Meses Registrados</p>
         <p class="text-3xl font-bold text-white" id="kpiMesesData">0</p>
@@ -47,19 +42,17 @@
     </div>
 
     {# GRÁFICO PRINCIPAL #}
-    
     <div class="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
       <h2 class="text-xl font-bold text-white mb-6">Tendencia de Gastos Mensual</h2>
-      
+
       <div class="flex gap-4 mb-6">
         <label class="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" id="filterTodos" checked 
-                 onchange="if(this.checked) document.getElementById('filterTipo').value = ''; actualizarGrafico()"
-                 class="w-4 h-4 rounded">
+          <input type="checkbox" id="filterTodos" checked
+                 class="w-4 h-4 rounded accent-[#10b981]">
           <span class="text-gray-300 text-sm">Todos los gastos</span>
         </label>
-        
-        <select id="filterTipo" onchange="if(this.value) document.getElementById('filterTodos').checked = false; actualizarGrafico()" 
+
+        <select id="filterTipo"
                 class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-300 text-sm outline-none">
           <option value="">-- Por tipo --</option>
           <option value="Mantenimiento">Mantenimiento</option>
@@ -77,10 +70,8 @@
     </div>
 
     {# TABLA COMPARATIVA #}
-    
     <div class="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
       <h2 class="text-xl font-bold text-white mb-6">Desglose por Mes</h2>
-      
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm">
           <thead>
@@ -91,48 +82,38 @@
               <th class="p-4 text-gray-400 font-bold text-right">Var. vs Anterior</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-800" id="tablaMesesBody">
-            {# Se llena con JavaScript #}
-          </tbody>
+          <tbody class="divide-y divide-gray-800" id="tablaMesesBody"></tbody>
         </table>
       </div>
     </div>
 
     {# GRÁFICO PASTEL Y RESUMEN #}
-    
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
-        <h2 class="text-xl font-bold text-white mb-6">Gastos por Categoría (últimos 3 meses)</h2>
+        <h2 class="text-xl font-bold text-white mb-6">Gastos por Categoría</h2>
         <div class="relative w-full h-72">
           <canvas id="chartGastosPorTipo"></canvas>
         </div>
       </div>
-
-      {# TABLA RESUMEN POR TIPO #}
       <div class="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
         <h2 class="text-xl font-bold text-white mb-6">Resumen por Tipo</h2>
-        
-        <div class="space-y-3" id="resumenPorTipo">
-          {# Se llena con JavaScript #}
-        </div>
+        <div class="space-y-3" id="resumenPorTipo"></div>
       </div>
     </div>
 
     {# BOTONES DE ACCIÓN #}
-    
     <div class="flex gap-4">
       <a href="{% url 'finanzas:gastos' %}"
          class="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition-all">
         → Ver Lista de Gastos
       </a>
-      <button onclick="exportarDatos()"
-              class="px-6 py-3 rounded-xl border border-gray-700 text-gray-400 hover:bg-gray-800 font-bold transition-all">
-        ⬇️ Exportar Datos
-      </button>
+      <a href="{% url 'finanzas:exportar_gastos' %}"
+         class="px-6 py-3 rounded-xl border border-gray-700 text-gray-400 hover:bg-gray-800 font-bold transition-all">
+        ⬇️ Exportar Excel
+      </a>
     </div>
   </div>
 
-  {# SCRIPTS #}
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <script src="{% static 'js/chart.min.js' %}"></script>
   <script src="{% static 'finanzas/js/dashboard_gastos.js' %}"></script>
 {% endblock %}

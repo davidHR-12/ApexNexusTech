@@ -1,447 +1,598 @@
 {% extends "core/base_admin.html" %}
-{% block title %}Configuración del Sitio Público{% endblock %}
-
+{% block title %}
+  Configuración del Sitio Público - A.N.T
+{% endblock title %}
 {% block content %}
-<div class="p-4 md:p-6 max-w-screen-lg mx-auto">
+  <div class="space-y-6">
     <div class="mb-6">
-        <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest mb-1 gap-2">
-            <a href="{% url 'core:configuracion' %}" class="hover:text-white transition-colors">Configuración</a>
-            <span>/</span>
-            <span class="text-[#10b981]">Sitio Público</span>
-        </nav>
-        <h1 class="text-2xl font-bold text-white">Configuración del Sitio Público</h1>
-        <p class="text-gray-400 text-sm mt-1">Edita estadísticas, materiales, productos, proceso y contacto.</p>
+      <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest mb-1 gap-2">
+        <a href="{% url 'core:configuracion' %}"
+           class="hover:text-white transition-colors">Configuración</a>
+        <span>/</span>
+        <span class="text-[#10b981]">Sitio Público</span>
+      </nav>
+      <h1 class="text-2xl font-bold text-white">Configuración del Sitio Público</h1>
+      <p class="text-gray-400 text-sm mt-1">Edita estadísticas, materiales, productos, proceso y contacto.</p>
     </div>
-
-  {# ── TABS SIMPLIFICADOS ── #}
-  <div class="border-b border-gray-800">
-    <nav class="-mb-px flex gap-1 overflow-x-auto">
-      <button data-tab="estadisticas" class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">Estadísticas</button>
-      <button data-tab="materiales"   class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">Materiales</button>
-      <button data-tab="productos"    class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">Productos</button>
-      <button data-tab="proceso"      class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">Proceso</button>
-      <button data-tab="contacto"     class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">Contacto</button>
-    </nav>
-  </div>
-
-
-  {# ══════════════════════════════════════════════ #}
-  {# TAB: ESTADÍSTICAS                             #}
-  {# ══════════════════════════════════════════════ #}
-  <div id="tab-estadisticas" class="tab-panel hidden">
-    <div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden mt-6">
-      <div class="px-6 py-4 border-b border-gray-800 flex items-center gap-3">
-        <div class="w-2 h-2 rounded-full bg-blue-400"></div>
-        <h2 class="font-semibold text-white">Franja de Estadísticas</h2>
-      </div>
-      <form method="post" class="p-6">
-        {% csrf_token %}
-        <input type="hidden" name="seccion" value="estadisticas">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="bg-gray-900/40 rounded-xl p-5 space-y-3">
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Stat 1 — Piezas</p>
-            <div><label class="text-xs text-gray-500 mb-1 block">Número</label>{{ stats_form.stat_piezas_numero }}</div>
-            <div><label class="text-xs text-gray-500 mb-1 block">Etiqueta</label>{{ stats_form.stat_piezas_etiqueta }}</div>
-          </div>
-          <div class="bg-gray-900/40 rounded-xl p-5 space-y-3">
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Stat 2 — Respuesta</p>
-            <div><label class="text-xs text-gray-500 mb-1 block">Número</label>{{ stats_form.stat_respuesta_numero }}</div>
-            <div><label class="text-xs text-gray-500 mb-1 block">Etiqueta</label>{{ stats_form.stat_respuesta_etiqueta }}</div>
-          </div>
-          <div class="bg-gray-900/40 rounded-xl p-5 space-y-3">
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Stat 3 — Materiales</p>
-            <div><label class="text-xs text-gray-500 mb-1 block">Número</label>{{ stats_form.stat_materiales_numero }}</div>
-            <div><label class="text-xs text-gray-500 mb-1 block">Etiqueta</label>{{ stats_form.stat_materiales_etiqueta }}</div>
-          </div>
-          <div class="bg-gray-900/40 rounded-xl p-5 space-y-3">
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Stat 4 — Garantía</p>
-            <div><label class="text-xs text-gray-500 mb-1 block">Número</label>{{ stats_form.stat_garantia_numero }}</div>
-            <div><label class="text-xs text-gray-500 mb-1 block">Etiqueta</label>{{ stats_form.stat_garantia_etiqueta }}</div>
-          </div>
-        </div>
-        <div class="flex justify-end pt-5">
-          <button type="submit" class="bg-[#10b981] hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors">Guardar Estadísticas</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-
-  {# ══════════════════════════════════════════════ #}
-  {# TAB: MATERIALES                               #}
-  {# ══════════════════════════════════════════════ #}
-  <div id="tab-materiales" class="tab-panel hidden space-y-6 mt-6">
-
-    {# Dónde mostrar #}
-    <div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-800 flex items-center gap-3">
-        <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
-        <h2 class="font-semibold text-white">¿Dónde mostrar los materiales?</h2>
-      </div>
-      <form method="post" class="p-6 space-y-4">
-        {% csrf_token %}
-        <input type="hidden" name="seccion" value="materiales">
-        
-        <div class="space-y-3">
-          <div class="flex items-center gap-3 p-3 bg-gray-900/40 rounded-xl">
-            {{ materiales_form.mostrar_materiales_en_index }}
-            <label class="text-sm text-gray-300 font-medium">Mostrar en la página de Inicio</label>
-          </div>
-          <div class="flex items-center gap-3 p-3 bg-gray-900/40 rounded-xl">
-            {{ materiales_form.mostrar_materiales_en_pagina }}
-            <label class="text-sm text-gray-300 font-medium">Mostrar en la página Materiales</label>
-          </div>
-        </div>
-        
-        <div class="flex justify-end pt-2">
-          <button type="submit" class="bg-[#10b981] hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors">Guardar</button>
-        </div>
-      </form>
-    </div>
-
-    {# Cards de materiales #}
-    <div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-2 h-2 rounded-full bg-purple-400"></div>
-          <h2 class="font-semibold text-white">Cards de Materiales</h2>
-          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">{{ cards_materiales|length }}</span>
-        </div>
-        <button type="button" onclick="abrirCrear('materiales')" class="flex items-center gap-2 bg-[#10b981] hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          Nuevo
+    {# ── TABS SIMPLIFICADOS ── #}
+    <div class="border-b border-gray-800">
+      <nav class="-mb-px flex gap-1 overflow-x-auto">
+        <button data-tab="estadisticas"
+                class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
+          Estadísticas
         </button>
-      </div>
-
-      {% if cards_materiales %}
-      <div id="sortable-materiales" class="divide-y divide-gray-800">
-        {% for card in cards_materiales %}
-        <div class="flex items-center gap-4 px-6 py-4 group hover:bg-gray-800/30 transition-colors" data-id="{{ card.id }}">
-          <div class="drag-handle cursor-grab text-gray-600 hover:text-gray-400 flex-shrink-0 select-none">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M7 4a1 1 0 100 2 1 1 0 000-2zM13 4a1 1 0 100 2 1 1 0 000-2zM7 9a1 1 0 100 2 1 1 0 000-2zM13 9a1 1 0 100 2 1 1 0 000-2zM7 14a1 1 0 100 2 1 1 0 000-2zM13 14a1 1 0 100 2 1 1 0 000-2z"/>
-            </svg>
-          </div>
-          <div class="w-14 h-14 rounded-xl overflow-hidden bg-gray-900 flex-shrink-0 border border-gray-700">
-            {% if card.imagen %}
-              <img src="{{ card.imagen.url }}" alt="{{ card.titulo }}" class="w-full h-full object-cover">
-            {% else %}
-              <div class="w-full h-full flex items-center justify-center text-gray-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <button data-tab="materiales"
+                class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
+          Materiales
+        </button>
+        <button data-tab="productos"
+                class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
+          Productos
+        </button>
+        <button data-tab="proceso"
+                class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
+          Proceso
+        </button>
+        <button data-tab="contacto"
+                class="tab-btn px-5 py-3 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
+          Contacto
+        </button>
+      </nav>
+    </div>
+    {# ══════════════════════════════════════════════ #}
+    {# TAB: ESTADÍSTICAS                             #}
+    {# ══════════════════════════════════════════════ #}
+    <div id="tab-estadisticas" class="tab-panel hidden">
+      <div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden mt-6">
+        <div class="px-6 py-4 border-b border-gray-800 flex items-center gap-3">
+          <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+          <h2 class="font-semibold text-white">Franja de Estadísticas</h2>
+        </div>
+        <form method="post" class="p-6">
+          {% csrf_token %}
+          <input type="hidden" name="seccion" value="estadisticas">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-gray-900/40 rounded-xl p-5 space-y-3">
+              <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Stat 1 — Piezas</p>
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">Número</label>
+                {{ stats_form.stat_piezas_numero }}
               </div>
-            {% endif %}
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              <p class="font-semibold text-white text-sm">{{ card.titulo }}</p>
-              {% if card.badge_texto %}<span class="text-[10px] px-2 py-0.5 rounded-full font-bold {{ card.get_badge_classes }}">{{ card.badge_texto }}</span>{% endif %}
-              {% if not card.activo %}<span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-500 font-bold">Oculto</span>{% endif %}
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">Etiqueta</label>
+                {{ stats_form.stat_piezas_etiqueta }}
+              </div>
             </div>
-            <p class="text-gray-500 text-xs mt-0.5 truncate">{{ card.descripcion|truncatechars:70 }}</p>
+            <div class="bg-gray-900/40 rounded-xl p-5 space-y-3">
+              <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Stat 2 — Respuesta</p>
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">Número</label>
+                {{ stats_form.stat_respuesta_numero }}
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">Etiqueta</label>
+                {{ stats_form.stat_respuesta_etiqueta }}
+              </div>
+            </div>
+            <div class="bg-gray-900/40 rounded-xl p-5 space-y-3">
+              <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Stat 3 — Materiales</p>
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">Número</label>
+                {{ stats_form.stat_materiales_numero }}
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">Etiqueta</label>
+                {{ stats_form.stat_materiales_etiqueta }}
+              </div>
+            </div>
+            <div class="bg-gray-900/40 rounded-xl p-5 space-y-3">
+              <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Stat 4 — Garantía</p>
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">Número</label>
+                {{ stats_form.stat_garantia_numero }}
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 mb-1 block">Etiqueta</label>
+                {{ stats_form.stat_garantia_etiqueta }}
+              </div>
+            </div>
           </div>
-          <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-            <button type="button" class="btn-editar-card px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white text-xs font-bold"
-                    data-id="{{ card.id }}" data-seccion="materiales" data-titulo="{{ card.titulo|escapejs }}"
-                    data-descripcion="{{ card.descripcion|escapejs }}" data-orden="{{ card.orden }}"
-                    data-activo="{{ card.activo|yesno:'true,false' }}" data-badge-texto="{{ card.badge_texto|escapejs }}"
-                    data-badge-color="{{ card.badge_color }}" data-tags="{{ card.tags|escapejs }}"
-                    data-imagen-url="{% if card.imagen %}{{ card.imagen.url }}{% endif %}">
-              Editar
+          <div class="flex justify-end pt-5">
+            <button type="submit"
+                    class="bg-[#10b981] hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors">
+              Guardar Estadísticas
             </button>
-            <form method="post" action="{% url 'core:eliminar_card' card.id %}" onsubmit="return confirm('¿Eliminar?')" style="display:inline;">
-              {% csrf_token %}
-              <button type="submit" class="px-3 py-1.5 rounded-lg bg-red-900/30 hover:bg-red-900/60 text-red-400 text-xs font-bold">Eliminar</button>
-            </form>
           </div>
-        </div>
-        {% endfor %}
+        </form>
       </div>
-      {% else %}
-      <div class="px-6 py-12 text-center text-gray-500">
-        <p class="text-sm">No hay materiales. Crea el primero.</p>
-      </div>
-      {% endif %}
     </div>
-  </div>
-
-
-  {# ══════════════════════════════════════════════ #}
-  {# TAB: PRODUCTOS DESTACADOS                     #}
-  {# ══════════════════════════════════════════════ #}
-  <div id="tab-productos" class="tab-panel hidden mt-6">
-    <div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-800 flex items-center gap-3">
-        <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
-        <h2 class="font-semibold text-white">Sección "Lo más pedido"</h2>
+    {# ══════════════════════════════════════════════ #}
+    {# TAB: MATERIALES                               #}
+    {# ══════════════════════════════════════════════ #}
+    <div id="tab-materiales" class="tab-panel hidden space-y-6 mt-6">
+      {# Dónde mostrar #}
+      <div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-800 flex items-center gap-3">
+          <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+          <h2 class="font-semibold text-white">¿Dónde mostrar los materiales?</h2>
+        </div>
+        <form method="post" class="p-6 space-y-4">
+          {% csrf_token %}
+          <input type="hidden" name="seccion" value="materiales">
+          <div class="space-y-3">
+            <div class="flex items-center gap-3 p-3 bg-gray-900/40 rounded-xl">
+              {{ materiales_form.mostrar_materiales_en_index }}
+              <label class="text-sm text-gray-300 font-medium">Mostrar en la página de Inicio</label>
+            </div>
+            <div class="flex items-center gap-3 p-3 bg-gray-900/40 rounded-xl">
+              {{ materiales_form.mostrar_materiales_en_pagina }}
+              <label class="text-sm text-gray-300 font-medium">Mostrar en la página Materiales</label>
+            </div>
+          </div>
+          <div class="flex justify-end pt-2">
+            <button type="submit"
+                    class="bg-[#10b981] hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors">
+              Guardar
+            </button>
+          </div>
+        </form>
       </div>
-      <form method="post" class="p-6 space-y-4">
-        {% csrf_token %}
-        <input type="hidden" name="seccion" value="productos">
-        <div class="flex items-center gap-3 p-3 bg-gray-900/40 rounded-xl">
-          {{ prod_dest_form.mostrar_seccion_productos_destacados }}
-          <label class="text-sm text-gray-300 font-medium">Mostrar en el Inicio</label>
+      {# Cards de materiales #}
+      <div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-2 h-2 rounded-full bg-purple-400"></div>
+            <h2 class="font-semibold text-white">Cards de Materiales</h2>
+            <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">{{ cards_materiales|length }}</span>
+          </div>
+          <button type="button"
+                  onclick="abrirCrear('materiales')"
+                  class="flex items-center gap-2 bg-[#10b981] hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Nuevo
+          </button>
         </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Máx. productos (1–8)</label>
-          {{ prod_dest_form.max_productos_destacados }}
-        </div>
-        <div class="flex justify-end">
-          <button type="submit" class="bg-[#10b981] hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors">Guardar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-
-  {# ══════════════════════════════════════════════ #}
-  {# TAB: PROCESO                                  #}
-  {# ══════════════════════════════════════════════ #}
-  <div id="tab-proceso" class="tab-panel hidden space-y-6 mt-6">
-
-    {# Textos de proceso #}
-    <div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-800 flex items-center gap-3">
-        <div class="w-2 h-2 rounded-full bg-orange-400"></div>
-        <h2 class="font-semibold text-white">Página de Proceso</h2>
+        {% if cards_materiales %}
+          <div id="sortable-materiales" class="divide-y divide-gray-800">
+            {% for card in cards_materiales %}
+              <div class="flex items-center gap-4 px-6 py-4 group hover:bg-gray-800/30 transition-colors"
+                   data-id="{{ card.id }}">
+                <div class="drag-handle cursor-grab text-gray-600 hover:text-gray-400 flex-shrink-0 select-none">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M7 4a1 1 0 100 2 1 1 0 000-2zM13 4a1 1 0 100 2 1 1 0 000-2zM7 9a1 1 0 100 2 1 1 0 000-2zM13 9a1 1 0 100 2 1 1 0 000-2zM7 14a1 1 0 100 2 1 1 0 000-2zM13 14a1 1 0 100 2 1 1 0 000-2z" />
+                  </svg>
+                </div>
+                <div class="w-14 h-14 rounded-xl overflow-hidden bg-gray-900 flex-shrink-0 border border-gray-700">
+                  {% if card.imagen %}
+                    <img src="{{ card.imagen.url }}"
+                         alt="{{ card.titulo }}"
+                         class="w-full h-full object-cover">
+                  {% else %}
+                    <div class="w-full h-full flex items-center justify-center text-gray-700">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  {% endif %}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <p class="font-semibold text-white text-sm">{{ card.titulo }}</p>
+                    {% if card.badge_texto %}
+                      <span class="text-[10px] px-2 py-0.5 rounded-full font-bold {{ card.get_badge_classes }}">{{ card.badge_texto }}</span>
+                    {% endif %}
+                    {% if not card.activo %}
+                      <span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-500 font-bold">Oculto</span>
+                    {% endif %}
+                  </div>
+                  <p class="text-gray-500 text-xs mt-0.5 truncate">{{ card.descripcion|truncatechars:70 }}</p>
+                </div>
+                <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                  <button type="button"
+                          class="btn-editar-card px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white text-xs font-bold"
+                          data-id="{{ card.id }}"
+                          data-seccion="materiales"
+                          data-titulo="{{ card.titulo|escapejs }}"
+                          data-descripcion="{{ card.descripcion|escapejs }}"
+                          data-orden="{{ card.orden }}"
+                          data-activo="{{ card.activo|yesno:'true,false' }}"
+                          data-badge-texto="{{ card.badge_texto|escapejs }}"
+                          data-badge-color="{{ card.badge_color }}"
+                          data-tags="{{ card.tags|escapejs }}"
+                          data-imagen-url="{% if card.imagen %}{{ card.imagen.url }}{% endif %}">Editar</button>
+                  <form method="post"
+                        action="{% url 'core:eliminar_card' card.id %}"
+                        onsubmit="return confirm('¿Eliminar?')"
+                        style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="px-3 py-1.5 rounded-lg bg-red-900/30 hover:bg-red-900/60 text-red-400 text-xs font-bold">
+                      Eliminar
+                    </button>
+                  </form>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="px-6 py-12 text-center text-gray-500">
+            <p class="text-sm">No hay materiales. Crea el primero.</p>
+          </div>
+        {% endif %}
       </div>
-      <form method="post" class="p-6 space-y-4">
-        {% csrf_token %}
-        <input type="hidden" name="seccion" value="proceso">
-        <div>
-          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Título</label>
-          {{ proceso_form.proceso_titulo }}
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Subtítulo</label>
-          {{ proceso_form.proceso_subtitulo }}
-        </div>
-        <div class="flex justify-end">
-          <button type="submit" class="bg-[#10b981] hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors">Guardar</button>
-        </div>
-      </form>
     </div>
-
-    {# Pasos del proceso #}
-    <div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-        <div class="flex items-center gap-3">
+    {# ══════════════════════════════════════════════ #}
+    {# TAB: PRODUCTOS DESTACADOS                     #}
+    {# ══════════════════════════════════════════════ #}
+    <div id="tab-productos" class="tab-panel hidden mt-6">
+      <div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-800 flex items-center gap-3">
+          <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+          <h2 class="font-semibold text-white">Sección "Lo más pedido"</h2>
+        </div>
+        <form method="post" class="p-6 space-y-4">
+          {% csrf_token %}
+          <input type="hidden" name="seccion" value="productos">
+          <div class="flex items-center gap-3 p-3 bg-gray-900/40 rounded-xl">
+            {{ prod_dest_form.mostrar_seccion_productos_destacados }}
+            <label class="text-sm text-gray-300 font-medium">Mostrar en el Inicio</label>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Máx. productos (1–8)</label>
+            {{ prod_dest_form.max_productos_destacados }}
+          </div>
+          <div class="flex justify-end">
+            <button type="submit"
+                    class="bg-[#10b981] hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors">
+              Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {# ══════════════════════════════════════════════ #}
+    {# TAB: PROCESO                                  #}
+    {# ══════════════════════════════════════════════ #}
+    <div id="tab-proceso" class="tab-panel hidden space-y-6 mt-6">
+      {# Textos de proceso #}
+      <div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-800 flex items-center gap-3">
           <div class="w-2 h-2 rounded-full bg-orange-400"></div>
-          <h2 class="font-semibold text-white">Pasos</h2>
-          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">{{ cards_proceso|length }}</span>
+          <h2 class="font-semibold text-white">Página de Proceso</h2>
         </div>
-        <button type="button" onclick="abrirCrear('proceso')" class="flex items-center gap-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border border-orange-500/30 px-4 py-2 rounded-xl text-sm font-bold transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          Nuevo
-        </button>
-      </div>
-
-      {% if cards_proceso %}
-      <div id="sortable-proceso" class="divide-y divide-gray-800">
-        {% for card in cards_proceso %}
-        <div class="flex items-center gap-4 px-6 py-4 group hover:bg-gray-800/30 transition-colors" data-id="{{ card.id }}">
-          <div class="drag-handle cursor-grab text-gray-600 hover:text-gray-400 flex-shrink-0 select-none">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M7 4a1 1 0 100 2 1 1 0 000-2zM13 4a1 1 0 100 2 1 1 0 000-2zM7 9a1 1 0 100 2 1 1 0 000-2zM13 9a1 1 0 100 2 1 1 0 000-2zM7 14a1 1 0 100 2 1 1 0 000-2zM13 14a1 1 0 100 2 1 1 0 000-2z"/>
-            </svg>
+        <form method="post" class="p-6 space-y-4">
+          {% csrf_token %}
+          <input type="hidden" name="seccion" value="proceso">
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Título</label>
+            {{ proceso_form.proceso_titulo }}
           </div>
-          {% if card.paso_numero %}
-          <div class="w-9 h-9 rounded-xl {% if card.es_paso_destacado %}bg-[#10b981] text-white{% else %}bg-gray-800 text-gray-400{% endif %} flex items-center justify-center font-black text-sm flex-shrink-0">
-            {{ card.paso_numero }}
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Subtítulo</label>
+            {{ proceso_form.proceso_subtitulo }}
           </div>
-          {% endif %}
-          <div class="w-14 h-14 rounded-xl overflow-hidden bg-gray-900 flex-shrink-0 border border-gray-700">
-            {% if card.imagen %}
-              <img src="{{ card.imagen.url }}" alt="{{ card.titulo }}" class="w-full h-full object-cover">
-            {% else %}
-              <div class="w-full h-full flex items-center justify-center text-gray-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-              </div>
-            {% endif %}
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              <p class="font-semibold text-white text-sm">{{ card.titulo }}</p>
-              {% if card.es_paso_destacado %}<span class="text-[10px] bg-[#10b981]/20 text-[#10b981] px-2 py-0.5 rounded-full font-bold">Destacado</span>{% endif %}
-            </div>
-            <p class="text-gray-500 text-xs mt-0.5 truncate">{{ card.descripcion|truncatechars:70 }}</p>
-          </div>
-          <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-            <button type="button" class="btn-editar-card px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white text-xs font-bold"
-                    data-id="{{ card.id }}" data-seccion="proceso" data-titulo="{{ card.titulo|escapejs }}"
-                    data-descripcion="{{ card.descripcion|escapejs }}" data-orden="{{ card.orden }}"
-                    data-activo="{{ card.activo|yesno:'true,false' }}"
-                    data-imagen-url="{% if card.imagen %}{{ card.imagen.url }}{% endif %}"
-                    data-paso-numero="{{ card.paso_numero|default:'' }}"
-                    data-destacado="{{ card.es_paso_destacado|yesno:'true,false' }}">
-              Editar
+          <div class="flex justify-end">
+            <button type="submit"
+                    class="bg-[#10b981] hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors">
+              Guardar
             </button>
-            <form method="post" action="{% url 'core:eliminar_card' card.id %}" onsubmit="return confirm('¿Eliminar?')" style="display:inline;">
-              {% csrf_token %}
-              <button type="submit" class="px-3 py-1.5 rounded-lg bg-red-900/30 hover:bg-red-900/60 text-red-400 text-xs font-bold">Eliminar</button>
-            </form>
           </div>
+        </form>
+      </div>
+      {# Pasos del proceso #}
+      <div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-2 h-2 rounded-full bg-orange-400"></div>
+            <h2 class="font-semibold text-white">Pasos</h2>
+            <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">{{ cards_proceso|length }}</span>
+          </div>
+          <button type="button"
+                  onclick="abrirCrear('proceso')"
+                  class="flex items-center gap-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border border-orange-500/30 px-4 py-2 rounded-xl text-sm font-bold transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Nuevo
+          </button>
         </div>
-        {% endfor %}
+        {% if cards_proceso %}
+          <div id="sortable-proceso" class="divide-y divide-gray-800">
+            {% for card in cards_proceso %}
+              <div class="flex items-center gap-4 px-6 py-4 group hover:bg-gray-800/30 transition-colors"
+                   data-id="{{ card.id }}">
+                <div class="drag-handle cursor-grab text-gray-600 hover:text-gray-400 flex-shrink-0 select-none">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M7 4a1 1 0 100 2 1 1 0 000-2zM13 4a1 1 0 100 2 1 1 0 000-2zM7 9a1 1 0 100 2 1 1 0 000-2zM13 9a1 1 0 100 2 1 1 0 000-2zM7 14a1 1 0 100 2 1 1 0 000-2zM13 14a1 1 0 100 2 1 1 0 000-2z" />
+                  </svg>
+                </div>
+                {% if card.paso_numero %}
+                  <div class="w-9 h-9 rounded-xl {% if card.es_paso_destacado %}bg-[#10b981] text-white{% else %}bg-gray-800 text-gray-400{% endif %} flex items-center justify-center font-black text-sm flex-shrink-0">
+                    {{ card.paso_numero }}
+                  </div>
+                {% endif %}
+                <div class="w-14 h-14 rounded-xl overflow-hidden bg-gray-900 flex-shrink-0 border border-gray-700">
+                  {% if card.imagen %}
+                    <img src="{{ card.imagen.url }}"
+                         alt="{{ card.titulo }}"
+                         class="w-full h-full object-cover">
+                  {% else %}
+                    <div class="w-full h-full flex items-center justify-center text-gray-700">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  {% endif %}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <p class="font-semibold text-white text-sm">{{ card.titulo }}</p>
+                    {% if card.es_paso_destacado %}
+                      <span class="text-[10px] bg-[#10b981]/20 text-[#10b981] px-2 py-0.5 rounded-full font-bold">Destacado</span>
+                    {% endif %}
+                  </div>
+                  <p class="text-gray-500 text-xs mt-0.5 truncate">{{ card.descripcion|truncatechars:70 }}</p>
+                </div>
+                <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                  <button type="button"
+                          class="btn-editar-card px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white text-xs font-bold"
+                          data-id="{{ card.id }}"
+                          data-seccion="proceso"
+                          data-titulo="{{ card.titulo|escapejs }}"
+                          data-descripcion="{{ card.descripcion|escapejs }}"
+                          data-orden="{{ card.orden }}"
+                          data-activo="{{ card.activo|yesno:'true,false' }}"
+                          data-imagen-url="{% if card.imagen %}{{ card.imagen.url }}{% endif %}"
+                          data-paso-numero="{{ card.paso_numero|default:'' }}"
+                          data-destacado="{{ card.es_paso_destacado|yesno:'true,false' }}">Editar</button>
+                  <form method="post"
+                        action="{% url 'core:eliminar_card' card.id %}"
+                        onsubmit="return confirm('¿Eliminar?')"
+                        style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="px-3 py-1.5 rounded-lg bg-red-900/30 hover:bg-red-900/60 text-red-400 text-xs font-bold">
+                      Eliminar
+                    </button>
+                  </form>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="px-6 py-12 text-center text-gray-500">
+            <p class="text-sm">No hay pasos. Crea el primero.</p>
+          </div>
+        {% endif %}
       </div>
-      {% else %}
-      <div class="px-6 py-12 text-center text-gray-500">
-        <p class="text-sm">No hay pasos. Crea el primero.</p>
-      </div>
-      {% endif %}
     </div>
-  </div>
-
-
-  {# ══════════════════════════════════════════════ #}
-  {# TAB: CONTACTO                                 #}
-  {# ══════════════════════════════════════════════ #}
-  <div id="tab-contacto" class="tab-panel hidden mt-6">
-    <div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-800 flex items-center gap-3">
-        <div class="w-2 h-2 rounded-full bg-green-400"></div>
-        <h2 class="font-semibold text-white">Contacto y WhatsApp</h2>
-      </div>
-      <form method="post" class="p-6 space-y-4">
-        {% csrf_token %}
-        <input type="hidden" name="seccion" value="contacto">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Número WhatsApp</label>
-            {{ contacto_form.whatsapp_numero }}
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Email</label>
-            {{ contacto_form.email_contacto }}
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Ciudad</label>
-            {{ contacto_form.ciudad_contacto }}
-          </div>
-          <div class="flex items-center gap-3 p-3 bg-gray-900/40 rounded-xl self-end mb-1">
-            {{ contacto_form.mostrar_boton_whatsapp }}
-            <label class="text-sm text-gray-300 font-medium">Botón flotante</label>
-          </div>
+    {# ══════════════════════════════════════════════ #}
+    {# TAB: CONTACTO                                 #}
+    {# ══════════════════════════════════════════════ #}
+    <div id="tab-contacto" class="tab-panel hidden mt-6">
+      <div class="bg-[#1e293b] rounded-2xl border border-gray-800 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-800 flex items-center gap-3">
+          <div class="w-2 h-2 rounded-full bg-green-400"></div>
+          <h2 class="font-semibold text-white">Contacto y WhatsApp</h2>
         </div>
-        <div class="flex justify-end">
-          <button type="submit" class="bg-[#10b981] hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors">Guardar</button>
+        <form method="post" class="p-6 space-y-4">
+          {% csrf_token %}
+          <input type="hidden" name="seccion" value="contacto">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Número WhatsApp</label>
+              {{ contacto_form.whatsapp_numero }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Instagram</label>
+              {{ contacto_form.instagram_url }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Email</label>
+              {{ contacto_form.email_contacto }}
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Ciudad</label>
+              {{ contacto_form.ciudad_contacto }}
+            </div>
+            <div class="col-span-full mt-2">
+              <label class="block text-center text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                Mostrar botones flotantes
+              </label>
+              <div class="flex flex-row justify-center items-center gap-6">
+                <div class="flex items-center gap-2">
+                  {{ contacto_form.mostrar_boton_whatsapp }}
+                  <label class="text-sm text-gray-300">WhatsApp</label>
+                </div>
+                <div class="flex items-center gap-2">
+                  {{ contacto_form.mostrar_boton_instagram }}
+                  <label class="text-sm text-gray-300">Instagram</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-end">
+            <button type="submit"
+                    class="bg-[#10b981] hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors">
+              Guardar
+            </button>
+          </div>
         </div>
       </form>
     </div>
   </div>
-
-</div>{# /container #}
-
-
+</div>
+{# /container #}
 {# ════════════════════════════════════════════════════════════════════ #}
 {# MODAL ÚNICO — Crear o Editar card                                  #}
 {# ════════════════════════════════════════════════════════════════════ #}
-<div id="modal-card" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-  <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="cerrarModal()"></div>
-
+<div id="modal-card"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"
+       onclick="cerrarModal()"></div>
   <div class="relative bg-[#1e293b] border border-gray-700 rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col">
-
     <div class="flex-shrink-0 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
       <h3 class="font-bold text-white" id="modal-titulo">Card</h3>
-      <button type="button" onclick="cerrarModal()" class="text-gray-500 hover:text-white">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      <button type="button"
+              onclick="cerrarModal()"
+              class="text-gray-500 hover:text-white">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
       </button>
     </div>
-
-    <form id="modal-form" method="post" enctype="multipart/form-data" class="overflow-y-auto flex-1 flex flex-col">
+    <form id="modal-form"
+          method="post"
+          enctype="multipart/form-data"
+          class="overflow-y-auto flex-1 flex flex-col">
       {% csrf_token %}
       <input type="hidden" name="seccion" id="modal-seccion">
-
       <div class="p-6 space-y-4 flex-1">
-
         <div>
-          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Título <span class="text-red-400">*</span></label>
-          <input type="text" name="titulo" id="modal-input-titulo" required placeholder="Ej: PLA Premium..."
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+            Título <span class="text-red-400">*</span>
+          </label>
+          <input type="text"
+                 name="titulo"
+                 id="modal-input-titulo"
+                 required
+                 placeholder="Ej: PLA Premium..."
                  class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#10b981]">
         </div>
-
         <div>
-          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Descripción <span class="text-red-400">*</span></label>
-          <textarea name="descripcion" id="modal-input-descripcion" rows="3" required placeholder="Describe..."
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+            Descripción <span class="text-red-400">*</span>
+          </label>
+          <textarea name="descripcion"
+                    id="modal-input-descripcion"
+                    rows="3"
+                    required
+                    placeholder="Describe..."
                     class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#10b981] resize-none"></textarea>
         </div>
-
         <div>
           <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Imagen</label>
-          <div id="modal-img-actual" class="hidden mb-3 relative h-36 rounded-xl overflow-hidden border border-gray-700">
-            <img id="modal-img-actual-src" src="" alt="" class="w-full h-full object-cover">
+          <div id="modal-img-actual"
+               class="hidden mb-3 relative h-36 rounded-xl overflow-hidden border border-gray-700">
+            <img id="modal-img-actual-src"
+                 src=""
+                 alt=""
+                 class="w-full h-full object-cover">
           </div>
           <div class="relative border-2 border-dashed border-gray-700 hover:border-[#10b981] rounded-xl p-4 text-center cursor-pointer">
-            <input type="file" name="imagen" id="modal-input-imagen" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-            <svg class="w-8 h-8 mx-auto text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            <input type="file"
+                   name="imagen"
+                   id="modal-input-imagen"
+                   accept="image/*"
+                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+            <svg class="w-8 h-8 mx-auto text-gray-600 mb-2"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <p class="text-sm text-gray-500" id="modal-dropzone-label">Clic para subir</p>
-            <img id="modal-img-preview" src="" alt="preview" class="hidden w-full h-32 object-cover rounded-xl mt-2">
+            <img id="modal-img-preview"
+                 src=""
+                 alt="preview"
+                 class="hidden w-full h-32 object-cover rounded-xl mt-2">
           </div>
         </div>
-
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Orden</label>
-            <input type="number" name="orden" id="modal-input-orden" min="0" value="0" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#10b981]">
+            <input type="number"
+                   name="orden"
+                   id="modal-input-orden"
+                   min="0"
+                   value="0"
+                   class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#10b981]">
           </div>
           <div class="flex items-center gap-3 pt-6">
-            <input type="checkbox" name="activo" id="modal-input-activo" checked class="w-4 h-4 rounded accent-emerald-500">
+            <input type="checkbox"
+                   name="activo"
+                   id="modal-input-activo"
+                   checked
+                   class="w-4 h-4 rounded accent-emerald-500">
             <label for="modal-input-activo" class="text-sm text-gray-300">Visible</label>
           </div>
         </div>
-
         {# Campos MATERIALES #}
-        <div id="campos-materiales" class="hidden border-t border-gray-800 pt-4 space-y-4">
+        <div id="campos-materiales"
+             class="hidden border-t border-gray-800 pt-4 space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Badge texto</label>
-              <input type="text" name="badge_texto" id="modal-input-badge-texto" placeholder="Ej: Estético..." class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#10b981]">
+              <input type="text"
+                     name="badge_texto"
+                     id="modal-input-badge-texto"
+                     placeholder="Ej: Estético..."
+                     class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#10b981]">
             </div>
             <div>
               <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Color</label>
-              <select name="badge_color" id="modal-input-badge-color" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#10b981]">
-                {% for value, label in badge_colores %}
-                <option value="{{ value }}">{{ label }}</option>
-                {% endfor %}
+              <select name="badge_color"
+                      id="modal-input-badge-color"
+                      class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#10b981]">
+                {% for value, label in badge_colores %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
               </select>
             </div>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tags (separados por coma)</label>
-            <input type="text" name="tags" id="modal-input-tags" placeholder="Ej: Fácil de Pintar, Eco-Friendly" class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#10b981]">
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+              Tags (separados por coma)
+            </label>
+            <input type="text"
+                   name="tags"
+                   id="modal-input-tags"
+                   placeholder="Ej: Fácil de Pintar, Eco-Friendly"
+                   class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#10b981]">
           </div>
         </div>
-
         {# Campos PROCESO #}
-        <div id="campos-proceso" class="hidden border-t border-gray-800 pt-4 space-y-4">
+        <div id="campos-proceso"
+             class="hidden border-t border-gray-800 pt-4 space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Número del paso</label>
-              <input type="number" name="paso_numero" id="modal-input-paso-numero" min="1" placeholder="1, 2, 3..." class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#10b981]">
+              <input type="number"
+                     name="paso_numero"
+                     id="modal-input-paso-numero"
+                     min="1"
+                     placeholder="1, 2, 3..."
+                     class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#10b981]">
             </div>
             <div class="flex items-center gap-3 pt-6">
-              <input type="checkbox" name="es_paso_destacado" id="modal-input-destacado" class="w-4 h-4 rounded accent-emerald-500">
-              <label for="modal-input-destacado" class="text-sm text-gray-300">Destacado <span class="text-[#10b981]">(verde)</span></label>
+              <input type="checkbox"
+                     name="es_paso_destacado"
+                     id="modal-input-destacado"
+                     class="w-4 h-4 rounded accent-emerald-500">
+              <label for="modal-input-destacado" class="text-sm text-gray-300">
+                Destacado <span class="text-[#10b981]">(verde)</span>
+              </label>
             </div>
           </div>
         </div>
-
       </div>
-
       <div class="flex-shrink-0 px-6 py-4 border-t border-gray-700 flex justify-end gap-3">
-        <button type="button" onclick="cerrarModal()" class="px-5 py-2 rounded-xl text-sm font-semibold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 transition-colors">Cancelar</button>
-        <button type="submit" class="px-5 py-2 rounded-xl text-sm font-bold bg-[#10b981] hover:bg-emerald-500 text-white transition-colors">Guardar</button>
+        <button type="button"
+                onclick="cerrarModal()"
+                class="px-5 py-2 rounded-xl text-sm font-semibold text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 transition-colors">
+          Cancelar
+        </button>
+        <button type="submit"
+                class="px-5 py-2 rounded-xl text-sm font-bold bg-[#10b981] hover:bg-emerald-500 text-white transition-colors">
+          Guardar
+        </button>
       </div>
     </form>
   </div>
 </div>
-
-
 {% endblock %}
-
 {% block extra_js %}
-<script>
+  <script>
 // TABS
 (function () {
   const btns = document.querySelectorAll('.tab-btn');
@@ -585,5 +736,5 @@ function guardarOrden(list) {
     body: JSON.stringify(data)
   }).catch(err => console.error('Error:', err));
 }
-</script>
+  </script>
 {% endblock %}

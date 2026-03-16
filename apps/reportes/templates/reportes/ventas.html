@@ -1,0 +1,128 @@
+{% extends "core/base_admin.html" %}
+{% block title %}
+  Reporte de Ventas - A.N.T
+{% endblock title %}
+{% block content %}
+    <div class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <div class="mb-8">
+                    <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest mb-3 gap-2">
+                        <a href="{% url 'reportes:dashboard' %}"
+                           class="hover:text-white transition-colors">Reportes</a>
+                        <span>/</span>
+                        <span class="text-[#10b981]">Ventas</span>
+                    </nav>
+                </div>
+                <h1 class="text-2xl font-bold text-white">Reporte de Ventas</h1>
+            </div>
+            {# Filtro de fechas + Export #}
+            <div class="flex flex-wrap items-center gap-2">
+                <form method="get"
+                      class="flex items-center gap-2 flex-wrap"
+                      id="filtroForm">
+                    <input type="date"
+                           name="desde"
+                           id="inputDesde"
+                           value="{{ fecha_desde|date:'Y-m-d' }}"
+                           class="bg-[#0f172a] border border-gray-700 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#10b981] transition">
+                    <span class="text-gray-600 text-xs">hasta</span>
+                    <input type="date"
+                           name="hasta"
+                           id="inputHasta"
+                           value="{{ fecha_hasta|date:'Y-m-d' }}"
+                           class="bg-[#0f172a] border border-gray-700 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#10b981] transition">
+                    <button type="submit"
+                            class="px-4 py-2 rounded-xl bg-[#10b981] hover:bg-emerald-400 text-white text-xs font-bold transition">
+                        Filtrar
+                    </button>
+                </form>
+                {# Export Excel — pasa las mismas fechas #}
+                <a id="btnExport"
+                   href="{% url 'reportes:exportar_ventas' %}?desde={{ fecha_desde|date:'Y-m-d' }}&hasta={{ fecha_hasta|date:'Y-m-d' }}"
+                   class="flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400 text-xs font-bold transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Exportar Excel
+                </a>
+            </div>
+        </div>
+        {# KPIs del período #}
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-5">
+                <p class="text-gray-500 text-xs uppercase font-bold mb-2">Total recaudado</p>
+                <p class="text-2xl font-black text-emerald-400 font-mono">RD$ {{ total_recaudado|floatformat:2 }}</p>
+            </div>
+            <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-5">
+                <p class="text-gray-500 text-xs uppercase font-bold mb-2">Pedidos creados</p>
+                <p class="text-2xl font-black text-white">{{ total_pedidos }}</p>
+            </div>
+            <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-5">
+                <p class="text-gray-500 text-xs uppercase font-bold mb-2">Pagos registrados</p>
+                <p class="text-2xl font-black text-white">{{ pagos|length }}</p>
+            </div>
+        </div>
+        {# Tabla de pagos #}
+        <div class="bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-800/50 flex items-center justify-between">
+                <h2 class="text-white font-bold text-sm">Pagos del período</h2>
+                <p class="text-gray-600 text-xs">{{ pagos|length }} registro{{ pagos|length|pluralize:"s" }}</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr>
+                            <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Pedido</th>
+                            <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Cliente</th>
+                            <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Método</th>
+                            <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Referencia</th>
+                            <th class="px-5 py-3 text-right text-gray-500 text-xs font-bold uppercase">Monto</th>
+                            <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800/50">
+                        {% for pago in pagos %}
+                            <tr class="hover:bg-gray-800/20 transition-colors">
+                                <td class="px-5 py-3">
+                                    <a href="{% url 'pedidos:pedido_detalle' pago.pedido.id %}"
+                                       class="text-[#10b981] font-mono font-bold hover:underline">#{{ pago.pedido.id|stringformat:"04d" }}</a>
+                                </td>
+                                <td class="px-5 py-3 text-gray-300">{{ pago.pedido.nombre_cliente }}</td>
+                                <td class="px-5 py-3 text-gray-400 text-xs">{{ pago.get_metodo_display }}</td>
+                                <td class="px-5 py-3 text-gray-500 text-xs font-mono">{{ pago.referencia|default:"—" }}</td>
+                                <td class="px-5 py-3 text-right font-mono font-bold text-emerald-400">RD$ {{ pago.monto|floatformat:2 }}</td>
+                                <td class="px-5 py-3 text-gray-500 text-xs">{{ pago.fecha_pago|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="px-5 py-10 text-center text-gray-600">Sin pagos en este período.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    {% if pagos %}
+                        <tfoot>
+                            <tr class="border-t-2 border-gray-700">
+                                <td colspan="4"
+                                    class="px-5 py-3 text-right text-gray-400 text-xs font-bold uppercase">Total</td>
+                                <td class="px-5 py-3 text-right font-mono font-black text-emerald-400 text-base">
+                                    RD$ {{ total_recaudado|floatformat:2 }}
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+// Mantener el link de exportar sincronizado con el filtro de fechas
+document.getElementById('filtroForm').addEventListener('change', function() {
+  const desde = document.getElementById('inputDesde').value;
+  const hasta = document.getElementById('inputHasta').value;
+  const btn = document.getElementById('btnExport');
+  btn.href = `{% url 'reportes:exportar_ventas' %}?desde=${desde}&hasta=${hasta}`;
+});
+    </script>
+{% endblock content %}

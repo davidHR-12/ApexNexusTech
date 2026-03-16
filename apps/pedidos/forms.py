@@ -101,7 +101,6 @@ class ItemPersonalizadoForm(TailwindModelForm):
             "descripcion",
             "material_personalizado",
             "gramos_por_unidad",
-            "cantidad",
             "precio_unitario",
         ]
         widgets = {
@@ -134,7 +133,6 @@ class ItemPersonalizadoForm(TailwindModelForm):
         self.fields["precio_unitario"].initial = None
         self.fields["precio_unitario"].widget.attrs["placeholder"] = "Ej: 100"
         self.fields["gramos_por_unidad"].initial = None
-        self.fields["cantidad"].initial = 1
 
     def clean(self):
         """Valida que haya suficiente material en stock y que el precio sea válido"""
@@ -144,3 +142,83 @@ class ItemPersonalizadoForm(TailwindModelForm):
             self.add_error("precio_unitario", "El precio debe ser mayor a 0.")
 
         return cleaned_data
+
+class ItemContenedorForm(TailwindModelForm):
+    """
+    Formulario para crear el ítem contenedor (producto final visible para el cliente).
+    Solo requiere nombre/descripción — el precio y los gramos se calculan
+    automáticamente a partir de los componentes de producción.
+    """
+    class Meta:
+        model   = ItemPedido
+        fields  = ['descripcion', 'cantidad']
+        widgets = {
+            'descripcion': forms.TextInput(attrs={
+                'placeholder': 'Ej: Casco de Iron Man',
+                'autofocus': True,
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['descripcion'].label  = 'Nombre del producto final'
+        self.fields['descripcion'].required = True
+        self.fields['cantidad'].initial   = 1
+        self.fields['cantidad'].label     = 'Cantidad de unidades'
+
+
+class ComponenteItemForm(TailwindModelForm):
+    """
+    Formulario para agregar un componente de producción a un ítem contenedor.
+    Contiene los datos técnicos: material, gramos, precio, cantidad.
+    """
+    material_personalizado = forms.ModelChoiceField(
+        queryset=Material.objects.filter(activo=True),
+        required=True,
+        label='Material',
+        empty_label='Seleccione el material',
+        widget=forms.HiddenInput(attrs={'id': 'comp-material-id-hidden'}),
+    )
+
+    class Meta:
+        model  = ItemPedido
+        fields = [
+            'descripcion',
+            'material_personalizado',
+            'gramos_por_unidad',
+            'precio_unitario',
+        ]
+        widgets = {
+            'descripcion': forms.TextInput(attrs={
+                'placeholder': 'Ej: Parte roja — ABS',
+            }),
+            'gramos_por_unidad': forms.NumberInput(attrs={
+                'placeholder': 'Ej: 200',
+            }),
+            'precio_unitario': forms.NumberInput(attrs={
+                'placeholder': 'Ej: 350',
+            }),
+            'cantidad': forms.NumberInput(attrs={
+                'placeholder': '1',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['material_personalizado'].queryset = Material.objects.filter(
+            activo=True
+        ).select_related('tipo', 'marca', 'color')
+        self.fields['material_personalizado'].label_from_instance = (
+            lambda obj: f"{obj.tipo} {obj.marca} — {obj.color}  (Stock: {obj.stock_actual}g)"
+        )
+        self.fields['descripcion'].required = True
+        self.fields['descripcion'].label    = 'Nombre del componente'
+        self.fields['gramos_por_unidad'].required = True
+        self.fields['gramos_por_unidad'].initial = ""
+        self.fields['precio_unitario'].required    = True
+
+    def clean_precio_unitario(self):
+        precio = self.cleaned_data.get('precio_unitario')
+        if precio is not None and precio <= 0:
+            raise forms.ValidationError('El precio debe ser mayor a 0.')
+        return precio

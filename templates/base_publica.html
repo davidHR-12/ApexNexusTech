@@ -1,11 +1,12 @@
 {% load humanize %}
+{% load tailwind_tags %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    {% tailwind_css %}
     <link rel="icon"
           type="image/x-icon"
           href="{% static 'img/Logo-figura.ico' %}">
@@ -16,55 +17,6 @@
         Inicio - A.N.T
       {% endblock title %}
     </title>
-    <style>
-      body { font-family: 'Inter', sans-serif; }
-
-      input:-webkit-autofill,
-      input:-webkit-autofill:hover,
-      input:-webkit-autofill:focus,
-      textarea:-webkit-autofill,
-      select:-webkit-autofill {
-        -webkit-box-shadow: 0 0 0px 1000px #0f172a inset;
-        -webkit-text-fill-color: #ffffff;
-        transition: background-color 9999s ease-in-out 0s;
-      }
-
-      /* ── Menú móvil ── */
-      #mobile-menu {
-        transition: all 0.3s ease-in-out;
-        max-height: 0;
-        overflow: hidden;
-      }
-      #mobile-menu.open {
-        max-height: 500px;
-        padding-bottom: 1.5rem;
-      }
-
-      /* ── Cart Drawer ── */
-      #cart-drawer {
-        transform: translateX(100%);
-        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      #cart-drawer.open {
-        transform: translateX(0);
-      }
-      #cart-overlay {
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.35s ease;
-      }
-      #cart-overlay.open {
-        opacity: 1;
-        pointer-events: auto;
-      }
-
-      /* Badge pulse cuando hay items */
-      @keyframes badgePulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.2); }
-      }
-      .badge-pulse { animation: badgePulse 2.5s ease-in-out infinite; }
-    </style>
   </head>
   <body class="bg-[#0f172a] text-white flex flex-col min-h-screen">
     {# ════════ NAVBAR ════════ #}
@@ -100,25 +52,37 @@
             </div>
           </a>
           {# Desktop nav #}
-          <div class="hidden md:flex items-center space-x-8 text-sm font-medium">
+          <div class="hidden md:flex items-center space-x-4 text-sm font-medium">
             <a href="{% url 'clientes:materiales' %}"
-               class="text-gray-400 hover:text-[#10b981] transition">Materiales</a>
+               class="px-4 py-2 rounded-lg transition-all duration-200 {% if request.resolver_match.url_name == 'materiales' %} bg-gray-800 text-[#10b981] shadow-sm {% else %} text-gray-400 hover:text-[#10b981] hover:bg-gray-800/50 {% endif %}">
+              Materiales
+            </a>
             <a href="{% url 'clientes:productos' %}"
-               class="text-gray-400 hover:text-[#10b981] transition">Productos</a>
+               class="px-4 py-2 rounded-lg transition-all duration-200 {% if request.resolver_match.url_name == 'productos' %} bg-gray-800 text-[#10b981] shadow-sm {% else %} text-gray-400 hover:text-[#10b981] hover:bg-gray-800/50 {% endif %}">
+              Productos
+            </a>
             <a href="{% url 'clientes:proceso' %}"
-               class="text-gray-400 hover:text-[#10b981] transition">Proceso</a>
+               class="px-4 py-2 rounded-lg transition-all duration-200 {% if request.resolver_match.url_name == 'proceso' %} bg-gray-800 text-[#10b981] shadow-sm {% else %} text-gray-400 hover:text-[#10b981] hover:bg-gray-800/50 {% endif %}">
+              Proceso
+            </a>
             <div class="h-6 w-[1px] bg-gray-800 mx-2"></div>
             {# Botón carrito con badge #}
             <button onclick="abrirCarrito()"
-                    class="relative p-2 text-gray-400 hover:text-[#10b981] hover:bg-gray-800/50 rounded-xl transition-all">
+                    class="relative p-2 text-gray-400 cursor-pointer hover:text-[#10b981] hover:bg-gray-800/50 rounded-xl transition-all">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               {% if request.session.carrito %}
-                <span class="badge-pulse absolute -top-1 -right-1 bg-[#10b981] text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg shadow-[#10b981]/40">
-                  {{ request.session.carrito|json_script:"data-carrito" }}
+                <span id="cart-badge-desktop"
+                      class="badge-pulse absolute -top-1 -right-1 bg-[#10b981] text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg shadow-[#10b981]/40">
+                  {{ request.session.carrito|length }}
                 </span>
+              {% else %}
+                <span id="cart-badge-desktop"
+                      class="hidden absolute -top-1 -right-1 bg-[#10b981] text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg shadow-[#10b981]/40"></span>
               {% endif %}
+              {# data-carrito para JS (fuera del badge) #}
+              {{ request.session.carrito|json_script:"data-carrito" }}
             </button>
             {% if user.is_authenticated %}
               <a href="{% if user.rol == 'Admin' %}{% url 'core:dashboard_admin' %}{% else %}{% url 'clientes:home' %}{% endif %}"
@@ -142,9 +106,13 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               {% if request.session.carrito %}
-                <span class="absolute -top-1 -right-1 bg-[#10b981] text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
+                <span id="cart-badge-mobile"
+                      class="absolute -top-1 -right-1 bg-[#10b981] text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
                   {{ request.session.carrito|length }}
                 </span>
+              {% else %}
+                <span id="cart-badge-mobile"
+                      class="hidden absolute -top-1 -right-1 bg-[#10b981] text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center"></span>
               {% endif %}
             </button>
             <button id="hamburger-btn" class="text-gray-400 p-2 focus:outline-none">
@@ -178,14 +146,12 @@
       </div>
     </nav>
     {# ════════ CART DRAWER ════════ #}
-    {# Overlay #}
     <div id="cart-overlay"
          onclick="cerrarCarrito()"
          class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"></div>
-    {# Panel lateral derecho #}
     <aside id="cart-drawer"
            class="fixed top-0 right-0 h-full w-full max-w-sm bg-[#0f172a] border-l border-gray-800 z-[70] flex flex-col shadow-2xl">
-      {# Header #}
+      {# Header — nunca se reemplaza, siempre visible #}
       <div class="flex items-center justify-between p-5 border-b border-gray-800 shrink-0">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 bg-[#10b981]/10 border border-[#10b981]/20 rounded-xl flex items-center justify-center">
@@ -198,9 +164,13 @@
           </div>
           <h2 class="text-white font-bold text-lg">Mi Carrito</h2>
           {% if request.session.carrito %}
-            <span class="bg-[#10b981] text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+            <span id="cart-badge-header"
+                  class="bg-[#10b981] text-white text-[10px] font-black px-2 py-0.5 rounded-full">
               {{ request.session.carrito|length }}
             </span>
+          {% else %}
+            <span id="cart-badge-header"
+                  class="hidden bg-[#10b981] text-white text-[10px] font-black px-2 py-0.5 rounded-full"></span>
           {% endif %}
         </div>
         <button onclick="cerrarCarrito()"
@@ -210,114 +180,17 @@
           </svg>
         </button>
       </div>
-      {# Items #}
-      <div class="flex-1 overflow-y-auto p-4 space-y-3">
-        {% if request.session.carrito %}
-          {% for id, item in request.session.carrito.items %}
-            <div class="group flex items-center gap-3 bg-[#1e293b] border border-gray-800 p-3 rounded-2xl hover:border-gray-700 transition-colors">
-              {# Imagen #}
-              <div class="w-14 h-14 bg-gray-900 rounded-xl p-1.5 shrink-0 flex items-center justify-center overflow-hidden">
-                {% if item.imagen %}
-                  <img src="{{ item.imagen }}"
-                       class="w-full h-full object-contain"
-                       alt="{{ item.nombre }}">
-                {% else %}
-                  <svg class="w-6 h-6 text-gray-700"
-                       fill="none"
-                       stroke="currentColor"
-                       viewBox="0 0 24 24">
-                    <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                {% endif %}
-              </div>
-              {# Info #}
-              <div class="flex-1 min-w-0">
-                <p class="text-white text-sm font-bold truncate">{{ item.nombre }}</p>
-                <p class="text-gray-500 text-xs font-mono mt-0.5">RD$ {{ item.precio|floatformat:0 }} c/u</p>
-                <div class="flex items-center justify-between mt-2">
-                  {# Controles cantidad #}
-                  <div class="flex items-center gap-1 bg-gray-900 rounded-lg px-1 py-0.5 border border-gray-700">
-                    <a href="{% url 'clientes:actualizar_carrito' id 'restar' %}"
-                       class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-400 transition-colors font-black text-sm rounded">
-                      −
-                    </a>
-                    <span class="text-[#10b981] font-mono font-bold text-xs w-5 text-center">{{ item.cantidad }}</span>
-                    <a href="{% url 'clientes:actualizar_carrito' id 'sumar' %}"
-                       class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-[#10b981] transition-colors font-black text-sm rounded">
-                      +
-                    </a>
-                  </div>
-                  {# Subtotal por item #}
-                  <span class="text-white font-mono font-bold text-sm"
-                        data-precio="{{ item.precio }}"
-                        data-cantidad="{{ item.cantidad }}">
-                    RD$ <span class="item-subtotal">—</span>
-                  </span>
-                </div>
-              </div>
-              {# Eliminar #}
-              <a href="{% url 'clientes:actualizar_carrito' id 'eliminar' %}"
-                 class="p-1.5 text-gray-700 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100 shrink-0"
-                 title="Eliminar">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </a>
-            </div>
-          {% endfor %}
-        {% else %}
-          {# Carrito vacío #}
-          <div class="flex flex-col items-center justify-center h-full py-20 text-center px-4">
-            <div class="w-16 h-16 bg-gray-800/50 border border-gray-700/50 rounded-2xl flex items-center justify-center mb-4">
-              <svg class="w-8 h-8 text-gray-600"
-                   fill="none"
-                   stroke="currentColor"
-                   viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
-            <p class="text-gray-300 font-bold text-sm mb-1">Tu carrito está vacío</p>
-            <p class="text-gray-600 text-xs mb-6 leading-relaxed">Explora el catálogo y añade las piezas que te interesen</p>
-            <a href="{% url 'clientes:productos' %}"
-               onclick="cerrarCarrito()"
-               class="px-5 py-2.5 bg-[#10b981] text-white text-sm font-bold rounded-xl hover:bg-[#059669] transition-colors">
-              Ver Catálogo
-            </a>
-          </div>
-        {% endif %}
+      {# ── Target HTMX: todo el cuerpo del drawer ── #}
+      <div id="cart-contenido" class="flex flex-col flex-1 min-h-0">
+        {% include "publico/partials/carrito_contenido.html" with carrito=request.session.carrito %}
       </div>
-      {# Footer con total y CTA (solo si hay items) #}
-      {% if request.session.carrito %}
-        <div class="shrink-0 border-t border-gray-800 p-5 space-y-4 bg-[#0a1020]">
-          <div class="flex items-end justify-between">
-            <div>
-              <p class="text-gray-500 text-[10px] uppercase font-bold tracking-widest mb-1">Total estimado</p>
-              <p class="text-[#10b981] text-2xl font-black font-mono" id="drawerTotal">RD$ —</p>
-            </div>
-            <p class="text-gray-600 text-[10px] text-right leading-relaxed max-w-[110px]">
-              El total final se confirma al procesar el pedido
-            </p>
-          </div>
-          <a href="{% url 'clientes:checkout_express' %}"
-             class="flex items-center justify-center gap-2 w-full bg-[#10b981] text-white py-4 rounded-2xl font-black text-base hover:bg-[#059669] transition-all shadow-lg shadow-[#10b981]/20 hover:scale-[1.01]">
-            Terminar Pedido
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </a>
-          <button onclick="cerrarCarrito()"
-                  class="w-full text-center text-gray-500 text-sm hover:text-gray-300 transition-colors py-1">
-            Seguir comprando
-          </button>
-        </div>
-      {% endif %}
     </aside>
     {# ════════ MAIN ════════ #}
     <main class="flex-grow">
       {% block content %}
       {% endblock content %}
     </main>
-    {# ════════ FOOTER (dinámico) ════════ #}
+    {# ════════ FOOTER ════════ #}
     <footer class="bg-[#0b1222] border-t border-gray-900 pt-16 pb-8">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
@@ -363,7 +236,8 @@
                    class="hover:text-[#10b981] transition">Cómo funciona</a>
               </li>
               <li>
-                <a href="#" class="hover:text-[#10b981] transition">Preguntas frecuentes</a>
+                <a href="{% url 'clientes:materiales' %}"
+                   class="hover:text-[#10b981] transition">Materiales</a>
               </li>
             </ul>
           </div>
@@ -403,13 +277,25 @@
                      class="hover:text-[#10b981] transition">WhatsApp</a>
                 </li>
               {% endif %}
+              {% if config.instagram_url %}
+                <li class="flex items-center gap-2">
+                  <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M7.75 2C4.574 2 2 4.574 2 7.75v8.5C2 19.426 4.574 22 7.75 22h8.5C19.426 22 22 19.426 22 16.25v-8.5C22 4.574 19.426 2 16.25 2h-8.5zm0 2h8.5C18.284 4 20 5.716 20 7.75v8.5c0 2.034-1.716 3.75-3.75 3.75h-8.5C5.716 20 4 18.284 4 16.25v-8.5C4 5.716 5.716 4 7.75 4zm9.25 1.5a.75.75 0 100 1.5.75.75 0 000-1.5zM12 7a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6z" />
+                  </svg>
+                  <a href="{{ config.instagram_url }}"
+                     target="_blank"
+                     class="hover:text-[#10b981] transition">Instagram</a>
+                </li>
+              {% endif %}
             </ul>
           </div>
         </div>
         <div class="border-t border-gray-900 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p class="text-gray-600 text-xs text-center">&copy; 2026 A.N.T Studio. Todos los derechos reservados.</p>
           <div class="flex gap-6">
-            <a href="#" class="text-gray-600 hover:text-white transition text-xs">Instagram</a>
+            <a href="{{ config.instagram_url }}"
+               target="_blank"
+               class="text-gray-600 hover:text-white transition text-xs">Instagram</a>
             {% if config.whatsapp_numero %}
               <a href="https://wa.me/{{ config.whatsapp_numero }}"
                  target="_blank"
@@ -419,12 +305,12 @@
         </div>
       </div>
     </footer>
-    {# ════════ BOTÓN FLOTANTE WHATSAPP (condicional) ════════ #}
+    {# ════════ BOTÓN FLOTANTE WHATSAPP ════════ #}
     {% if config.mostrar_boton_whatsapp and config.whatsapp_numero %}
       <a href="https://wa.me/{{ config.whatsapp_numero }}"
          target="_blank"
          rel="noopener"
-         class="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#1ebe5d] text-white w-14 h-14 rounded-full shadow-lg shadow-green-500/30 flex items-center justify-center transition-all hover:scale-110 group">
+         class="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#1ebe5d] text-white w-12 h-12 rounded-full shadow-lg shadow-green-500/30 flex items-center justify-center transition-all hover:scale-110 group">
         <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
         </svg>
@@ -433,9 +319,22 @@
         </span>
       </a>
     {% endif %}
+    {% if config.mostrar_boton_instagram and config.instagram_url %}
+      <a href="{{ config.instagram_url }}"
+         target="_blank"
+         rel="noopener"
+         class="fixed bottom-24 right-6 z-50 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 hover:brightness-110 text-white w-12 h-12 rounded-full shadow-lg shadow-pink-500/40 flex items-center justify-center transition-all hover:scale-110 group">
+        <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M7.75 2C4.574 2 2 4.574 2 7.75v8.5C2 19.426 4.574 22 7.75 22h8.5C19.426 22 22 19.426 22 16.25v-8.5C22 4.574 19.426 2 16.25 2h-8.5zm0 2h8.5C18.284 4 20 5.716 20 7.75v8.5c0 2.034-1.716 3.75-3.75 3.75h-8.5C5.716 20 4 18.284 4 16.25v-8.5C4 5.716 5.716 4 7.75 4zm9.25 1.5a.75.75 0 100 1.5.75.75 0 000-1.5zM12 7a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6z" />
+        </svg>
+        <span class="absolute right-16 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-gray-700 shadow">
+          Síguenos
+        </span>
+      </a>
+    {% endif %}
     {# ════════ SCRIPTS ════════ #}
     <script>
-      // ── Hamburguesa ─────────────────────────────────────────────
+      // ── Hamburguesa ──────────────────────────────────────────────
       const hamburgerBtn = document.getElementById('hamburger-btn');
       const mobileMenu   = document.getElementById('mobile-menu');
       const hamburgerIco = document.getElementById('hamburger-icon');
@@ -450,40 +349,16 @@
       });
 
       // ── Cart Drawer ──────────────────────────────────────────────
-      const cartDrawer  = document.getElementById('cart-drawer');
-      const cartOverlay = document.getElementById('cart-overlay');
-
       function abrirCarrito() {
-        cartDrawer.classList.add('open');
-        cartOverlay.classList.add('open');
+        document.getElementById('cart-drawer').classList.add('open');
+        document.getElementById('cart-overlay').classList.add('open');
         document.body.style.overflow = 'hidden';
-        calcularTotalesDrawer();
       }
 
       function cerrarCarrito() {
-        cartDrawer.classList.remove('open');
-        cartOverlay.classList.remove('open');
+        document.getElementById('cart-drawer').classList.remove('open');
+        document.getElementById('cart-overlay').classList.remove('open');
         document.body.style.overflow = '';
-      }
-
-      function calcularTotalesDrawer() {
-        // Subtotales por item
-        document.querySelectorAll('[data-precio][data-cantidad]').forEach(el => {
-          const precio   = parseFloat(el.dataset.precio   || 0);
-          const cantidad = parseInt(el.dataset.cantidad || 0);
-          const span     = el.querySelector('.item-subtotal');
-          if (span) span.textContent = (precio * cantidad).toLocaleString('es-DO', { minimumFractionDigits: 0 });
-        });
-
-        // Total general desde sesión inyectada
-        const totalEl = document.getElementById('drawerTotal');
-        if (!totalEl) return;
-        const carrito = JSON.parse(document.getElementById('data-carrito').textContent);
-        let total = 0;
-        Object.values(carrito).forEach(item => {
-          total += parseFloat(item.precio || 0) * parseInt(item.cantidad || 0);
-        });
-        totalEl.textContent = `RD$ ${total.toLocaleString('es-DO', { minimumFractionDigits: 2 })}`;
       }
 
       // ── Django messages → Toasts ─────────────────────────────────
@@ -505,7 +380,6 @@
           {% endfor %}
         {% endif %}
 
-        calcularTotalesDrawer();
         checkSidebarState();
       });
     </script>

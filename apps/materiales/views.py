@@ -33,7 +33,7 @@ def material_list(request):
     orden_filtro = request.GET.get("orden", "")
 
     # 2. QuerySet Base
-    materiales_qs = Material.objects.all()
+    materiales_qs = Material.objects.filter(activo=True)
 
     # 3. Aplicar Búsqueda y Filtros
     if search_query:
@@ -136,22 +136,47 @@ def editar_material(request, material_id):
     return redirect("materiales:lista_materiales")
 
 
+
 @admin_required
 @require_POST
 def eliminar_material(request, material_id):
+    """
+    Intenta eliminar el material.
+    Si tiene historial (entradas, consumos, pérdidas) lo archiva en vez de borrar.
+    """
     material = get_object_or_404(Material, pk=material_id)
+ 
+    tiene_historial = (
+        material.entradas.exists()
+        or material.consumos.exists()
+        or material.historial.exists()
+    )
+ 
+    if tiene_historial:
+        # Archivar en vez de borrar
+        material.activo = False
+        material.save(update_fields=["activo"])
+        return JsonResponse({
+            "success": True,
+            "archivado": True,
+            "message": (
+                f"{material} tiene historial registrado. "
+                "Se archivó en lugar de eliminarse para preservar los registros."
+            ),
+        })
+ 
     try:
         nombre = str(material)
-        material.delete()
-        return JsonResponse(
-            {"success": True, "message": f"Material {nombre} eliminado correctamente."}
-        )
+        material.delete(force_delete=True)
+        return JsonResponse({
+            "success": True,
+            "archivado": False,
+            "message": f"Material {nombre} eliminado permanentemente.",
+        })
     except ValidationError as e:
         return JsonResponse({"success": False, "message": str(e.message)})
-    except Exception:
-        return JsonResponse(
-            {"success": False, "message": "Ocurrió un error inesperado."}
-        )
+    except Exception as e:
+        return JsonResponse({"success": False, "message": f"Error inesperado: {e}"})
 
 
 @admin_required
@@ -418,3 +443,39 @@ def obtener_precio_material(request, material_id):
         'nombre': f"{material.tipo} {material.marca}",
         'color': str(material.color),
     })
+
+@admin_required
+@require_POST
+def toggle_material_activo(request, material_id):
+    """
+    Activa o desactiva un material.
+    Desactivar lo oculta de la tabla principal sin borrar nada.
+    """
+    material = get_object_or_404(Material, pk=material_id)
+    material.activo = not material.activo
+    material.save(update_fields=["activo"])
+    estado = "activado" if material.activo else "desactivado"
+    return JsonResponse({
+        "success": True,
+        "activo": material.activo,
+        "message": f"Material {estado} correctamente.",
+    })
+ 
+ 
+@admin_required
+def obtener_materiales_archivados(request):
+    """
+    Devuelve el partial con todos los materiales desactivados (activo=False).
+    Compatible con HTMX y fetch normal.
+    """
+    materiales = (
+        Material.objects
+        .filter(activo=False)
+        .select_related("tipo", "color", "marca")
+        .order_by("tipo__nombre", "marca__nombre")
+    )
+    return render(
+        request,
+        "materiales/partials/lista_materiales_archivados.html",
+        {"materiales": materiales},
+    )

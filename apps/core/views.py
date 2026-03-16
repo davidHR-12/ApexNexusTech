@@ -1,27 +1,40 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Sum, Q, Count
-from django.utils import timezone
-from decimal import Decimal
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse
-from django.contrib import messages
-
-import os
+# Librerías estándar de Python
 import json
-from django.conf import settings
+import os
+from datetime import date
+from decimal import Decimal, ROUND_HALF_UP
 
-from apps.pedidos.models import Pago, Pedido, ConfiguracionPago
+# Django: Núcleo y Utilidades
+from django.conf import settings
+from django.contrib import messages
+from django.db.models import Count, Q
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+
+# Django: Decoradores
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods, require_POST
+from django.contrib.auth import update_session_auth_hash
+from django.utils.http import urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.urls import reverse
+
+# Apps locales: Modelos y Decoradores externos
 from apps.finanzas.models import Gasto
-from apps.materiales.models import Material
+from apps.pedidos.models import ConfiguracionPago
 from apps.productos.models import Categoria, Producto
 from apps.usuarios.decorators import admin_required
+from apps.usuarios.utils import email_verification_token
 
-from .models import Impresora, ConfiguracionSitio, CardPublica
+# Directorio actual: Modelos y Formularios
 from .forms import (
-    ImpresoraForm, CardPublicaForm, EstadisticasForm, MaterialesForm,
-    ProductosDestacadosForm, ProcesoForm, ContactoForm
+    CardPublicaForm, ConfiguracionCalculadoraForm, ContactoForm,
+    EstadisticasForm, ImpresoraForm, MaterialesForm,
+    ProcesoForm, ProductosDestacadosForm,PerfilForm, CambioPasswordForm
 )
-
+from .models import CardPublica, ConfiguracionCalculadora, ConfiguracionSitio, Impresora
+from apps.usuarios.models import Usuario
 
 # ════════════════════════════════════════════════════════════════════
 # UTILIDADES PRIVADAS (Helper Functions)
@@ -156,50 +169,174 @@ def gestionar_media_huerfana(request):
 @admin_required
 def dashboard_admin(request):
     """
-    Dashboard principal del administrador.
-    Muestra resumen de ingresos, gastos, utilidad y alertas de stock.
+    Centro de Operaciones — landing page del administrador.
+    Muestra el estado actual del negocio para tomar decisiones inmediatas.
+    Sin KPIs financieros (esos viven en reportes:dashboard).
     """
-    ahora = timezone.now()
-    
-    # Calcular métricas del mes
-    ingresos_mes = Pago.objects.filter(
-        fecha_pago__month=ahora.month, 
-        fecha_pago__year=ahora.year
-    ).aggregate(total=Sum("monto"))["total"] or Decimal("0.00")
+    from apps.pedidos.models import Pedido, SolicitudCotizacion
+    from apps.materiales.models import Material
 
-    gastos_mes = Gasto.objects.filter(
-        fecha__month=ahora.month, 
-        fecha__year=ahora.year
-    ).aggregate(total=Sum("monto"))["total"] or Decimal("0.00")
+    # ── Pedidos activos agrupados por estado ──────────────────────
+    estados_activos = ['En_Espera', 'Confirmado', 'En_Produccion', 'Listo']
+    pedidos_activos = (
+        Pedido.objects
+        .filter(estado_pedido__in=estados_activos)
+        .select_related('usuario')
+        .order_by('fecha_creacion')
+    )
 
-    # Información de materiales
-    materiales = Material.objects.all()
-    total_gramos = materiales.aggregate(Sum("stock_actual"))["stock_actual__sum"] or 0
-    
-    # Alertas de stock
-    alertas_stock = [m for m in materiales if m.stock_actual <= m.stock_minimo]
-    materiales_ok = [m for m in materiales if m.stock_actual > m.stock_minimo]
+    pedidos_por_estado = {
+        'En_Espera':     [],
+        'Confirmado':    [],
+        'En_Produccion': [],
+        'Listo':         [],
+    }
+    for p in pedidos_activos:
+        pedidos_por_estado[p.estado_pedido].append(p)
+
+    # ── Solicitudes pendientes ────────────────────────────────────
+    solicitudes_pendientes = (
+        SolicitudCotizacion.objects
+        .filter(estado='Pendiente')
+        .select_related('usuario')
+        .order_by('-fecha_solicitud')[:6]
+    )
+    solicitudes_count = SolicitudCotizacion.objects.filter(estado='Pendiente').count()
+    hoy = date.today()
+    recordatorio_reporte = hoy.day <= 3
+
+    # ── Alertas de stock ──────────────────────────────────────────
+    materiales = Material.objects.filter(activo=True).select_related('tipo', 'color', 'marca')
+    total_gramos = sum(m.stock_actual for m in materiales)
+    alertas_stock = [m for m in materiales if m.necesita_reposicion]
 
     context = {
-        "ingresos_mes": ingresos_mes,
-        "gastos_mes": gastos_mes,
-        "utilidad_neta": ingresos_mes - gastos_mes,
-        "pedidos_activos": Pedido.objects.exclude(
-            estado_pedido__in=["Entregado", "Cancelado"]
-        ).count(),
-        "total_kg": total_gramos / 1000,
-        "materiales": materiales,
-        "alertas_stock": alertas_stock[:5],
-        "materiales_ok": materiales_ok[:5],
+        'segment': 'dashboard_admin',
+        'kpis': {'solicitudes_nuevas': solicitudes_count, 'recordatorio_reporte': recordatorio_reporte},
+        'recordatorio_reporte': recordatorio_reporte,
+        # Pedidos operativos
+        'pedidos_por_estado':  pedidos_por_estado,
+        'total_en_espera':     len(pedidos_por_estado['En_Espera']),
+        'total_confirmado':    len(pedidos_por_estado['Confirmado']),
+        'total_produccion':    len(pedidos_por_estado['En_Produccion']),
+        'total_listo':         len(pedidos_por_estado['Listo']),
+        'total_activos':       len(pedidos_activos),
+        # Solicitudes
+        'solicitudes_pendientes': solicitudes_pendientes[:5],
+        'solicitudes_count':      solicitudes_count,
+        # Inventario
+        'alertas_stock':  alertas_stock[:5],
+        'total_kg':       total_gramos / 1000,
     }
-    return render(request, "core/dashboard_admin.html", context)
-
+    return render(request, 'core/dashboard_admin.html', context)
 
 @admin_required
 def calculadora(request):
-    """Vista de la calculadora de impresoras."""
-    return render(request, "core/calculadora.html")
+    """
+    Muestra la calculadora. Los valores predeterminados vienen de
+    ConfiguracionCalculadora y pre-rellenan los inputs de gastos fijos.
+    No guarda ningún cálculo en BD.
+    """
+    config = ConfiguracionCalculadora.obtener()
+    return render(request, 'core/calculadora.html', {'config': config})
 
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def calcular_ajax(request):
+    """
+    Recibe JSON con todos los valores del formulario,
+    calcula y devuelve resultados. Nunca toca la BD.
+    """
+    try:
+        data = json.loads(request.body)
+
+        def d(key, default=0):
+            return Decimal(str(data.get(key, default) or 0))
+
+        precio_kg= d('precio_kg')
+        precio_kwh= d('precio_kwh')
+        consumo_watts= d('consumo_watts')
+        vida_util_horas= d('vida_util_horas')
+        precio_repuestos= d('precio_repuestos')
+        margen_error_pct= d('margen_error_porcentaje')
+        tiempo_horas= d('tiempo_horas')
+        tiempo_minutos= d('tiempo_minutos')
+        gramos= d('gramos')
+        insumos= d('insumos')
+        multiplicador= d('multiplicador', 4)
+
+        # Tiempo total en horas
+        tiempo_total = tiempo_horas + (tiempo_minutos / Decimal('60'))
+
+        # Cálculos
+        precio_material= (gramos * precio_kg) / Decimal('1000')
+        precio_luz= (consumo_watts * precio_kwh / Decimal('1000')) * tiempo_total
+        desgaste= (tiempo_total * precio_repuestos / vida_util_horas) if vida_util_horas > 0 else Decimal('0')
+        base= precio_material + precio_luz
+        margen_error= base * (margen_error_pct / Decimal('100'))
+        costo_total= base + desgaste + margen_error + insumos
+        total_cobrar= costo_total * multiplicador
+
+        def fmt(val):
+            return float(val.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
+
+        return JsonResponse({
+            'success': True,
+            'precio_material': fmt(precio_material),
+            'precio_luz': fmt(precio_luz),
+            'desgaste_maquina': fmt(desgaste),
+            'margen_error': fmt(margen_error),
+            'insumos': fmt(insumos),
+            'costo_total': fmt(costo_total),
+            'total_cobrar': fmt(total_cobrar),
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+@admin_required
+def configurar_calculadora(request):
+    """
+    Permite al admin editar los valores predeterminados de la calculadora.
+    """
+    config = ConfiguracionCalculadora.obtener()
+
+    if request.method == 'POST':
+        form = ConfiguracionCalculadoraForm(request.POST, instance=config)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Configuración de la calculadora guardada.")
+            return redirect('core:configurar_calculadora')
+    else:
+        form = ConfiguracionCalculadoraForm(instance=config)
+
+    return render(request, 'core/configuraciones/config_calculadora.html', {'form': form})
+
+@admin_required
+def configurar_factura(request):
+    from apps.core.models import ConfiguracionFactura
+    from apps.core.forms import ConfiguracionFacturaForm
+
+    config = ConfiguracionFactura.obtener()
+
+    if request.method == "POST":
+        # ── Eliminar logo si el usuario presionó la X ──
+        eliminar_logo = request.POST.get("eliminar_logo") == "true"
+        if eliminar_logo and config.logo:
+            config.logo.delete(save=False)
+            config.logo = None
+            config.save(update_fields=["logo"])
+
+        form = ConfiguracionFacturaForm(request.POST, request.FILES, instance=config)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Datos de factura guardados correctamente.")
+            return redirect("core:configurar_factura")
+    else:
+        form = ConfiguracionFacturaForm(instance=config)
+
+    return render(request, "core/configuraciones/config_factura.html", {"form": form, "config": config})
 
 @admin_required
 def configuracion(request):
@@ -482,3 +619,117 @@ def reordenar_cards(request):
         return JsonResponse({'ok': False, 'error': 'JSON inválido'}, status=400)
     except Exception as e:
         return JsonResponse({'ok': False, 'error': str(e)}, status=500)
+
+@admin_required
+def mi_perfil(request):
+    """
+    Página de perfil del usuario autenticado.
+ 
+    accion=perfil   → guarda nombre/teléfono. Si el email cambió,
+                      lo almacena en pending_email y envía verificación.
+                      El email actual NO cambia hasta confirmar.
+    accion=password → cambia contraseña validando la actual.
+    """
+    user          = request.user
+    perfil_form   = PerfilForm(instance=user)
+    password_form = CambioPasswordForm(user=user)
+ 
+    if request.method == "POST":
+        accion = request.POST.get("accion")
+ 
+        # ── Guardar datos del perfil ──────────────────────────────
+        if accion == "perfil":
+            perfil_form = PerfilForm(request.POST, instance=user)
+            if perfil_form.is_valid():
+                email_actual = user.email
+                email_nuevo = perfil_form.cleaned_data["email_nuevo"]
+                print(f"DEBUG: email_actual={email_actual!r}, email_nuevo={email_nuevo!r}, igual={email_nuevo == email_actual}")
+
+ 
+                # Guardar campos que NO son email (guardamos manualmente para controlar email)
+                user.first_name = perfil_form.cleaned_data["first_name"]
+                user.last_name  = perfil_form.cleaned_data["last_name"]
+                user.telefono   = perfil_form.cleaned_data["telefono"]
+ 
+                if email_nuevo and email_nuevo != email_actual:
+                    # Guardar en pending_email — no tocar email ni username todavía
+                    user.pending_email = email_nuevo
+                    user.save(update_fields=["first_name", "last_name", "telefono", "pending_email"])
+ 
+                    # Enviar verificación al nuevo correo
+                    token = email_verification_token.make_token(user)
+                    uid   = urlsafe_base64_encode(force_bytes(user.pk))
+                    link  = request.build_absolute_uri(
+                        reverse("core:confirmar_email_nuevo",
+                                kwargs={"uidb64": uid, "token": token})
+                    )
+                    from apps.clientes.emails import enviar_confirmacion_email_nuevo
+                    enviar_confirmacion_email_nuevo(user, email_nuevo, link)
+ 
+                    messages.info(
+                        request,
+                        f"Se envió un enlace de confirmación a {email_nuevo}. "
+                        f"Tu email actual ({email_actual}) sigue activo hasta que confirmes el cambio."
+                    )
+                else:
+                    # Solo nombre/teléfono cambiaron
+                    user.save(update_fields=["first_name", "last_name", "telefono"])
+                    messages.success(request, "Perfil actualizado correctamente.")
+ 
+                return redirect("core:mi_perfil")
+ 
+        # ── Cambiar contraseña ────────────────────────────────────
+        elif accion == "password":
+            password_form = CambioPasswordForm(user=user, data=request.POST)
+            if password_form.is_valid():
+                user.set_password(password_form.cleaned_data["password_nuevo"])
+                user.save()
+                update_session_auth_hash(request, user)   # mantiene la sesión activa
+                messages.success(request, "Contraseña actualizada correctamente.")
+                return redirect("core:mi_perfil")
+ 
+    return render(request, "core/configuraciones/mi_perfil.html", {
+        "segment":       "configuracion",
+        "perfil_form":   perfil_form,
+        "password_form": password_form,
+    })
+ 
+ 
+@admin_required
+def confirmar_email_nuevo(request, uidb64, token):
+    """
+    Confirma el cambio de email pendiente.
+    Una vez verificado, mueve pending_email → email y limpia pending_email.
+    """
+    try:
+        uid  = urlsafe_base64_decode(uidb64).decode()
+        user = Usuario.objects.get(pk=uid)
+    except Exception:
+        user = None
+ 
+    if user and email_verification_token.check_token(user, token) and user.pending_email:
+        nuevo_email = user.pending_email
+ 
+        # Verificar que nadie más haya tomado ese email mientras esperaba
+        if Usuario.objects.filter(email=nuevo_email).exclude(pk=user.pk).exists():
+            messages.error(
+                request,
+                "El correo ya fue registrado por otra cuenta. Por favor elige uno diferente."
+            )
+            user.pending_email = None
+            user.save(update_fields=["pending_email"])
+            return redirect("core:mi_perfil")
+ 
+        user.email         = nuevo_email
+        user.username      = nuevo_email   # username == email en este sistema
+        user.pending_email = None
+        # is_email_verified: superusers la tienen True por el save() del modelo,
+        # clientes la recuperan aquí
+        user.is_email_verified = True
+        user.save()
+ 
+        messages.success(request, f"Email actualizado a {nuevo_email} correctamente.")
+        return redirect("core:mi_perfil")
+ 
+    # Enlace inválido o ya usado
+    return render(request, "core/configuraciones/confirmar_email_invalido.html", status=400)

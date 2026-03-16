@@ -3,17 +3,17 @@
 // ============================================================================
 
 // Sincronizar el input type="color" con el div de previsualización
-document.addEventListener('input', function(e) {
+document.addEventListener('input', function (e) {
     if (e.target && e.target.name === 'color_hex') {
         console.log('🎨 Color cambiado:', e.target.value);
-        
+
         // Para el modal de CREAR
         const previewCrear = document.getElementById('color-preview');
         if (previewCrear) {
             previewCrear.style.backgroundColor = e.target.value;
             console.log('✅ Preview actualizado (crear)');
         }
-        
+
         // Para el modal de EDITAR
         const previewEditar = document.getElementById('edit_color_preview');
         if (previewEditar) {
@@ -35,7 +35,7 @@ function seleccionarColor(nombre, hex) {
     // 2. Asignar el valor HEX al input color y disparar el evento input
     if (inputHex) {
         inputHex.value = hex;
-        inputHex.disabled = true; 
+        inputHex.disabled = true;
         inputHex.parentElement.classList.add('pointer-events-none', 'opacity-70');
         // Importante: forzamos el evento 'input' para que otros listeners (como el de previsualización) reaccionen
         inputHex.dispatchEvent(new Event('input', { bubbles: true }));
@@ -49,7 +49,7 @@ function seleccionarColor(nombre, hex) {
                 <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
             </svg>`;
     }
-    
+
     // 3. Limpiar los resultados
     const results = document.getElementById('results-color');
     if (results) results.innerHTML = '';
@@ -60,15 +60,15 @@ function seleccionarColor(nombre, hex) {
 }
 
 // Si el usuario empieza a escribir manualmente, desbloqueamos y reseteamos
-document.getElementById('input-color')?.addEventListener('input', function() {
+document.getElementById('input-color')?.addEventListener('input', function () {
     const inputHex = document.getElementById('input-color-hex');
     const preview = document.getElementById('color-preview');
-    
+
     if (inputHex && inputHex.disabled) {
         inputHex.disabled = false;
         inputHex.parentElement.classList.remove('pointer-events-none', 'opacity-70');
         inputHex.value = "#10b981";
-        
+
         if (preview) {
             preview.style.backgroundColor = "#10b981";
             preview.classList.remove('ring-2', 'ring-blue-500');
@@ -97,7 +97,7 @@ function aplicarCapitalize(text) {
     const el = document.getElementById(id);
     if (!el) return;
 
-    el.addEventListener('input', function() {
+    el.addEventListener('input', function () {
         // Limpieza si está vacío
         const targetSelector = this.getAttribute('hx-target');
         if (this.value.trim() === '') {
@@ -118,7 +118,7 @@ function aplicarCapitalize(text) {
     const el = document.getElementById(id);
     if (!el) return;
 
-    el.addEventListener('input', function() {
+    el.addEventListener('input', function () {
         // Limpieza si está vacío
         const targetSelector = this.getAttribute('hx-target');
         if (this.value.trim() === '') {
@@ -139,7 +139,7 @@ function aplicarCapitalize(text) {
     const el = document.getElementById(id);
     if (!el) return;
 
-    el.addEventListener('input', function() {
+    el.addEventListener('input', function () {
         // Solo limpieza: si el usuario borra, se cierra el div de sugerencias
         const targetSelector = this.getAttribute('hx-target');
         if (this.value.trim() === '') {
@@ -150,7 +150,7 @@ function aplicarCapitalize(text) {
 });
 
 // Asegurar que los datos bloqueados se envíen al servidor
-document.getElementById('formCrearMaterial')?.addEventListener('submit', function() {
+document.getElementById('formCrearMaterial')?.addEventListener('submit', function () {
     const inputHex = document.getElementById('input-color-hex');
     if (inputHex) {
         inputHex.disabled = false; // Lo habilitamos justo al enviar
@@ -166,7 +166,7 @@ function abrirEditar(id) {
     fetch(url)
         .then(r => r.json())
         .then(data => {
-            
+
             const costo = document.getElementById('edit_costo');
             const stock = document.getElementById('edit_stock_minimo');
 
@@ -183,12 +183,12 @@ function abrirEditar(id) {
             if (costo) costo.value = data.costo_por_gramo;
             if (stock) stock.value = data.stock_minimo;
 
-            
+
             // Llenar textos de visualización
             if (nombre) nombre.innerText = data.nombre || '';
             if (tipo) tipo.innerText = data.tipo || '';
             if (enlace) enlace.value = data.enlace_compra || '';
-            
+
             if (colorNombreSpan) {
                 colorNombreSpan.innerText = `"${data.color_nombre || 'Color sin asignar'}"`;
             }
@@ -290,17 +290,16 @@ function confirmarEliminarMaterial(id, nombre) {
             <div class="text-center">
                 <p class="text-gray-300 mb-2">Estás por eliminar:</p>
                 <p class="text-white font-semibold text-lg">${nombre}</p>
-                <p class="text-gray-400 text-sm mt-3 border-t border-gray-700/50 pt-3">Si tiene historial, no se eliminara, en cambio se desactivará automáticamente.</p>
+                <p class="text-gray-400 text-sm mt-3 border-t border-gray-700/50 pt-3">
+                    Si tiene historial, se archivará automáticamente en lugar de eliminarse.
+                </p>
             </div>`,
         iconHtml: swalIcons.warningRed,
         confirmButtonText: 'Sí, Eliminar',
         cancelButtonText: 'Cancelar',
         showCloseButton: true,
-        customClass: {
-            ...swalCustomClasses,
-            icon: 'border-0'
-        }
-    }).then((result) => {
+        customClass: { ...swalCustomClasses, icon: 'border-0' }
+    }).then(result => {
         if (!result.isConfirmed) return;
 
         fetch(`/administrador/materiales/${id}/eliminar/`, {
@@ -310,21 +309,17 @@ function confirmarEliminarMaterial(id, nombre) {
                 'Content-Type': 'application/json'
             }
         })
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    mostrarToast('success', data.message);
-                    setTimeout(() => location.reload(), 1000);
+                    const tipo = data.archivado ? 'warning' : 'success';
+                    mostrarToast(tipo, data.message);
+                    setTimeout(() => location.reload(), 1200);
                 } else {
-                    Swal.close();
-                    mostrarToast('error', data.message || 'Error al eliminar el material');
+                    mostrarToast('error', data.message || 'Error al eliminar');
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.close();
-                mostrarToast('error', 'Error al procesar la solicitud');
-            });
+            .catch(() => mostrarToast('error', 'Error de conexión'));
     });
 }
 
@@ -454,4 +449,170 @@ if (typeof window.MaterialesHandlers === 'undefined') {
     };
 
     document.addEventListener('keydown', window.MaterialesHandlers.keydown);
+}
+
+
+// ─────────────────────────────────────────────────────────────────
+// DESACTIVAR / ARCHIVAR MATERIAL
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * Desactiva (archiva) un material individual.
+ * Muestra confirmación antes de proceder.
+ */
+function confirmarDesactivarMaterial(id, nombre) {
+    Swal.fire({
+        ...swalConfigBase,
+        title: 'Archivar Material',
+        html: `
+            <div class="text-center">
+                <p class="text-gray-300 mb-2">¿Archivar <strong>${nombre}</strong>?</p>
+                <p class="text-gray-500 text-xs mt-2">
+                    El material dejará de aparecer en la tabla principal.<br>
+                    Podrás reactivarlo desde el archivo en cualquier momento.
+                </p>
+            </div>`,
+        iconHtml: swalIcons.archiveAmber,
+        confirmButtonText: 'Sí, Archivar',
+        cancelButtonText: 'Cancelar',
+        showCloseButton: true,
+        customClass: {
+            ...swalCustomClasses,
+            icon: 'border-0',
+            confirmButton: swalCustomClasses.confirmButton
+                .replace('bg-red-500', 'bg-amber-500')
+                .replace('hover:bg-red-600', 'hover:bg-amber-600')
+                .replace('border-red-500', 'border-amber-500'),
+        },
+    }).then(result => {
+        if (!result.isConfirmed) return;
+
+        fetch(`/administrador/materiales/${id}/toggle-activo/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarToast('success', data.message);
+                    setTimeout(() => location.reload(), 900);
+                } else {
+                    mostrarToast('error', data.message || 'Error al archivar el material');
+                }
+            })
+            .catch(() => mostrarToast('error', 'Error de conexión'));
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// MODAL DE ARCHIVO DE MATERIALES
+// ─────────────────────────────────────────────────────────────────
+// Función interna para solo recargar el contenido del modal (sin tocar el flag)
+function _recargarContenidoArchivo() {
+    const contenedor = document.getElementById('contenido-archivo-materiales');
+    if (contenedor) {
+        contenedor.innerHTML = '<div class="text-center py-10 text-gray-500 text-sm">Cargando archivo...</div>';
+    }
+    fetch('/administrador/materiales/api/archivados/')
+        .then(r => r.text())
+        .then(html => {
+            if (contenedor) contenedor.innerHTML = html;
+            abrirModal('modalArchivoMateriales');
+        })
+        .catch(() => mostrarToast('error', 'Error al cargar el archivo de materiales'));
+}
+
+// Abre el modal desde cero (resetea el flag)
+function abrirArchivoMateriales() {
+    materialesArchivoModificado = false;
+    _recargarContenidoArchivo();
+}
+
+// Al reactivar individualmente: mantiene el flag y solo recarga el contenido
+function reactivarMaterial(id) {
+    fetch(`/administrador/materiales/${id}/toggle-activo/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            mostrarToast('success', data.message);
+            materialesArchivoModificado = true;
+            _recargarContenidoArchivo();  // ← usa la función interna, no toca el flag
+        } else {
+            mostrarToast('error', data.message || 'Error al reactivar');
+        }
+    })
+    .catch(() => mostrarToast('error', 'Error de conexión'));
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SELECCIÓN MÚLTIPLE EN EL MODAL
+// ─────────────────────────────────────────────────────────────────
+
+function toggleSelectAllMateriales(source) {
+    document.querySelectorAll('input[name="materiales_ids"]').forEach(cb => {
+        cb.checked = source.checked;
+    });
+    toggleBatchButtonMateriales();
+}
+
+function toggleBatchButtonMateriales() {
+    const total = document.querySelectorAll('input[name="materiales_ids"]');
+    const checked = document.querySelectorAll('input[name="materiales_ids"]:checked');
+    const selectAll = document.getElementById('selectAllMateriales');
+    const container = document.getElementById('batchActionMateriales');
+    const count = document.getElementById('selectedCountMateriales');
+
+    if (selectAll) selectAll.checked = (total.length > 0 && total.length === checked.length);
+    if (container) container.classList.toggle('hidden', checked.length === 0);
+    if (count) count.innerText = checked.length;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// REACTIVAR MÚLTIPLES MATERIALES
+// ─────────────────────────────────────────────────────────────────
+
+function reactivarMultiplesMateriales() {
+    const ids = Array.from(
+        document.querySelectorAll('input[name="materiales_ids"]:checked')
+    ).map(cb => cb.value);
+
+    if (ids.length === 0) {
+        mostrarToast('warning', 'Selecciona al menos un material.');
+        return;
+    }
+
+    const texto = ids.length === 1 ? '1 material' : `${ids.length} materiales`;
+
+    Swal.fire({
+        ...swalConfigBase,
+        title: '¿Reactivar selección?',
+        text: `Se reactivarán ${texto} en el inventario.`,
+        iconHtml: swalIcons.questionBlue,
+        confirmButtonText: 'Sí, Reactivar',
+        cancelButtonText: 'Cancelar',
+        showCloseButton: true,
+        customClass: {
+            ...swalCustomClasses,
+            confirmButton: 'px-4 py-3 rounded-xl border border-blue-500 text-white bg-blue-500 hover:bg-blue-600 transition-all font-bold text-sm mx-2',
+            icon: 'border-0'
+        }
+    }).then(result => {
+        if (!result.isConfirmed) return;
+
+        // Activar cada uno en paralelo
+        Promise.all(
+            ids.map(id =>
+                fetch(`/administrador/materiales/${id}/toggle-activo/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+                }).then(r => r.json())
+            )
+        ).then(() => {
+            mostrarToast('success', `${texto} reactivados correctamente.`);
+            setTimeout(() => location.reload(), 400);
+        }).catch(() => mostrarToast('error', 'Error al reactivar algunos materiales'));
+    });
 }

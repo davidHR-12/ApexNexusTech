@@ -4,17 +4,16 @@ from django.contrib import messages
 from django.db import transaction
 
 # Importación de Modelos
-from apps.materiales.models import Material
-from apps.pedidos.models import SolicitudCotizacion, Pedido, ItemPedido, ConfiguracionPago, Pago
+from apps.pedidos.models import SolicitudCotizacion, Pedido, ItemPedido
 from apps.productos.models import Producto, VarianteProducto
 from apps.clientes.models import PerfilCliente
-from apps.usuarios.models import Usuario
 from apps.core.models import CardPublica
-from apps.usuarios.decorators import cliente_required
+from apps.clientes.emails import enviar_confirmacion_pedido_guest
+
 
 
 # Importación de Formularios
-from .forms import SolicitudCotizacionForm, GuestCheckoutForm,PerfilClienteForm
+from .forms import SolicitudCotizacionForm, GuestCheckoutForm
 
 # ==========================================
 #  VISTAS PÚBLICAS
@@ -65,16 +64,15 @@ def proceso_view(request):
     return render(request, 'publico/proceso.html', {'config': config, 'cards_proceso': cards_proceso})
 
 
-
 def productos(request):
     from apps.productos.models import Categoria
     from apps.materiales.models import Color
-    from django.db.models import Q
+    from django.db.models import Q, Min, F, ExpressionWrapper, DecimalField
+    from django.db.models.functions import Coalesce
 
     q          = request.GET.get('q', '').strip()
     categoria  = request.GET.get('categoria', '')
     precio_max = request.GET.get('precio_max', '')
-    color_id   = request.GET.get('color', '')
 
     qs = Producto.objects.filter(mostrar_en_web=True, activo=True).prefetch_related(
         'variantes__detalles_material__material__color'
@@ -88,15 +86,22 @@ def productos(request):
 
     if precio_max:
         try:
-            qs = qs.filter(precio_venta__lte=int(precio_max))
+            # Anotamos con el precio mínimo real (precio_venta + precio_adicional de la variante más barata)
+            # Coalesce hace fallback a precio_venta si el producto no tiene variantes activas
+            qs = qs.annotate(
+                precio_real=Coalesce(
+                    Min(
+                        ExpressionWrapper(
+                            F('precio_venta') + F('variantes__precio_adicional'),
+                            output_field=DecimalField(max_digits=12, decimal_places=2)
+                        )
+                    ),
+                    F('precio_venta'),
+                    output_field=DecimalField(max_digits=12, decimal_places=2)
+                )
+            ).filter(precio_real__lte=int(precio_max))
         except ValueError:
             pass
-
-    if color_id:
-        qs = qs.filter(
-            variantes__activa=True,
-            variantes__detalles_material__material__color__id=color_id
-        ).distinct()
 
     categorias = Categoria.objects.filter(
         productos__mostrar_en_web=True,
@@ -114,15 +119,15 @@ def productos(request):
         'categorias':        categorias,
         'colores':           colores,
         'precio_opciones': [
+            ('100',  'RD$ 100'),
+            ('200',  'RD$ 200'),
             ('500',  'RD$ 500'),
             ('1000', 'RD$ 1K'),
             ('2000', 'RD$ 2K'),
-            ('5000', 'RD$ 5K'),
         ],
         'q_actual':          q,
         'categoria_actual':  categoria,
         'precio_max_actual': precio_max,
-        'color_actual':      color_id,
         'total_resultados':  qs.count(),
     }
 
@@ -170,26 +175,31 @@ def detalle_pedido_cliente(request, pedido_id):
         visible_para_cliente=True
     ).order_by('-fecha_creacion')
 
-    # Ítems
-    items = pedido.items.all()
+    # Solo ítems raíz — los componentes son detalle interno de producción
+    items = (
+        pedido.items
+        .filter(item_padre__isnull=True)
+        .select_related("variante__producto")
+        .prefetch_related("componentes")   # necesario para subtotal / precio_unitario_efectivo
+    )
 
     # Configuración de datos bancarios del negocio
     from apps.pedidos.models import ConfiguracionPago
     config_pago = ConfiguracionPago.obtener()
 
     # Tipo de pedido
-    es_pedido_cotizacion = pedido.solicitud is not None
-    tiene_items_catalogo = pedido.items.filter(variante__isnull=False).exists()
-    tiene_items_personalizados = pedido.items.filter(variante__isnull=True).exists()
+    es_pedido_cotizacion      = pedido.solicitud is not None
+    tiene_items_catalogo      = items.filter(variante__isnull=False).exists()
+    tiene_items_personalizados = items.filter(variante__isnull=True).exists()
 
-    # Determinar si ya tiene comprobante o pago registrado
+    # Primer pago registrado (referencia para el cliente)
     pago_existente = pedido.pagos.order_by('-fecha_pago').first()
 
     # Anticipo calculado (para pedidos personalizados cotizados)
     anticipo = None
     if config_pago and es_pedido_cotizacion and pedido.precio_total > 0:
         from decimal import Decimal
-        pct = config_pago.porcentaje_anticipo / Decimal('100')
+        pct     = config_pago.porcentaje_anticipo / Decimal('100')
         anticipo = (pedido.precio_total * pct).quantize(Decimal('0.01'))
 
     # Estados en los que el cliente puede interactuar con el pago
@@ -200,18 +210,18 @@ def detalle_pedido_cliente(request, pedido_id):
     )
 
     return render(request, 'clientes/detalle_pedido.html', {
-        'pedido': pedido,
-        'items': items,
-        'notas': notas_publicas,
-        'config_pago': config_pago,
-        'pago_existente': pago_existente,
-        'es_pedido_cotizacion': es_pedido_cotizacion,
-        'tiene_items_catalogo': tiene_items_catalogo,
+        'pedido':                    pedido,
+        'items':                     items,
+        'pagos':                     pedido.pagos.order_by('-fecha_pago'),
+        'notas':                     notas_publicas,
+        'config_pago':               config_pago,
+        'pago_existente':            pago_existente,
+        'es_pedido_cotizacion':      es_pedido_cotizacion,
+        'tiene_items_catalogo':      tiene_items_catalogo,
         'tiene_items_personalizados': tiene_items_personalizados,
-        'anticipo': anticipo,
-        'puede_seleccionar_pago': puede_seleccionar_pago,
+        'anticipo':                  anticipo,
+        'puede_seleccionar_pago':    puede_seleccionar_pago,
     })
-
 
 @login_required
 def seleccionar_metodo_pago(request, pedido_id):
@@ -373,9 +383,6 @@ def crear_pedido_catalogo(request, variante_id):
         descripcion=f"Pedido Web: {variante.producto.nombre}",
         precio_total=0,       
         peso_estimado_g=0,    
-        tiempo_estimado_h=0,  
-        costo_material=0,
-        costo_energia=0,
         otros_costos=0
     )
     
@@ -405,9 +412,8 @@ def _procesar_pedido_desde_carrito(usuario, carrito):
             usuario=usuario,
             estado_pedido='En_Espera',
             descripcion="Pedido Web: Varios productos del catálogo",
-            peso_estimado_g=0,      # <--- Obligatorio
-            tiempo_estimado_h=0,    # <--- Obligatorio
-            precio_total=0          # <--- Obligatorio
+            peso_estimado_g=0,      
+            precio_total=0          
         )
 
         for variante_id, item_data in carrito.items():
@@ -463,6 +469,22 @@ def checkout_paso_final(request):
                     'form': form,
                     'carrito': carrito,
                 })
+
+            # ── NUEVO: bloquear si el email ya tiene cuenta ──
+            from apps.usuarios.models import Usuario  # o tu modelo de usuario
+            email_ingresado = form.cleaned_data.get('email', '').strip().lower()
+            if Usuario.objects.filter(email__iexact=email_ingresado).exists():
+                form.add_error(
+                    'email',
+                    'Este correo ya tiene una cuenta registrada. '
+                    'Por favor inicia sesión para continuar con tu pedido.'
+                )
+                return render(request, 'clientes/checkout_invitado.html', {
+                    'form': form,
+                    'carrito': carrito,
+                })
+            # ── fin validación ──
+
             datos_cliente = {
                 'usuario': None,
                 'guest_nombre': f"{form.cleaned_data['nombre']} {form.cleaned_data['apellido']}",
@@ -470,12 +492,13 @@ def checkout_paso_final(request):
                 'guest_telefono': form.cleaned_data['telefono'],
                 'guest_direccion': form.cleaned_data['direccion'],
                 'guest_ciudad': form.cleaned_data['ciudad'],
-                'descripcion': f"Pedido invitado: {form.cleaned_data['nombre']}",
+                'descripcion': f"Pedido de: {form.cleaned_data['nombre']} {form.cleaned_data['apellido']}",
             }
             try:
                 nuevo_pedido = _crear_pedido_con_items(datos_cliente, carrito)
                 request.session['carrito'] = {}
                 request.session['ultimo_pedido_id'] = nuevo_pedido.id
+                enviar_confirmacion_pedido_guest(nuevo_pedido)
                 messages.success(request, "¡Pedido realizado con éxito!")
                 return redirect('clientes:pedido_confirmado_invitado')
             except Exception as e:
@@ -504,7 +527,6 @@ def _crear_pedido_con_items(datos_cliente, carrito):
         pedido = Pedido.objects.create(
             estado_pedido='En_Espera',
             peso_estimado_g=0,
-            tiempo_estimado_h=0,
             precio_total=0,
             **datos_cliente,
         )
@@ -542,7 +564,6 @@ def _procesar_pedido_guest(data, carrito):
             estado_pedido='En_Espera',
             descripcion="Pedido Web (Invitado): Varios productos del catálogo",
             peso_estimado_g=0,
-            tiempo_estimado_h=0,
             precio_total=0,
         )
 
@@ -569,39 +590,40 @@ def confirmacion_guest(request):
     
     return render(request, 'clientes/confirmacion_guest.html', {'pedido': pedido})
 
-
-
 def agregar_al_carrito(request, variante_id):
-    """Soporta cantidad personalizada vía parámetro GET."""
     carrito = request.session.get('carrito', {})
     variante = get_object_or_404(VarianteProducto, id=variante_id)
-    
-    # Capturar cantidad del GET (por defecto 1 si no viene nada)
+
     try:
         cantidad = int(request.GET.get('cantidad', 1))
     except ValueError:
         cantidad = 1
 
     v_id_str = str(variante_id)
-    
+
     if v_id_str in carrito:
         carrito[v_id_str]['cantidad'] += cantidad
     else:
         carrito[v_id_str] = {
-            'nombre': variante.producto.nombre,
+            'nombre': str(variante),
             'precio': float(variante.precio_final),
             'cantidad': cantidad,
             'imagen': variante.producto.imagen.url if variante.producto.imagen else ''
         }
-    
+
     request.session['carrito'] = carrito
-    messages.success(request, f"Se han añadido {cantidad} unidad(es) de {variante.producto.nombre}.")
+
+    # Si viene de HTMX → devolver el partial (sin recargar)
+    if request.headers.get('HX-Request'):
+        return render(request, 'publico/partials/carrito_contenido.html', {'es_htmx': True, 'carrito': carrito,
+        })
+
+    # Si viene de navegación normal → redirigir como antes
+    messages.success(request, f"Se añadieron {cantidad} unidad(es) de {variante}.")
     return redirect(request.META.get('HTTP_REFERER', 'clientes:productos'))
 
+
 def actualizar_carrito(request, variante_id, accion):
-    """
-    Acciones: 'sumar', 'restar', 'eliminar'
-    """
     carrito = request.session.get('carrito', {})
     v_id_str = str(variante_id)
 
@@ -614,8 +636,13 @@ def actualizar_carrito(request, variante_id, accion):
                 del carrito[v_id_str]
         elif accion == 'eliminar':
             del carrito[v_id_str]
-        
+
         request.session['carrito'] = carrito
         request.session.modified = True
-        
+
+    # Si viene de HTMX → devolver el partial
+    if request.headers.get('HX-Request'):
+        return render(request, 'publico/partials/carrito_contenido.html', {'es_htmx': True, 'carrito': carrito,
+        })
+
     return redirect(request.META.get('HTTP_REFERER', 'clientes:productos'))

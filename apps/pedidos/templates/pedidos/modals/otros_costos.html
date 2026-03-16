@@ -1,0 +1,66 @@
+{% extends "core/modal_base.html" %}
+{% block modal_content %}
+    <form method="post"
+          action="{% url 'pedidos:agregar_otros_costos' pedido.id %}"
+          class="space-y-4">
+        {% csrf_token %}
+
+        {# Info box #}
+        <div class="flex items-start gap-2.5 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+            <svg class="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-[11px] text-amber-400/80 leading-relaxed">
+                <span class="font-bold text-amber-400">Este costo se sumará al total del pedido.</span>
+                Se generará automáticamente una nota pública visible para el cliente indicando el concepto y monto.
+            </p>
+        </div>
+
+        {# Descripción #}
+        <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1">
+                Concepto <span class="text-red-400">*</span>
+            </label>
+            <input type="text"
+                   name="descripcion_costo"
+                   required
+                   placeholder="Ej: Costo de envío, Acabado especial..."
+                   class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white outline-none focus:border-[#10b981] transition-all">
+        </div>
+
+        {# Monto #}
+        <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1">
+                Monto (RD$) <span class="text-red-400">*</span>
+            </label>
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500 font-mono text-sm">RD$</span>
+                <input type="number"
+                       name="monto_costo"
+                       required
+                       min="0.01"
+                       step="0.01"
+                       placeholder="0.00"
+                       class="w-full bg-[#0f172a] border border-gray-700 rounded-xl pl-12 pr-4 py-3 text-white font-mono outline-none focus:border-[#10b981] transition-all">
+            </div>
+        </div>
+
+        {# Preview de la nota que se generará #}
+        <div class="p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+            <p class="text-[10px] text-blue-400/70 uppercase font-bold tracking-wider mb-1">Nota pública que verá el cliente</p>
+            <p class="text-xs text-blue-300/80 italic">
+                "Se ha añadido un cargo adicional al pedido: <strong class="text-blue-300">[Concepto]</strong> — RD$ <strong class="text-blue-300">[Monto]</strong>."
+            </p>
+        </div>
+
+        <button type="submit"
+                class="w-full py-3 mt-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold transition-all shadow-lg shadow-amber-900/20 flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Agregar Costo y Notificar Cliente
+        </button>
+    </form>
+{% endblock %}

@@ -2,6 +2,13 @@ from django import forms
 from .models import Usuario
 import uuid
 import re
+from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
+from django.urls import reverse
+
+_FIELD_CLASS = (
+    "w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 "
+    "text-white outline-none focus:border-[#10b981] transition-all"
+)
 
 class TailwindModelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -189,3 +196,51 @@ class RegistroForm(forms.ModelForm):
             raise forms.ValidationError("Las contraseñas no coinciden.")
         
         return cleaned_data
+
+
+class CustomPasswordResetForm(PasswordResetForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["email"].widget.attrs.update({
+            "class": _FIELD_CLASS,
+            "placeholder": "tu@correo.com",
+        })
+
+    def get_users(self, email):
+        for user in super().get_users(email):
+            if not user.email.startswith("manual_"):
+                yield user
+
+    def send_mail(self, subject_template_name, email_template_name,
+                  context, from_email, to_email, html_email_template_name=None):
+        from apps.clientes.emails import enviar_reset_password
+        user = context["user"]
+        link = "{protocol}://{domain}{path}".format(
+            protocol=context["protocol"],
+            domain=context["domain"],
+            path=reverse(
+                "usuarios:password_reset_confirm",
+                kwargs={"uidb64": context["uid"], "token": context["token"]},
+            ),
+        )
+        enviar_reset_password(user, link)
+ 
+ 
+class CustomSetPasswordForm(SetPasswordForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({"class": _FIELD_CLASS})
+
+    def clean_new_password2(self):
+        pw1 = self.cleaned_data.get("new_password1")
+        pw2 = self.cleaned_data.get("new_password2")
+        if pw1 and pw2 and pw1 != pw2:
+            raise forms.ValidationError("Las dos contraseñas no coinciden.")
+        return pw2
+
+    def clean(self):
+        # Al sobrescribir clean y NO llamar a super().clean(), 
+        # Django deja de ejecutar los validadores de AUTH_PASSWORD_VALIDATORS
+        # Solo asegúrate de devolver los datos limpios.
+        return self.cleaned_data

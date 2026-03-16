@@ -1,224 +1,229 @@
 {% extends "core/base_admin.html" %}
+{% block title %}
+  Configuración de Cobros y Pagos - A.N.T
+{% endblock title %}
 {% load static %}
 {% block content %}
-<div class="p-4 md:p-6 max-w-4xl mx-auto">
-
-    {# ── CABECERA ── #}
-    <div class="mb-8">
-        <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest mb-3 gap-2">
-            <a href="{% url 'core:configuracion' %}" class="hover:text-white transition-colors">Configuración</a>
-            <span>/</span>
-            <span class="text-[#10b981]">Cobros y Pagos</span>
-        </nav>
-        <div class="flex items-start justify-between">
-            <div class="flex items-center gap-4">
-                <div class="w-14 h-14 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center text-amber-400">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
+    <div class="space-y-6">
+        {# ── CABECERA ── #}
+        <div class="mb-8">
+            <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest mb-3 gap-2">
+                <a href="{% url 'core:configuracion' %}"
+                   class="hover:text-white transition-colors">Configuración</a>
+                <span>/</span>
+                <span class="text-[#10b981]">Cobros y Pagos</span>
+            </nav>
+            <div class="flex items-start justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center text-amber-400">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">Configuración de Cobros</h1>
+                        <p class="text-gray-400 text-sm mt-0.5">Datos bancarios y condiciones que verán los clientes al pagar.</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-2xl font-bold text-white">Configuración de Cobros</h1>
-                    <p class="text-gray-400 text-sm mt-0.5">
-                        Datos bancarios y condiciones que verán los clientes al pagar.
-                    </p>
-                </div>
-            </div>
-            {# Badge de estado #}
-            {% if config %}
-                <span class="px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest
-                    {% if config.activo %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/30
-                    {% else %}bg-red-500/10 text-red-400 border border-red-500/30{% endif %}">
-                    {% if config.activo %}● Activo{% else %}● Inactivo{% endif %}
-                </span>
-            {% endif %}
-        </div>
-    </div>
-    <form method="POST" class="space-y-6">
-        {% csrf_token %}
-
-        {# ══ BLOQUE 1: Datos bancarios ══ #}
-        <div class="bg-[#1e293b] border border-gray-700 rounded-2xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-700 bg-gray-800/30 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-                    </svg>
-                </div>
-                <div>
-                    <h2 class="text-white font-bold text-sm">Datos Bancarios</h2>
-                    <p class="text-gray-500 text-xs">Información que verá el cliente al seleccionar transferencia</p>
-                </div>
-            </div>
-            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                        Nombre del Banco <span class="text-red-400">*</span>
-                    </label>
-                    <input type="text" name="banco" required
-                           value="{{ config.banco|default:'' }}"
-                           placeholder="Ej: Banco Popular, BHD León..."
-                           class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10b981] transition-all placeholder-gray-600">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                        Titular de la Cuenta <span class="text-red-400">*</span>
-                    </label>
-                    <input type="text" name="titular" required
-                           value="{{ config.titular|default:'' }}"
-                           placeholder="Nombre completo del titular"
-                           class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10b981] transition-all placeholder-gray-600">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                        Número de Cuenta <span class="text-red-400">*</span>
-                    </label>
-                    <input type="text" name="numero_cuenta" required
-                           value="{{ config.numero_cuenta|default:'' }}"
-                           placeholder="Ej: 123-456789-0"
-                           class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm font-mono outline-none focus:border-[#10b981] transition-all placeholder-gray-600">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                        Tipo de Cuenta
-                    </label>
-                    <select name="tipo_cuenta"
-                            class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10b981] transition-all">
-                        <option value="">— Seleccionar —</option>
-                        <option value="Ahorro" {% if config.tipo_cuenta == 'Ahorro' %}selected{% endif %}>Cuenta de Ahorro</option>
-                        <option value="Corriente" {% if config.tipo_cuenta == 'Corriente' %}selected{% endif %}>Cuenta Corriente</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                        Cédula del Titular
-                    </label>
-                    <input type="text" name="cedula"
-                           value="{{ config.cedula|default:'' }}"
-                           placeholder="Ej: 001-0000000-0"
-                           class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm font-mono outline-none focus:border-[#10b981] transition-all placeholder-gray-600">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                        Teléfono para Pagos Móviles
-                    </label>
-                    <input type="text" name="telefono_pago"
-                           value="{{ config.telefono_pago|default:'' }}"
-                           placeholder="Ej: 809-000-0000"
-                           class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm font-mono outline-none focus:border-[#10b981] transition-all placeholder-gray-600">
-                </div>
-
-                <div class="md:col-span-2">
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                        Instrucciones Adicionales
-                        <span class="normal-case text-gray-500 font-normal ml-1">(texto extra que verá el cliente)</span>
-                    </label>
-                    <textarea name="instrucciones_adicionales" rows="3"
-                              placeholder="Ej: Coloca tu número de pedido en el concepto de la transferencia..."
-                              class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10b981] transition-all placeholder-gray-600 resize-none">{{ config.instrucciones_adicionales|default:'' }}</textarea>
-                </div>
-
+                {# Badge de estado #}
+                {% if config %}
+                    <span class="px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest {% if config.activo %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 {% else %}bg-red-500/10 text-red-400 border border-red-500/30{% endif %}">
+                        {% if config.activo %}
+                            ● Activo
+                        {% else %}
+                            ● Inactivo
+                        {% endif %}
+                    </span>
+                {% endif %}
             </div>
         </div>
-
-        {# ══ BLOQUE 2: Condiciones de anticipo ══ #}
-        <div class="bg-[#1e293b] border border-gray-700 rounded-2xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-700 bg-gray-800/30 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+            {# ══ BLOQUE 1: Datos bancarios ══ #}
+            <div class="bg-[#1e293b] border border-gray-700 rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-700 bg-gray-800/30 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-blue-400"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-white font-bold text-sm">Datos Bancarios</h2>
+                        <p class="text-gray-500 text-xs">Información que verá el cliente al seleccionar transferencia</p>
+                    </div>
                 </div>
-                <div>
-                    <h2 class="text-white font-bold text-sm">Anticipo para Pedidos Personalizados</h2>
-                    <p class="text-gray-500 text-xs">Porcentaje del total que se exige como pago inicial</p>
-                </div>
-            </div>
-            <div class="p-6">
-                <div class="flex flex-col md:flex-row gap-6 items-start">
-                    <div class="flex-1">
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
                         <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                            % de Anticipo <span class="text-red-400">*</span>
+                            Nombre del Banco <span class="text-red-400">*</span>
                         </label>
-                        <div class="relative">
-                            <input type="number" name="porcentaje_anticipo" required
-                                   min="1" max="100" step="0.5"
-                                   value="{{ config.porcentaje_anticipo|default:'50' }}"
-                                   id="porcentajeInput"
-                                   oninput="actualizarEjemplo(this.value)"
-                                   class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 pr-10 text-white text-sm font-mono outline-none focus:border-amber-500 transition-all">
-                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-bold">%</span>
-                        </div>
-                        <p class="text-gray-600 text-xs mt-2">Solo aplica a pedidos que provengan de una cotización.</p>
+                        <input type="text"
+                               name="banco"
+                               required
+                               value="{{ config.banco|default:'' }}"
+                               placeholder="Ej: Banco Popular, BHD León..."
+                               class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10b981] transition-all placeholder-gray-600">
                     </div>
-
-                    {# Preview en vivo #}
-                    <div class="flex-1 bg-gray-900/50 border border-gray-700/60 rounded-xl p-4">
-                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Vista previa del cliente</p>
-                        <div class="space-y-2 text-sm">
-                            <div class="flex justify-between text-gray-400">
-                                <span>Total del pedido</span>
-                                <span class="font-mono">RD$ 2,000.00</span>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                            Titular de la Cuenta <span class="text-red-400">*</span>
+                        </label>
+                        <input type="text"
+                               name="titular"
+                               required
+                               value="{{ config.titular|default:'' }}"
+                               placeholder="Nombre completo del titular"
+                               class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10b981] transition-all placeholder-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                            Número de Cuenta <span class="text-red-400">*</span>
+                        </label>
+                        <input type="text"
+                               name="numero_cuenta"
+                               required
+                               value="{{ config.numero_cuenta|default:'' }}"
+                               placeholder="Ej: 123-456789-0"
+                               class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm font-mono outline-none focus:border-[#10b981] transition-all placeholder-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Tipo de Cuenta</label>
+                        <select name="tipo_cuenta"
+                                class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10b981] transition-all">
+                            <option value="">— Seleccionar —</option>
+                            <option value="Ahorro"
+                                    {% if config.tipo_cuenta == 'Ahorro' %}selected{% endif %}>
+                                Cuenta de Ahorro
+                            </option>
+                            <option value="Corriente"
+                                    {% if config.tipo_cuenta == 'Corriente' %}selected{% endif %}>
+                                Cuenta Corriente
+                            </option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Cédula del Titular</label>
+                        <input type="text"
+                               name="cedula"
+                               value="{{ config.cedula|default:'' }}"
+                               placeholder="Ej: 001-0000000-0"
+                               class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm font-mono outline-none focus:border-[#10b981] transition-all placeholder-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Teléfono para Pagos Móviles</label>
+                        <input type="text"
+                               name="telefono_pago"
+                               value="{{ config.telefono_pago|default:'' }}"
+                               placeholder="Ej: 809-000-0000"
+                               class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm font-mono outline-none focus:border-[#10b981] transition-all placeholder-gray-600">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                            Instrucciones Adicionales
+                            <span class="normal-case text-gray-500 font-normal ml-1">(texto extra que verá el cliente)</span>
+                        </label>
+                        <textarea name="instrucciones_adicionales"
+                                  rows="3"
+                                  placeholder="Ej: Coloca tu número de pedido en el concepto de la transferencia..."
+                                  class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#10b981] transition-all placeholder-gray-600 resize-none">{{ config.instrucciones_adicionales|default:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+            {# ══ BLOQUE 2: Condiciones de anticipo ══ #}
+            <div class="bg-[#1e293b] border border-gray-700 rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-700 bg-gray-800/30 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-amber-400"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-white font-bold text-sm">Anticipo para Pedidos Personalizados</h2>
+                        <p class="text-gray-500 text-xs">Porcentaje del total que se exige como pago inicial</p>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                                % de Anticipo <span class="text-red-400">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="number"
+                                       name="porcentaje_anticipo"
+                                       required
+                                       min="1"
+                                       max="100"
+                                       step="0.5"
+                                       value="{{ config.porcentaje_anticipo|default:'50' }}"
+                                       id="porcentajeInput"
+                                       oninput="actualizarEjemplo(this.value)"
+                                       class="w-full bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-3 pr-10 text-white text-sm font-mono outline-none focus:border-amber-500 transition-all">
+                                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-bold">%</span>
                             </div>
-                            <div class="flex justify-between text-amber-400 font-semibold">
-                                <span>Anticipo (<span id="pctLabel">{{ config.porcentaje_anticipo|default:'50' }}</span>%)</span>
-                                <span class="font-mono" id="anticipoEjemplo">—</span>
-                            </div>
-                            <div class="flex justify-between text-gray-500 text-xs border-t border-gray-800 pt-2">
-                                <span>Resto al retirar</span>
-                                <span class="font-mono" id="restoEjemplo">—</span>
+                            <p class="text-gray-600 text-xs mt-2">Solo aplica a pedidos que provengan de una cotización.</p>
+                        </div>
+                        {# Preview en vivo #}
+                        <div class="flex-1 bg-gray-900/50 border border-gray-700/60 rounded-xl p-4">
+                            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Vista previa del cliente</p>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between text-gray-400">
+                                    <span>Total del pedido</span>
+                                    <span class="font-mono">RD$ 2,000.00</span>
+                                </div>
+                                <div class="flex justify-between text-amber-400 font-semibold">
+                                    <span>Anticipo (<span id="pctLabel">{{ config.porcentaje_anticipo|default:'50' }}</span>%)</span>
+                                    <span class="font-mono" id="anticipoEjemplo">—</span>
+                                </div>
+                                <div class="flex justify-between text-gray-500 text-xs border-t border-gray-800 pt-2">
+                                    <span>Resto al retirar</span>
+                                    <span class="font-mono" id="restoEjemplo">—</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        {# ══ BLOQUE 3: Estado ══ #}
-        <div class="bg-[#1e293b] border border-gray-700 rounded-2xl p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-white font-semibold text-sm">Configuración activa</p>
-                    <p class="text-gray-500 text-xs mt-0.5">Si la desactivas, los clientes no verán opciones de pago.</p>
+            {# ══ BLOQUE 3: Estado ══ #}
+            <div class="bg-[#1e293b] border border-gray-700 rounded-2xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white font-semibold text-sm">Configuración activa</p>
+                        <p class="text-gray-500 text-xs mt-0.5">Si la desactivas, los clientes no verán opciones de pago.</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox"
+                               name="activo"
+                               class="sr-only peer"
+                               {% if config.activo or not config %}checked{% endif %}>
+                        <div class="w-12 h-6 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600">
+                        </div>
+                    </label>
                 </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" name="activo" class="sr-only peer"
-                           {% if config.activo or not config %}checked{% endif %}>
-                    <div class="w-12 h-6 bg-gray-700 rounded-full peer
-                                peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                                after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all
-                                peer-checked:bg-emerald-600"></div>
-                </label>
             </div>
-        </div>
-
-        {# ══ ACCIONES ══ #}
-        <div class="flex gap-4 pb-8">
-            <a href="{% url 'core:configuracion' %}"
-               class="px-6 py-3 rounded-xl border border-gray-700 text-gray-400 hover:bg-gray-800 transition-all font-bold text-sm">
-                ← Volver
-            </a>
-            <button type="submit"
-                    class="flex-1 md:flex-none px-8 py-3 rounded-xl bg-[#10b981] hover:bg-emerald-400 text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                Guardar Configuración
-            </button>
-        </div>
-    </form>
-</div>
-
-<script>
+            {# ══ ACCIONES ══ #}
+            <div class="flex gap-4 pb-8">
+                <a href="{% url 'core:configuracion' %}"
+                   class="px-6 py-3 rounded-xl border border-gray-700 text-gray-400 hover:bg-gray-800 transition-all font-bold text-sm">
+                    ← Volver
+                </a>
+                <button type="submit"
+                        class="flex-1 md:flex-none px-8 py-3 rounded-xl bg-[#10b981] hover:bg-emerald-400 text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Guardar Configuración
+                </button>
+            </div>
+        </form>
+    </div>
+    <script>
     function actualizarEjemplo(pct) {
         const total = 2000;
         pct = parseFloat(pct) || 0;
@@ -231,5 +236,5 @@
             'RD$ ' + parseFloat(resto).toLocaleString('es-DO', {minimumFractionDigits: 2});
     }
     actualizarEjemplo(document.getElementById('porcentajeInput').value);
-</script>
+    </script>
 {% endblock %}

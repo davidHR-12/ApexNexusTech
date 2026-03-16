@@ -1,4 +1,7 @@
 {% extends "core/base_admin.html" %}
+{% block title %}
+  Gestión de Materiales - A.N.T
+{% endblock title %}
 {% load humanize %}
 {% load static %}
 {% block content %}
@@ -24,11 +27,35 @@
     <div id="barra-filtros-container">{% include "materiales/partials/barra_filtros.html" %}</div>
     <div id="materiales-container" class="space-y-6">{% include "materiales/partials/material_tabla.html" %}</div>
   </div>
+
   {% include "materiales/modals/material_form.html" with modal_id="modalMaterial" title="Configurar Nuevo Material" description="Completa la información para configurar el nuevo material." is_edit=False %}
   {% include "materiales/modals/material_form.html" with modal_id="modalEditarMaterial" title="Editar Material" description="Ajusta los parámetros base o reporta mermas." is_edit=True %}
   {% include "materiales/modals/entrada_form.html" with modal_id="modalEntrada" title="Registrar Compra" description="Aumenta el stock y actualiza el costo promedio." max_width="max-w-2xl" max_height="max-h-[120vh]" %}
   {% include "materiales/modals/atributo_catalogo.html" with modal_id="modalCatalogo" title="Mantenimiento de Atributos" description="Corrige errores ortográficos o fusiona atributos duplicados." max_width="max-w-2xl" %}
+
+  {# ── MODAL ARCHIVO DE MATERIALES ── #}
+  <div id="modalArchivoMateriales"
+       class="hidden fixed inset-0 z-50 flex items-center justify-center p-4"
+       style="backdrop-filter:blur(4px);background:rgba(0,0,0,0.5);">
+    <div class="bg-[#1e293b] border border-gray-800 rounded-2xl shadow-2xl w-full max-w-lg relative">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800/60">
+        <div>
+          <h3 class="text-white font-bold text-base">Materiales Archivados</h3>
+          <p class="text-gray-500 text-xs mt-0.5">Materiales desactivados — puedes reactivarlos aquí.</p>
+        </div>
+        <button onclick="cerrarUltimoModal(); if(materialesArchivoModificado) location.reload();"
+                class="text-gray-500 hover:text-white transition p-1 rounded-lg hover:bg-gray-700">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div id="contenido-archivo-materiales" class="px-6 py-4 relative">
+        <div class="text-center py-10 text-gray-500 text-sm">Cargando...</div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
   {% block extra_js %}
     <script src="{% static 'materiales/js/materiales.js' %}"></script>
   {% endblock extra_js %}
-{% endblock content %}

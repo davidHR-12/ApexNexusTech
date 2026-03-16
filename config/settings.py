@@ -58,11 +58,18 @@ INSTALLED_APPS = [
     'apps.finanzas',
     'apps.reportes',
     "django_htmx",
+    'tailwind',
+    'theme',
+    'django_browser_reload',    
 ]
+
+TAILWIND_APP_NAME = 'theme' 
+INTERNAL_IPS = ['127.0.0.1']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django_browser_reload.middleware.BrowserReloadMiddleware',
     "django_htmx.middleware.HtmxMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -126,7 +133,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "es-mx"
 TIME_ZONE = "America/Santo_Domingo"
 USE_I18N = True
 
@@ -188,6 +195,11 @@ LOGGING = {
         },
         # logger
         "apps.core": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "apps.clientes": {
             "handlers": ["console"],
             "level": "INFO",
             "propagate": False,

@@ -1,0 +1,71 @@
+{% extends "emails/email_base.html" %}
+{% block titulo %}Confirma tu nuevo correo{% endblock %}
+
+{% block email_content %}
+  <div class="header">
+    {% if logo_url %}
+      <img src="{{ logo_url }}" alt="{{ config.nombre_negocio }}" class="logo">
+    {% else %}
+      <div class="logo-text">{{ config.nombre_negocio }}</div>
+      {% if config.slogan %}<div class="logo-sub">{{ config.slogan }}</div>{% endif %}
+    {% endif %}
+    <div class="badge-info">✉ &nbsp;Cambio de correo electrónico</div>
+    <h1>Confirma tu nueva dirección</h1>
+    <p>Alguien solicitó cambiar el email de tu cuenta. Si fuiste tú, confirma el cambio aquí.</p>
+  </div>
+
+  <div class="body">
+
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background-color:#0f172a;border:1px solid #1e3a5f;border-radius:12px;margin-bottom:24px;">
+      <tr>
+        <td style="padding:20px 24px;">
+          <p style="font-size:14px;color:#cbd5e1;line-height:1.7;margin:0;">
+            Hola{% if user.first_name %}, <strong style="color:#e2e8f0;">{{ user.first_name }}</strong>{% endif %}.<br><br>
+            Se solicitó cambiar el email de tu cuenta a
+            <strong style="color:#10b981;">{{ email_nuevo }}</strong>.<br><br>
+            Tu correo actual seguirá funcionando hasta que confirmes este cambio.
+            Este enlace es válido por <strong style="color:#e2e8f0;">72 horas</strong>.
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <div class="btn-wrap">
+      <a href="{{ link }}" class="btn-primary">Confirmar nuevo correo →</a>
+    </div>
+
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background-color:#0f172a;border:1px solid #334155;border-radius:10px;margin-top:16px;">
+      <tr>
+        <td style="padding:14px 16px;">
+          <p style="font-size:11px;color:#64748b;margin:0 0 6px 0;font-weight:700;text-transform:uppercase;letter-spacing:1px;">
+            ¿El botón no funciona? Copia este enlace:
+          </p>
+          <p style="font-size:11px;color:#10b981;word-break:break-all;font-family:'Courier New',monospace;margin:0;">
+            {{ link }}
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <div class="divider"></div>
+
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="border:1px solid #1e3a5f;border-radius:10px;">
+      <tr>
+        <td style="padding:14px 16px;text-align:center;">
+          <p style="font-size:12px;color:#64748b;margin:0;line-height:1.6;">
+            🔒 &nbsp;Si <strong style="color:#94a3b8;">no fuiste tú</strong> quien solicitó este cambio,
+            ignora este correo.<br>Tu email actual seguirá siendo el mismo.
+          </p>
+        </td>
+      </tr>
+    </table>
+
+  </div>
+{% endblock %}
+
+{% block footer_extra %}
+  Este correo se envió porque se solicitó un cambio de dirección de email para esta cuenta.<br><br>
+{% endblock %}

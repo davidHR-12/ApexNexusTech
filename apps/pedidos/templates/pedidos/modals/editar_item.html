@@ -13,17 +13,11 @@
             <label class="block text-blue-400 text-[10px] font-bold uppercase mb-1">Nombre / Descripción de la Pieza</label>
             {{ form.descripcion }}
         </div>
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Cantidad</label>
-                {{ form.cantidad }}
-            </div>
-            <div>
-    <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Precio Unitario ($)</label>
-    {{ form.precio_unitario }}
-    {# Pequeña ayuda visual #}
-    <p class="text-[10px] text-emerald-400 mt-1">Haz clic en el precio sugerido ↓ para aplicarlo</p>
-</div>
+        <div>
+            <label class="block text-gray-400 text-[10px] font-bold uppercase mb-1">Precio Unitario ($)</label>
+            {{ form.precio_unitario }}
+            {# Pequeña ayuda visual #}
+            <p class="text-[10px] text-emerald-400 mt-1">Haz clic en el precio sugerido ↓ para aplicarlo</p>
         </div>
         <div class="grid grid-cols-3 gap-4 p-3 bg-gray-900/30 rounded-xl border border-gray-800">
             <div class="col-span-2 relative">
@@ -60,7 +54,8 @@
             </div>
             <div class="flex justify-between text-xs border-t border-gray-800 pt-1 mt-1">
                 <span class="text-emerald-400 font-bold">Precio Sugerido (x1.5):</span>
-                <span id="pers-sugerido" class="text-emerald-400 font-bold cursor-pointer underline">RD$ 0.00</span>
+                <span id="pers-sugerido"
+                      class="text-emerald-400 font-bold cursor-pointer underline">RD$ 0.00</span>
             </div>
         </div>
         <div class="flex gap-3 pt-6 border-t border-gray-800 mt-6">

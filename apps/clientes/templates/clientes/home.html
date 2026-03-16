@@ -100,36 +100,23 @@
                             <div class="flex justify-between items-start mb-3">
                                 <span class="text-xs font-mono text-slate-500">#COT-{{ cotizacion.id }}</span>
                                 {% if cotizacion.estado == 'Pendiente' %}
-                                        <span class="text-xs font-bold text-yellow-500 bg-yellow-900/20 px-2 py-1 rounded">Revisando</span>
-                                    {% elif cotizacion.estado == 'Cotizada' %}
-                                        <span class="text-xs font-bold text-emerald-400 bg-emerald-900/20 px-2 py-1 rounded">¡Precio Listo!</span>
-                                    {% else %}
-                                        <span class="text-xs text-slate-400">{{ cotizacion.estado }}</span>
-                                    {% endif %}
-                                </div>
-                                <h3 class="text-white font-medium mb-2 truncate">{{ cotizacion.descripcion }}</h3>
-                                <p class="text-sm text-slate-400 mb-4">{{ cotizacion.fecha_solicitud|timesince }} atrás</p>
-                                {% if cotizacion.precio_cotizado %}
-                                    <div class="bg-slate-900 rounded-lg p-3 border border-slate-700 mb-3">
-                                        <p class="text-xs text-slate-400">Precio estimado</p>
-                                        <p class="text-lg font-bold text-emerald-400">${{ cotizacion.precio_cotizado }}</p>
-                                    </div>
-                                    <button class="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition">
-                                        Aceptar y Pedir
-                                    </button>
+                                    <span class="text-xs font-bold text-yellow-500 bg-yellow-900/20 px-2 py-1 rounded">Revisando</span>
+                                {% elif cotizacion.estado == 'Cotizada' %}
+                                    <span class="text-xs font-bold text-emerald-400 bg-emerald-900/20 px-2 py-1 rounded">¡Precio Listo!</span>
                                 {% else %}
-                                    <div class="text-xs text-slate-500 italic bg-slate-900/50 p-3 rounded-lg">
-                                        Estamos calculando el material y tiempo...
-                                    </div>
+                                    <span class="text-xs text-slate-400">{{ cotizacion.estado }}</span>
                                 {% endif %}
                             </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center py-8 text-slate-500">
-                        <p>No has solicitado cotizaciones personalizadas.</p>
-                    </div>
-                {% endif %}
-            </div>
+                            <h3 class="text-white font-medium mb-2 truncate">{{ cotizacion.descripcion }}</h3>
+                            <p class="text-sm text-slate-400 mb-4">{{ cotizacion.fecha_solicitud|timesince }} atrás</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8 text-slate-500">
+                    <p>No has solicitado cotizaciones personalizadas.</p>
+                </div>
+            {% endif %}
         </div>
-    {% endblock content %}
+    </div>
+{% endblock content %}

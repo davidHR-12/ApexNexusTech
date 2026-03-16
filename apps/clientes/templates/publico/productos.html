@@ -92,24 +92,6 @@
             {% endfor %}
           </div>
         </div>
-        {# Color #}
-        {% if colores %}
-          <div class="flex items-center gap-2.5">
-            <span class="text-[10px] text-gray-600 font-bold uppercase tracking-widest">Color</span>
-            <select name="color"
-                    id="color-input"
-                    onchange="disparar()"
-                    class="bg-gray-900 border border-gray-700 text-gray-300 text-xs font-bold rounded-lg px-3 py-1.5 outline-none focus:border-[#10b981]/50 transition-colors cursor-pointer">
-              <option value="">Todos</option>
-              {% for color in colores %}
-                <option value="{{ color.id }}"
-                        {% if color_actual == color.id|stringformat:'s' %}selected{% endif %}>
-                  {{ color.nombre }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
-        {% endif %}
         {# Limpiar #}
         <div class="ml-auto">
           <button type="button"
@@ -129,13 +111,6 @@
     {# ── Grid (target HTMX) ── #}
     <div id="productos-grid">{% include "publico/partials/productos_tabla.html" %}</div>
   </section>
-  <style>
-.pill-on  { background:#10b981; border-color:#10b981; color:#fff; }
-.pill-off { background:transparent; border-color:#374151; color:#9ca3af; }
-.pill-off:hover { border-color:rgba(16,185,129,0.4); color:#e5e7eb; }
-.htmx-indicator { display:none; }
-.htmx-request .htmx-indicator { display:flex; }
-  </style>
   <script>
 const form = document.getElementById('filtros-form');
 
@@ -173,8 +148,7 @@ function actualizarBotonLimpiar() {
     const q         = document.getElementById('q-input').value;
     const categoria = document.getElementById('categoria-input').value;
     const precio    = document.getElementById('precio-input').value;
-    const color     = document.getElementById('color-input');
-    const hayFiltros = q || categoria || precio || (color && color.value);
+    const hayFiltros = q || categoria || precio;
 
     document.getElementById('btn-limpiar').style.display  = hayFiltros ? 'flex' : 'none';
     document.getElementById('txt-sin-filtros').style.display = hayFiltros ? 'none' : 'inline';
@@ -187,8 +161,6 @@ function limpiarFiltros() {
     document.getElementById('q-input').value       = '';
     document.getElementById('categoria-input').value = '';
     document.getElementById('precio-input').value  = '';
-    if (document.getElementById('color-input'))
-        document.getElementById('color-input').value = '';
     document.querySelectorAll('.categoria-pill').forEach(btn => {
         const on = btn.dataset.slug === '';
         btn.classList.toggle('pill-on', on);

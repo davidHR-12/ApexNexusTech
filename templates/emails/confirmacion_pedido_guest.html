@@ -1,0 +1,168 @@
+{% extends "emails/email_base.html" %}
+{% block titulo %}Pedido #{{ pedido.id|stringformat:"04d" }} confirmado{% endblock %}
+
+{% block email_content %}
+  <!-- HEADER -->
+  <div class="header">
+    {% if logo_url %}
+      <img src="{{ logo_url }}" alt="{{ config.nombre_negocio }}" class="logo">
+    {% else %}
+      <div class="logo-text">{{ config.nombre_negocio }}</div>
+      {% if config.slogan %}<div class="logo-sub">{{ config.slogan }}</div>{% endif %}
+    {% endif %}
+    <div class="badge-ok">✓ &nbsp;Pedido Recibido</div>
+    <h1>¡Gracias, {{ nombre|truncatechars:30 }}!</h1>
+    <p>Tu pedido ha sido registrado correctamente.</p>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- ── Número de pedido ── -->
+    <p class="section-label">Número de Pedido</p>
+    <!--[tabla en lugar de flexbox — Gmail no soporta flex]-->
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0f172a; border:1px solid #334155; border-radius:12px; margin-bottom:24px;">
+      <tr>
+        <td style="padding:16px 20px;">
+          <span style="font-size:26px; font-weight:900; color:#10b981; font-family:'Courier New',monospace;">
+            #{{ pedido.id|stringformat:"04d" }}
+          </span>
+        </td>
+        <td style="padding:16px 20px; text-align:right; font-size:12px; color:#64748b; vertical-align:middle;">
+          Recibido el<br>
+          <strong style="color:#e2e8f0;">{{ pedido.fecha_creacion|date:"d/m/Y" }}</strong>
+        </td>
+      </tr>
+    </table>
+
+    <!-- ── Items ── -->
+    <p class="section-label">Resumen de tu pedido</p>
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th style="text-align:center;">Cant.</th>
+          <th style="text-align:right;">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in filas_items %}
+        <tr>
+          <td>{{ item.nombre }}</td>
+          <td style="text-align:center;" class="qty">×{{ item.cantidad }}</td>
+          <td>RD$ {{ item.subtotal|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- ── Total — tabla en lugar de flexbox ── -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0f172a; border-radius:10px; margin-top:4px; margin-bottom:28px;">
+      <tr>
+        <td style="padding:14px 20px; font-size:13px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">
+          Total a Pagar
+        </td>
+        <td style="padding:14px 20px; text-align:right; font-size:20px; font-weight:900; color:#10b981; font-family:'Courier New',monospace; white-space:nowrap;">
+          RD$ {{ pedido.precio_total|floatformat:2 }}
+        </td>
+      </tr>
+    </table>
+
+    <!-- ── Datos de contacto — tabla 2 columnas en lugar de grid ── -->
+    <p class="section-label">Datos de contacto</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr>
+        <td width="50%" style="padding-right:6px; vertical-align:top;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0f172a; border:1px solid #1e3a5f; border-radius:10px;">
+            <tr>
+              <td style="padding:12px 14px;">
+                <div style="font-size:9px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px;">Nombre</div>
+                <div style="font-size:13px; color:#e2e8f0; font-weight:600;">{{ pedido.guest_nombre|default:"—" }}</div>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td width="50%" style="padding-left:6px; vertical-align:top;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0f172a; border:1px solid #1e3a5f; border-radius:10px;">
+            <tr>
+              <td style="padding:12px 14px;">
+                <div style="font-size:9px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px;">WhatsApp</div>
+                <div style="font-size:13px; color:#e2e8f0; font-weight:600;">{{ pedido.guest_telefono|default:"—" }}</div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      {% if pedido.guest_direccion %}
+      <tr>
+        <td colspan="2" style="padding-top:12px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0f172a; border:1px solid #1e3a5f; border-radius:10px;">
+            <tr>
+              <td style="padding:12px 14px;">
+                <div style="font-size:9px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px;">Dirección de entrega</div>
+                <div style="font-size:13px; color:#e2e8f0; font-weight:600;">
+                  {{ pedido.guest_direccion }}{% if pedido.guest_ciudad %}, {{ pedido.guest_ciudad }}{% endif %}
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      {% endif %}
+    </table>
+
+    <div class="divider"></div>
+
+    <!-- ── Próximos pasos — tabla en lugar de flexbox ── -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0f172a; border:1px solid #1e3a5f; border-radius:12px; margin-bottom:24px;">
+      <tr>
+        <td style="padding:20px 24px;">
+          <p style="font-size:13px; font-weight:700; color:#10b981; text-transform:uppercase; letter-spacing:1px; margin-bottom:16px;">¿Qué sigue ahora?</p>
+
+          <!-- Paso 1 -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
+            <tr>
+              <td width="30" style="vertical-align:top; padding-top:1px;">
+                <div style="width:22px; height:22px; border-radius:50%; background-color:#10b981; color:#fff; font-size:11px; font-weight:900; text-align:center; line-height:22px;">1</div>
+              </td>
+              <td style="padding-left:10px; font-size:13px; color:#94a3b8; line-height:1.5; vertical-align:top;">
+                <strong style="color:#e2e8f0;">Revisamos tu pedido</strong> — Nuestro equipo lo analizará en las próximas horas.
+              </td>
+            </tr>
+          </table>
+
+          <!-- Paso 2 -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
+            <tr>
+              <td width="30" style="vertical-align:top; padding-top:1px;">
+                <div style="width:22px; height:22px; border-radius:50%; background-color:#10b981; color:#fff; font-size:11px; font-weight:900; text-align:center; line-height:22px;">2</div>
+              </td>
+              <td style="padding-left:10px; font-size:13px; color:#94a3b8; line-height:1.5; vertical-align:top;">
+                <strong style="color:#e2e8f0;">Te contactamos por WhatsApp</strong> — Coordinaremos el pago y la entrega contigo directamente.
+              </td>
+            </tr>
+          </table>
+
+          <!-- Paso 3 -->
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="30" style="vertical-align:top; padding-top:1px;">
+                <div style="width:22px; height:22px; border-radius:50%; background-color:#10b981; color:#fff; font-size:11px; font-weight:900; text-align:center; line-height:22px;">3</div>
+              </td>
+              <td style="padding-left:10px; font-size:13px; color:#94a3b8; line-height:1.5; vertical-align:top;">
+                <strong style="color:#e2e8f0;">Producción y entrega</strong> — Una vez confirmado el pago, iniciamos la impresión.
+              </td>
+            </tr>
+          </table>
+
+        </td>
+      </tr>
+    </table>
+
+  </div>
+{% endblock %}
+
+{% block footer_extra %}
+  Este correo es una confirmación automática de tu pedido.<br>
+  Si tienes preguntas, escríbenos por WhatsApp o responde este correo.<br><br>
+{% endblock %}

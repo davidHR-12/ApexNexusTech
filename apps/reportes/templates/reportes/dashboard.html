@@ -1,0 +1,462 @@
+{% extends "core/base_admin.html" %}
+{% block title %}
+    Dashboard de Reportes - A.N.T
+{% endblock title %}
+{% load humanize %}
+{% load static %}
+{% load l10n %}
+{% block content %}
+    <div class="space-y-6">
+        {# ── CABECERA ─────────────────────────────────── #}
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <h1 class="text-2xl font-bold text-white">Panel de Reportes</h1>
+                <p class="text-gray-500 text-sm mt-0.5">{{ hoy|date:"d \d\e F, Y" }}</p>
+            </div>
+            <div class="flex gap-2">
+                <a href="{% url 'reportes:ventas' %}"
+                   class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-700 hover:border-[#10b981]/40 text-gray-400 hover:text-[#10b981] text-xs font-bold transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Ventas
+                </a>
+                <a href="{% url 'reportes:inventario' %}"
+                   class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-700 hover:border-[#10b981]/40 text-gray-400 hover:text-[#10b981] text-xs font-bold transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    Inventario
+                </a>
+            </div>
+        </div>
+        {% if mostrar_recordatorio_reporte %}
+            <div class="mb-6 flex items-start gap-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5">
+                <div class="p-2 bg-amber-500/20 rounded-xl flex-shrink-0">
+                    <svg class="w-5 h-5 text-amber-400"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-amber-300 font-bold text-sm">📊 Inicio de mes — ¿Descargaste el reporte de {{ mes_anterior_label }}?</p>
+                    <p class="text-amber-400/70 text-xs mt-1">
+                        Es un buen momento para exportar ventas e inventario del mes anterior antes de que el período se mezcle.
+                    </p>
+                </div>
+                <div class="flex gap-2 flex-shrink-0">
+                    <a href="{% url 'reportes:exportar_ventas' %}?desde={{ inicio_ant }}&hasta={{ fin_ant }}"
+                       class="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-xl transition-all whitespace-nowrap">
+                        ⬇ Ventas
+                    </a>
+                    <a href="{% url 'reportes:exportar_inventario' %}"
+                       class="px-3 py-2 bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 text-xs font-bold rounded-xl border border-amber-500/30 transition-all whitespace-nowrap">
+                        ⬇ Inventario
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+        {# ── KPI CARDS ─────────────────────────────────── #}
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {# Ingresos #}
+            <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-gray-500 text-xs uppercase font-bold tracking-wider">Ingresos mes</p>
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-emerald-400"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-2xl font-black text-[#10b981] font-mono">RD$ {{ kpis.ingresos_mes|floatformat:0|intcomma }}</p>
+                {% if kpis.ingresos_var is not None %}
+                    <p class="text-xs mt-1.5 {% if kpis.ingresos_var >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+                        {% if kpis.ingresos_var >= 0 %}
+                            ▲
+                        {% else %}
+                            ▼
+                        {% endif %}
+                        {{ kpis.ingresos_var|floatformat:1 }}% vs mes anterior
+                    </p>
+                {% endif %}
+            </div>
+            {# Gastos #}
+            <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-gray-500 text-xs uppercase font-bold tracking-wider">Gastos mes</p>
+                    <div class="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-red-400"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-2xl font-black text-white font-mono">RD$ {{ kpis.gastos_mes|floatformat:0|intcomma }}</p>
+                {% if kpis.gastos_var is not None %}
+                    <p class="text-xs mt-1.5 {% if kpis.gastos_var <= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+                        {% if kpis.gastos_var >= 0 %}
+                            ▲
+                        {% else %}
+                            ▼
+                        {% endif %}
+                        {{ kpis.gastos_var|floatformat:1 }}% vs mes anterior
+                    </p>
+                {% endif %}
+            </div>
+            {# Ganancia #}
+            <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-5 {% if kpis.ganancia_mes >= 0 %} animate-pulse bg-emerald-600/20 border-emerald-500/20{% else %} animate-pulse bg-red-600/20 border-red-500/20{% endif %}">
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-gray-500 text-xs uppercase font-bold tracking-wider">Ganancia mes</p>
+                    <div class="w-8 h-8 rounded-xl {% if kpis.ganancia_mes >= 0 %}bg-emerald-500/10{% else %}bg-red-500/10{% endif %} flex items-center justify-center">
+                        <svg class="w-4 h-4 {% if kpis.ganancia_mes >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-2xl font-black font-mono {% if kpis.ganancia_mes >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+                    RD$ {{ kpis.ganancia_mes|floatformat:0|intcomma }}
+                </p>
+                {% if kpis.ganancia_var is not None %}
+                    <p class="text-xs mt-1.5 {% if kpis.ganancia_var >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+                        {% if kpis.ganancia_var >= 0 %}
+                            ▲
+                        {% else %}
+                            ▼
+                        {% endif %}
+                        {{ kpis.ganancia_var|floatformat:1|intcomma }}% vs mes anterior
+                    </p>
+                {% endif %}
+            </div>
+            {# Pedidos del mes #}
+            <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-gray-500 text-xs uppercase font-bold tracking-wider">Pedidos mes</p>
+                    <div class="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-blue-400"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-2xl font-black text-white">{{ kpis.pedidos_mes }}</p>
+                {% if kpis.pedidos_var is not None %}
+                    <p class="text-xs mt-1.5 {% if kpis.pedidos_var >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+                        {% if kpis.pedidos_var >= 0 %}
+                            ▲
+                        {% else %}
+                            ▼
+                        {% endif %}
+                        {{ kpis.pedidos_var|floatformat:1 }}% vs mes anterior
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+        {# ── FILA 2: info rápida ───────────────────────── #}
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-amber-400"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-amber-300 font-bold text-lg">RD$ {{ kpis.saldo_pendiente_total|floatformat:0|intcomma }}</p>
+                    <p class="text-amber-200/60 text-xs">Saldo pendiente por cobrar</p>
+                </div>
+            </div>
+            <div class="{% if kpis.materiales_criticos > 0 %}bg-red-500/10 border-red-500/20{% else %}bg-emerald-500/10 border-emerald-500/20{% endif %} border rounded-2xl p-4 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl {% if kpis.materiales_criticos > 0 %}bg-red-500/20{% else %}bg-emerald-500/20{% endif %} flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 {% if kpis.materiales_criticos > 0 %}text-red-400{% else %}text-emerald-400{% endif %}"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="{% if kpis.materiales_criticos > 0 %}text-red-300{% else %}text-emerald-300{% endif %} font-bold text-lg">
+                        {{ kpis.materiales_criticos|intcomma }} material{{ kpis.materiales_criticos|pluralize:"es" }}
+                    </p>
+                    <p class="text-gray-400 text-xs">
+                        {% if kpis.materiales_criticos > 0 %}
+                            con stock crítico
+                        {% else %}
+                            Inventario OK
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="bg-purple-500/10 border border-purple-500/20 rounded-2xl p-4 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-purple-400"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-purple-300 font-bold text-lg">{{ impresoras_stats.disponibles }}/{{ impresoras_stats.total }}</p>
+                    <p class="text-gray-400 text-xs">Impresoras disponibles · {{ impresoras_stats.imprimiendo }} imprimiendo</p>
+                </div>
+            </div>
+        </div>
+        {# ── FILA 3: Gráficos ──────────────────────────── #}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {# Ingresos vs Gastos — últimos 6 meses #}
+            <div class="lg:col-span-2 bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-800/50 flex items-center justify-between">
+                    <h2 class="text-white font-bold text-sm">Ingresos vs Gastos — últimos 6 meses</h2>
+                    <div class="flex items-center gap-3 text-xs">
+                        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block"></span> Ingresos</span>
+                        <span class="flex items-center gap-1.5 text-gray-500"><span class="w-2.5 h-2.5 rounded-sm bg-red-500/70 inline-block"></span> Gastos</span>
+                        <span class="flex items-center gap-1.5 text-gray-500"><span class="w-2.5 h-2.5 rounded-sm bg-cyan-500/70 inline-block"></span> Ganancias</span>
+                    </div>
+                </div>
+                <div class="p-5">
+                    <canvas id="chartIngresosGastos" height="100"></canvas>
+                </div>
+            </div>
+            {# Pedidos por estado #}
+            <div class="bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-800/50">
+                    <h2 class="text-white font-bold text-sm">Estado de Pedidos</h2>
+                </div>
+                <div class="p-5 flex flex-col items-center">
+                    <canvas id="chartEstados" width="180" height="180"></canvas>
+                    <div class="mt-4 w-full space-y-1.5" id="legendEstados"></div>
+                </div>
+            </div>
+        </div>
+        {# ── FILA 4: Tablas ────────────────────────────── #}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {# Top productos #}
+            <div class="bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-800/50">
+                    <h2 class="text-white font-bold text-sm">Top productos de catálogo</h2>
+                </div>
+                {% if top_productos %}
+                    <div class="divide-y divide-gray-800/50">
+                        {% for p in top_productos %}
+                            <div class="px-5 py-3 flex items-center justify-between hover:bg-gray-800/20 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-gray-600 text-xs font-mono w-4 text-center">{{ forloop.counter }}</span>
+                                    <p class="text-white text-sm font-medium">{{ p.variante__producto__nombre }}</p>
+                                </div>
+                                <div class="flex items-center gap-4 text-right">
+                                    <span class="text-gray-500 text-xs">{{ p.unidades }} ud</span>
+                                    <span class="text-emerald-400 font-mono text-xs font-bold">RD$ {{ p.ingresos|floatformat:0 }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-600 text-sm text-center py-8">Sin ventas de catálogo registradas.</p>
+                {% endif %}
+            </div>
+            {# Materiales críticos #}
+            <div class="bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-800/50 flex items-center justify-between">
+                    <h2 class="text-white font-bold text-sm">Materiales con stock bajo</h2>
+                    <a href="{% url 'reportes:inventario' %}"
+                       class="text-[#10b981] text-xs hover:underline">Ver todos</a>
+                </div>
+                {% if materiales_bajos %}
+                    <div class="divide-y divide-gray-800/50">
+                        {% for m in materiales_bajos %}
+                            <div class="px-5 py-3 flex items-center justify-between hover:bg-gray-800/20 transition-colors">
+                                <div>
+                                    <p class="text-white text-sm font-medium">{{ m.tipo }} {{ m.color }}</p>
+                                    <p class="text-gray-500 text-xs">{{ m.marca }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-red-400 font-mono text-sm font-bold">{{ m.stock_actual|floatformat:0 }}g</p>
+                                    <p class="text-gray-600 text-xs">mín: {{ m.stock_minimo|floatformat:0|intcomma }}g</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="flex items-center justify-center py-8 gap-2">
+                        <svg class="w-4 h-4 text-emerald-400"
+                             fill="currentColor"
+                             viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                        <p class="text-gray-500 text-sm">Todo el inventario está en orden.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {# ── ÚLTIMOS PEDIDOS ──────────────────────────── #}
+        <div class="bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-800/50 flex items-center justify-between">
+                <h2 class="text-white font-bold text-sm">Últimos pedidos</h2>
+                <a href="{% url 'pedidos:pedidos_lista' %}"
+                   class="text-[#10b981] text-xs hover:underline">Ver todos</a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left">
+                            <th class="px-5 py-3 text-gray-500 text-xs font-bold uppercase">#</th>
+                            <th class="px-5 py-3 text-gray-500 text-xs font-bold uppercase">Cliente</th>
+                            <th class="px-5 py-3 text-gray-500 text-xs font-bold uppercase">Estado</th>
+                            <th class="px-5 py-3 text-gray-500 text-xs font-bold uppercase text-right">Total</th>
+                            <th class="px-5 py-3 text-gray-500 text-xs font-bold uppercase">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800/50">
+                        {% for pedido in ultimos_pedidos %}
+                            <tr class="hover:bg-gray-800/20 transition-colors">
+                                <td class="px-5 py-3">
+                                    <a href="{% url 'pedidos:pedido_detalle' pedido.id %}"
+                                       class="text-[#10b981] font-mono font-bold hover:underline">#{{ pedido.id|stringformat:"04d" }}</a>
+                                </td>
+                                <td class="px-5 py-3 text-gray-300 text-sm">{{ pedido.nombre_cliente }}</td>
+                                <td class="px-5 py-3">
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase {% if pedido.estado_pedido == 'En_Espera' %}bg-amber-500/20 text-amber-400 {% elif pedido.estado_pedido == 'Confirmado' %}bg-blue-500/20 text-blue-400 {% elif pedido.estado_pedido == 'En_Produccion' %}bg-purple-500/20 text-purple-400 {% elif pedido.estado_pedido == 'Listo' %}bg-cyan-500/20 text-cyan-400 {% elif pedido.estado_pedido == 'Entregado' %}bg-emerald-500/20 text-emerald-400 {% else %}bg-red-500/20 text-red-400{% endif %}">
+                                        {{ pedido.get_estado_pedido_display }}
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3 text-right font-mono font-bold text-white">RD$ {{ pedido.precio_total|floatformat:0|intcomma }}</td>
+                                <td class="px-5 py-3 text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d/m/Y" }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="px-5 py-8 text-center text-gray-600">No hay pedidos registrados.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {# ── SCRIPTS ─────────────────────────────────────── #}
+    <script src="{% static 'js/chart.min.js' %}"></script>
+    <script>
+(function () {
+  'use strict';
+
+  // Datos desde Django
+  const dataIG  = {{ chart_ingresos_gastos_json|safe }};
+  const dataEst = {{ estados_chart_json|safe }};
+
+  // ── Paleta global ─────────────────────────────────────────────
+  Chart.defaults.color = '#64748b';
+  Chart.defaults.font.family = 'ui-monospace, monospace';
+
+  // ── 1. Ingresos vs Gastos (bar grouped) ──────────────────────
+  new Chart(document.getElementById('chartIngresosGastos'), {
+    type: 'bar',
+    data: {
+      labels: dataIG.labels,
+      datasets: [
+        {
+          label: 'Ingresos',
+          data: dataIG.ingresos,
+          backgroundColor: 'rgba(16,185,129,0.7)',
+          borderColor: '#10b981',
+          borderWidth: 1,
+          borderRadius: 6,
+        },
+        {
+          label: 'Gastos',
+          data: dataIG.gastos,
+          backgroundColor: 'rgba(239,68,68,0.5)',
+          borderColor: '#ef4444',
+          borderWidth: 1,
+          borderRadius: 6,
+        },
+        {
+          label: 'Ganancia',
+          data: dataIG.ganancias,
+          backgroundColor: 'rgba(59,130,246,0.4)',
+          borderColor: '#3b82f6',
+          borderWidth: 1,
+          borderRadius: 6,
+        },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` RD$ ${ctx.parsed.y.toLocaleString('es-DO', {minimumFractionDigits:2})}`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.03)' } },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.03)' },
+          ticks: {
+            callback: v => 'RD$ ' + (v/1000).toFixed(0) + 'k'
+          }
+        }
+      }
+    }
+  });
+
+  // ── 2. Pedidos por estado (doughnut) ─────────────────────────
+  const ctxEst = document.getElementById('chartEstados');
+  if (dataEst.data.length > 0) {
+    new Chart(ctxEst, {
+      type: 'doughnut',
+      data: {
+        labels: dataEst.labels,
+        datasets: [{
+          data: dataEst.data,
+          backgroundColor: dataEst.colors,
+          borderColor: '#1e293b',
+          borderWidth: 3,
+          hoverOffset: 6,
+        }]
+      },
+      options: {
+        cutout: '68%',
+        responsive: false,
+        plugins: { legend: { display: false } },
+      }
+    });
+
+    // Leyenda manual
+    const legend = document.getElementById('legendEstados');
+    dataEst.labels.forEach((label, i) => {
+      const total = dataEst.data.reduce((a, b) => a + b, 0);
+      const pct = total > 0 ? ((dataEst.data[i] / total) * 100).toFixed(0) : 0;
+      legend.innerHTML += `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${dataEst.colors[i]}"></span>
+            <span class="text-gray-400 text-xs">${label}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-white text-xs font-bold">${dataEst.data[i]}</span>
+            <span class="text-gray-600 text-xs">${pct}%</span>
+          </div>
+        </div>`;
+    });
+  } else {
+    ctxEst.parentElement.innerHTML = '<p class="text-gray-600 text-xs text-center py-12">Sin datos de pedidos.</p>';
+  }
+})();
+    </script>
+{% endblock content %}

@@ -1,4 +1,7 @@
 {% extends "core/base_admin.html" %}
+{% block title %}
+  Gestión de Solicitudes - A.N.T
+{% endblock title %}
 {% block content %}
     <div class="p-6">
         {# ── KPIs ── #}
@@ -33,6 +36,6 @@
         {# ── Filtros ── #}
         {% include "solicitudes/partials/barra_filtros_solicitudes.html" %}
         {# ── Tabla (target HTMX) ── #}
-        <div id="solicitudes-container" class="space-y-0">{% include "solicitudes/partials/solicitudes_tabla.html" %}</div>
+        <div id="solicitudes-container" class="space-y-6">{% include "solicitudes/partials/solicitudes_tabla.html" %}</div>
     </div>
 {% endblock %}

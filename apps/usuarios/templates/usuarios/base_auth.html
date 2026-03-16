@@ -1,53 +1,15 @@
+{% load tailwind_tags %} 
 <!DOCTYPE html>
 <html lang="es">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="https://cdn.tailwindcss.com"></script>
+        {% tailwind_css %}
         <title>
             {% block title %}
             {% endblock title %}
-        - 3D Print</title>
-        <style>
-            /* AUTOFILL FIX PARA DARK MODE */
-            input,
-            textarea,
-            select {
-                color: #ffffff;
-                caret-color: white;
-            }
-
-            /* Autofill base */
-            input:-webkit-autofill,
-            input:-webkit-autofill:hover,
-            input:-webkit-autofill:focus,
-            input:-webkit-autofill:active,
-            input:-webkit-autofill:focus-visible {
-                -webkit-box-shadow: 0 0 0 1000px #334155 inset !important;
-                box-shadow: 0 0 0 1000px #334155 inset !important;
-                -webkit-text-fill-color: #ffffff !important;
-                color: #ffffff !important;
-                filter: none !important;
-                transition: background-color 9999s ease-in-out 0s;
-
-                /* FIX: Forzar tamaño de fuente para evitar el texto pequeño en previsualización */
-                font-size: 1rem !important;
-            }
-
-            /* Forzar el texto del autofill mientras está activo */
-            input:-webkit-autofill::first-line {
-                color: #ffffff !important;
-                -webkit-text-fill-color: #ffffff !important;
-                /* FIX: Asegura que la previsualización use el tamaño correcto */
-                font-size: 1rem !important;
-            }
-
-            /* Evitar que Chrome cambie tipografía y tamaño */
-            input:-webkit-autofill {
-                font-family: inherit !important;
-                font-size: 1rem !important;
-            }
-        </style>
+        - 3D Print
+    </title>
         {% block extra_css %}
         {% endblock extra_css %}
     </head>
