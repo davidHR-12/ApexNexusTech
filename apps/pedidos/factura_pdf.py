@@ -356,14 +356,21 @@ def generar_factura_pdf(request, pedido_id):
     # ── 4. PAGOS + TOTALES ───────────────────────────────────────
     # Total calculado directo de ítems — no usar pedido.precio_total porque
     # los contenedores tienen precio_unitario=0 y no se reflejan ahí.
-    total  = sum(item.subtotal for item in items)
+    subtotal_items  = sum(item.subtotal for item in items)
+    otros_costos    = pedido.otros_costos or Decimal("0")
+    total           = subtotal_items + otros_costos
     pagado = sum(p.monto for p in pagos) if pagos.exists() else Decimal("0")
     saldo  = total - pagado
 
     tot_rows = [[
         Paragraph("Subtotal:",  S["tot_lbl"]),
-        Paragraph(f"RD$ {total:,.2f}", S["tot_val"]),
+        Paragraph(f"RD$ {subtotal_items:,.2f}", S["tot_val"]),
     ]]
+    if otros_costos > 0:
+        tot_rows.append([
+            Paragraph("Otros costos:", S["tot_lbl"]),
+            Paragraph(f"RD$ {otros_costos:,.2f}", S["tot_val"]),
+        ])
     if pagado > 0:
         tot_rows.append([
             Paragraph("Abonado:", S["tot_lbl"]),

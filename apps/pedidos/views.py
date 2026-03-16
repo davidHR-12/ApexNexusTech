@@ -378,6 +378,7 @@ def registrar_fallo_impresion(request, pedido_id):
                 + (f"\n\nImpresoras liberadas: {len(maquinas_a_liberar)}" if maquinas_a_liberar else "")
             ),
             visible_para_cliente=False,
+            tipo='fallo',
         )
 
         if fallidos_count >= total_produccion:
@@ -808,13 +809,6 @@ def rechazar_solicitud(request, solicitud_id):
     messages.success(request, f"Solicitud #{solicitud.id} de {solicitud.usuario.get_full_name() or solicitud.usuario.email} marcada como rechazada.")
     return redirect('pedidos:solicitudes_list')
 
-@admin_required
-def editar_notas_modal(request, pedido_id):
-    """Devuelve el HTML del modal para editar las notas administrativas"""
-    pedido = get_object_or_404(Pedido, id=pedido_id)
-    
-    return render(request, "pedidos/modals/editar_notas.html", {"pedido": pedido})
-
 @require_POST
 @admin_required
 def agregar_nota_pedido(request, pedido_id):
@@ -837,18 +831,6 @@ def agregar_nota_pedido(request, pedido_id):
 
 @require_POST
 @admin_required
-def guardar_notas(request, pedido_id):
-    """Actualiza el campo de notas/descripción general del pedido."""
-    pedido = get_object_or_404(Pedido, id=pedido_id)
-    pedido.notas = request.POST.get("notas")
-    pedido.save()
-    messages.success(request, "Información de seguimiento actualizada.")
-    return redirect("pedidos:pedido_detalle", pedido_id=pedido.id)
-
-
-
-@require_POST
-@admin_required
 def revisar_comprobante(request, pedido_id):
     """
     El admin aprueba o rechaza el comprobante de pago subido por el cliente.
@@ -868,9 +850,9 @@ def revisar_comprobante(request, pedido_id):
     pedido.save(update_fields=['comprobante_estado'])
 
     if decision == 'Aprobado':
-        messages.success(request, f"✅ Comprobante del Pedido #{pedido.id} aprobado.")
+        messages.success(request, f"Comprobante del Pedido #{pedido.id} aprobado.")
     else:
-        messages.warning(request, f"❌ Comprobante del Pedido #{pedido.id} rechazado. El cliente deberá subir uno nuevo.")
+        messages.warning(request, f"Comprobante del Pedido #{pedido.id} rechazado. El cliente deberá subir uno nuevo.")
 
     return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
 
@@ -920,4 +902,77 @@ def registrar_pago(request, pedido_id):
         request,
         f"Pago de RD$ {monto:,.2f} ({metodo}) registrado correctamente en el Pedido #{pedido.id}."
     )
+    return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
+
+
+@require_POST
+@admin_required
+def agregar_otros_costos(request, pedido_id):
+    """
+    Suma un costo adicional (envío, acabado, etc.) al campo otros_costos del pedido
+    y crea automáticamente una nota pública visible para el cliente.
+    """
+    from decimal import Decimal, InvalidOperation
+ 
+    pedido = get_object_or_404(Pedido, pk=pedido_id)
+ 
+    descripcion = request.POST.get('descripcion_costo', '').strip()
+    monto_str   = request.POST.get('monto_costo', '').strip()
+ 
+    if not descripcion or not monto_str:
+        messages.error(request, "El concepto y el monto son obligatorios.")
+        return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
+ 
+    try:
+        monto = Decimal(monto_str)
+        if monto <= 0:
+            raise ValueError
+    except (ValueError, InvalidOperation):
+        messages.error(request, "El monto debe ser un número mayor a 0.")
+        return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
+ 
+    # Sumar al campo otros_costos y recalcular precio_total
+    pedido.otros_costos = (pedido.otros_costos or Decimal('0')) + monto
+    pedido.precio_total = (pedido.precio_total or Decimal('0')) + monto
+    pedido.save(update_fields=['otros_costos', 'precio_total'])
+ 
+    # Nota pública automática para el cliente
+    NotaPedido.objects.create(
+        pedido=pedido,
+        autor=request.user,
+        contenido=(
+            f"Se ha añadido un cargo adicional al pedido: "
+            f"{descripcion} — RD$ {monto:,.2f}."
+        ),
+        visible_para_cliente=True,
+        tipo='otros_costos',
+    )
+ 
+    messages.success(
+        request,
+        f"Costo '{descripcion}' de RD$ {monto:,.2f} agregado y cliente notificado."
+    )
+    return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)
+
+@require_POST
+@admin_required
+def eliminar_nota_pedido(request, nota_id):
+    from django.utils import timezone
+    from datetime import timedelta
+
+    nota = get_object_or_404(NotaPedido, pk=nota_id)
+
+    # Notas automáticas del sistema nunca se pueden eliminar
+    if nota.tipo in ('otros_costos', 'fallo', 'sistema'):
+        messages.error(request, "Las notas generadas automáticamente no pueden eliminarse.")
+        return redirect('pedidos:pedido_detalle', pedido_id=nota.pedido_id)
+
+    limite = timezone.now() - timedelta(minutes=10)
+    if nota.fecha_creacion < limite:
+        messages.error(request, "Solo puedes eliminar notas dentro de los primeros 10 minutos de haberlas creado.")
+        return redirect('pedidos:pedido_detalle', pedido_id=nota.pedido_id)
+
+    pedido_id = nota.pedido_id
+    nota.delete()
+    messages.success(request, "Nota eliminada.")
     return redirect('pedidos:pedido_detalle', pedido_id=pedido_id)

@@ -612,7 +612,7 @@ function reactivarMultiplesMateriales() {
             )
         ).then(() => {
             mostrarToast('success', `${texto} reactivados correctamente.`);
-            setTimeout(() => location.reload(), 900);
+            setTimeout(() => location.reload(), 400);
         }).catch(() => mostrarToast('error', 'Error al reactivar algunos materiales'));
     });
 }

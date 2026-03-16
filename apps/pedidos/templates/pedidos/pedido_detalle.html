@@ -1,6 +1,6 @@
 {% extends "core/base_admin.html" %}
 {% block title %}
-  Detalle del Pedido - A.N.T
+    Detalle del Pedido - A.N.T
 {% endblock title %}
 {% load static %}
 {% block content %}
@@ -388,7 +388,7 @@
                                 Información y Notas
                             </h3>
                             {% if not pedido.estado_pedido == 'Entregado' %}
-                                <button onclick="abrirModal('modalEditarNotas')"
+                                <button onclick="abrirModal('modalAgregarNota')"
                                         class="flex items-center gap-1 px-2.5 py-1 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors text-xs font-bold border border-blue-500/20">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -408,17 +408,32 @@
                         <p class="text-[10px] text-emerald-500 uppercase font-bold tracking-wider mb-1">Historial de Anotaciones</p>
                         <div class="space-y-2 max-h-[160px] overflow-y-auto pr-1 scrollbar-thin">
                             {% for nota in pedido.anotaciones.all %}
-                                <div class="p-2.5 rounded-lg border {% if nota.visible_para_cliente %}bg-blue-500/5 border-blue-500/20{% else %}bg-gray-900/50 border-gray-700{% endif %}">
-                                    <div class="flex justify-between items-center mb-0.5">
+                                <div class="relative p-2.5 rounded-lg border {% if nota.visible_para_cliente %}bg-blue-500/5 border-blue-500/20{% else %}bg-gray-900/50 border-gray-700{% endif %}">
+                                    <div class="flex justify-between items-start mb-1">
                                         <span class="text-[10px] font-bold {% if nota.visible_para_cliente %}text-blue-400{% else %}text-gray-500{% endif %} uppercase">
                                             {{ nota.autor.get_full_name|default:nota.autor.username }}
                                             {% if nota.visible_para_cliente %}
                                                 <span class="ml-1 text-[8px] bg-blue-500/20 px-1 rounded text-blue-300">PÚBLICO</span>
                                             {% endif %}
                                         </span>
-                                        <span class="text-[9px] text-gray-600 font-mono">{{ nota.fecha_creacion|date:"d/m H:i" }}</span>
                                     </div>
-                                    <p class="text-xs text-gray-300">{{ nota.contenido|linebreaksbr }}</p>
+                                    <div class="absolute top-2 right-2 flex flex-col items-end gap-0.5">
+                                        <span class="text-[9px] text-gray-400 font-mono leading-none">{{ nota.fecha_creacion|date:"d/m/y · h:i A" }}</span>
+                                        {% if nota.tipo == 'manual' %}
+                                            <button onclick="confirmarEliminarNota('{% url 'pedidos:eliminar_nota' nota.id %}', this)"
+                                                    data-created="{{ nota.fecha_creacion.isoformat }}"
+                                                    class="nota-btn-eliminar text-red-400 hover:text-white p-1 hover:bg-red-600 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-red-400"
+                                                    title="Eliminar nota">
+                                                <svg class="w-3.5 h-3.5"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-xs text-gray-300 pr-10 leading-relaxed">{{ nota.contenido|linebreaksbr }}</p>
                                 </div>
                             {% empty %}
                                 <div class="flex items-center justify-center h-[80px] bg-gray-900/20 rounded-lg border border-dashed border-gray-700">
@@ -461,8 +476,20 @@
                                 <span>Costo Material Est.:</span>
                                 <span class="font-mono text-white">RD$ {{ pedido.costo_material }}</span>
                             </div>
-                            <div class="flex justify-between text-gray-400">
-                                <span>Otros Costos:</span>
+                            <div class="flex justify-between items-center text-gray-400">
+                                <span class="flex items-center gap-2">
+                                    Otros Costos:
+                                    {% if pedido.estado_pedido not in 'Entregado,Cancelado' %}
+                                        <button onclick="abrirModal('modalOtrosCostos')"
+                                                class="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white text-[10px] cursor-pointer font-bold rounded-lg transition-all flex items-center gap-1 uppercase tracking-tighter"
+                                                title="Agregar costo adicional">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            Añadir
+                                        </button>
+                                    {% endif %}
+                                </span>
                                 <span class="font-mono text-white">RD$ {{ pedido.otros_costos }}</span>
                             </div>
                             <div class="border-t border-gray-700 pt-2.5 flex justify-between font-bold text-white">
@@ -587,11 +614,33 @@
                             </div>
                         {% endif %}
                         <div class="border-t border-gray-700 pt-3">
-                            <div class="text-center py-2">
-                                <p class="text-2xl font-bold font-mono {% if pedido.esta_pagado %}text-green-400{% else %}text-red-400{% endif %}">
-                                    RD$ {{ pedido.saldo_pendiente }}
-                                </p>
-                                <p class="text-xs text-gray-500 uppercase mt-0.5 font-bold tracking-widest">Saldo Pendiente</p>
+                            <div class="relative">
+                                <div class="absolute inset-0 bg-gradient-to-r {% if pedido.esta_pagado %}from-emerald-500/20 to-emerald-500/5{% else %}from-red-500/20 to-red-500/5{% endif %} rounded-2xl blur-lg opacity-60">
+                                </div>
+                                <div class="relative bg-gradient-to-br {% if pedido.esta_pagado %}from-emerald-500/10 to-emerald-500/5 border border-emerald-500/40{% else %}from-red-500/10 to-red-500/5 border border-red-500/40{% endif %} rounded-2xl p-5 text-center">
+                                    <div class="flex items-center justify-center gap-1.5 mb-2">
+                                        {% if pedido.esta_pagado %}
+                                            <svg class="w-4 h-4 text-emerald-400"
+                                                 fill="currentColor"
+                                                 viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                            </svg>
+                                            <p class="text-[11px] font-bold uppercase tracking-widest text-emerald-400">Pagado</p>
+                                        {% else %}
+                                            <svg class="w-4 h-4 text-red-400"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24"
+                                                 stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <p class="text-[11px] font-bold uppercase tracking-widest text-red-400">Pendiente</p>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-4xl font-black font-mono {% if pedido.esta_pagado %}text-emerald-400{% else %}text-red-400{% endif %} leading-none">
+                                        RD$ {{ pedido.saldo_pendiente }}
+                                    </p>
+                                </div>
                             </div>
                             <button onclick="abrirModal('modalRegistrarPago')"
                                     class="w-full mt-2 bg-green-700 hover:bg-green-600 text-white text-xs font-bold uppercase py-2.5 rounded-xl transition-all tracking-widest border border-gray-600 flex items-center justify-center gap-2">
@@ -641,9 +690,10 @@
         {% include "pedidos/modals/item_catalogo.html" with modal_id="modalItemCatalogo" title="Item del Catálogo" description="Añade un producto del catálogo al pedido" max_width="max-w-3xl" %}
         {% include "pedidos/modals/item_contenedor.html" with modal_id="modalItemContenedor" title="Nuevo Producto Personalizado" description="Define el producto final y luego agrega sus componentes de producción" max_width="max-w-lg" %}
         {% include "pedidos/modals/agregar_componente.html" with modal_id="modalAgregarComponente" title="Agregar Componente" description="Material, gramos y precio del componente de producción" max_width="max-w-2xl" %}
-        {% include "pedidos/modals/editar_notas.html" with modal_id="modalEditarNotas" title="Notas del Pedido" description="Añade notas al pedido" max_width="max-w-2xl" %}
+        {% include "pedidos/modals/agregar_nota.html" with modal_id="modalAgregarNota" title="Notas del Pedido" description="Añade notas al pedido" max_width="max-w-2xl" %}
         {% include "pedidos/modals/comprobante_cliente.html" with modal_id="modalComprobante" title="Comprobante del Cliente" description="Sube el comprobante de pago" max_width="max-w-lg" %}
         {% include "pedidos/modals/registrar_pago.html" with modal_id="modalRegistrarPago" title="Registrar Pago" description="Registra un pago para este pedido" max_width="max-w-lg" %}
+        {% include "pedidos/modals/otros_costos.html" with modal_id="modalOtrosCostos" title="Agregar Costo Adicional" description="Costo de envío, acabados u otros cargos al pedido." max_width="max-w-md" %}
         {% if pedido.estado_pedido == 'En_Produccion' %}
             {% include "pedidos/modals/registrar_fallo.html" with modal_id="modalRegistrarFallo" title="Registrar Fallo de Impresión" description="Solo visible para el equipo — el cliente no será notificado" max_width="max-w-lg" %}
         {% endif %}

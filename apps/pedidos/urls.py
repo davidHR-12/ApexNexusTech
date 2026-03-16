@@ -20,12 +20,13 @@ urlpatterns = [
 
     # Notas
     path('pedido/<int:pedido_id>/notas/agregar/', views.agregar_nota_pedido, name='agregar_nota_pedido'),
-    path('pedido/<int:pedido_id>/notas/modal/', views.editar_notas_modal, name='editar_notas_modal'),
-    path('pedido/<int:pedido_id>/notas/guardar/', views.guardar_notas, name='editar_notas'),
+    path('pedido/notas/<int:nota_id>/eliminar/', views.eliminar_nota_pedido, name='eliminar_nota'),
 
     # ── PAGOS (NUEVAS) ──────────────────────────────────────────
     path('pedidos/<int:pedido_id>/registrar-pago/', views.registrar_pago, name='registrar_pago'),
     path('pedidos/<int:pedido_id>/comprobante/revisar/', views.revisar_comprobante, name='revisar_comprobante'),
+    path("<int:pedido_id>/otros-costos/", views.agregar_otros_costos, name="agregar_otros_costos"),
+
     # ────────────────────────────────────────────────────────────
 
     # ── FALLOS DE IMPRESIÓN (NUEVAS) ──────────────────────────

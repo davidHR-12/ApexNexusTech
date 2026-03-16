@@ -398,3 +398,64 @@ function confirmarRechazo(url, cliente) {
         }
     });
 }
+// ==========================================
+// NOTAS: eliminar nota manual
+// ==========================================
+
+const NOTA_LIMITE_MINUTOS = 10;
+
+function confirmarEliminarNota(url, btn) {
+    // Verificar en el cliente antes de llamar al servidor
+    const createdAt = new Date(btn.getAttribute('data-created'));
+    const ahora     = new Date();
+    const minutos   = (ahora - createdAt) / 1000 / 60;
+
+    if (minutos > NOTA_LIMITE_MINUTOS) {
+        mostrarToast('warning', 'Solo puedes eliminar notas dentro de los primeros 10 minutos.');
+        return;
+    }
+
+    Swal.fire({
+        ...swalConfigBase,
+        title: 'Eliminar nota',
+        html: 'Esta nota desaparecerá del historial permanentemente.',
+        iconHtml: swalIcons.warningRed,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        showCloseButton: true,
+        customClass: { ...swalCustomClasses, icon: 'border-0' }
+    }).then(result => {
+        if (!result.isConfirmed) return;
+
+        const form  = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+
+        const csrf  = document.createElement('input');
+        csrf.type   = 'hidden';
+        csrf.name   = 'csrfmiddlewaretoken';
+        csrf.value  = getCookie('csrftoken');
+
+        form.appendChild(csrf);
+        document.body.appendChild(form);
+        form.submit();
+    });
+}
+
+// Desactiva visualmente los botones de notas que ya pasaron los 10 minutos
+function actualizarBotonesNota() {
+    document.querySelectorAll('.nota-btn-eliminar').forEach(btn => {
+        const createdAt = new Date(btn.getAttribute('data-created'));
+        const minutos   = (new Date() - createdAt) / 1000 / 60;
+
+        if (minutos > NOTA_LIMITE_MINUTOS) {
+            btn.disabled = true;
+            btn.classList.add('opacity-30', 'cursor-not-allowed', 'hover:bg-transparent', 'hover:text-red-400');
+            btn.title    = 'Tiempo de eliminación expirado (10 min)';
+        }
+    });
+}
+
+// Ejecutar al cargar y cada 30 segundos para actualizar sin recargar
+document.addEventListener('DOMContentLoaded', actualizarBotonesNota);
+setInterval(actualizarBotonesNota, 30_000);

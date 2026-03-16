@@ -229,6 +229,16 @@ class Pedido(models.Model):
     )
 
     @property
+    def costo_total_produccion(self):
+        """Costo total de producción (sin margen)"""
+        return self.costo_material +  self.otros_costos
+
+    @property
+    def ganancia(self):
+        """Ganancia del pedido"""
+        return self.precio_total - self.costo_total_produccion
+    
+    @property
     def margen_porcentaje(self):
         """Margen de ganancia en porcentaje"""
         costo = self.costo_total_produccion
@@ -393,6 +403,12 @@ class ConfiguracionPago(models.Model):
 
 
 class NotaPedido(models.Model):
+    TIPOS = (
+        ('manual',       'Manual'),           # Admin escribió manualmente
+        ('otros_costos', 'Otros Costos'),      # Generada por agregar_otros_costos
+        ('fallo',        'Fallo de Impresión'), # Generada por registrar_fallo
+        ('sistema',      'Sistema'),           # Cualquier otra acción automática
+    )
     pedido = models.ForeignKey(
         Pedido, on_delete=models.CASCADE, related_name="anotaciones"
     )
@@ -406,13 +422,20 @@ class NotaPedido(models.Model):
     # Campo nuevo para controlar la visibilidad
     visible_para_cliente = models.BooleanField(default=False)
 
+    tipo = models.CharField(
+        max_length=20,
+        choices=TIPOS,
+        default='manual',
+        verbose_name='Tipo de nota',
+    )
+
     class Meta:
         ordering = ["-fecha_creacion"]
         verbose_name = "Nota de pedido"
         verbose_name_plural = "Notas de pedido"
 
     def __str__(self):
-        return f"Nota #{self.id} - Pedido {self.pedido.id}"
+        return f"Nota #{self.id} - Pedido {self.pedido.id} ({self.get_tipo_display()})"
 
 
 # =============================

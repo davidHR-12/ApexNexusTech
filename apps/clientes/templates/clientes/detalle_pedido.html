@@ -1,6 +1,6 @@
 {% extends 'clientes/base_cliente.html' %}
 {% block title %}
-  Detalle del Pedido - A.N.T
+    Detalle del Pedido - A.N.T
 {% endblock title %}
 {% block content %}
     <div class="space-y-4">
@@ -109,7 +109,7 @@
                             <div class="bg-gray-800/40 rounded-xl p-3 border border-gray-700/30">
                                 <div class="flex justify-between items-center mb-1.5">
                                     <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Actualización</span>
-                                    <span class="text-[10px] text-gray-500 font-mono">{{ nota.fecha_creacion|date:"d M, H:i" }}</span>
+                                    <span class="text-[10px] text-gray-400 font-mono">{{ nota.fecha_creacion|date:"d/m/Y · h:i A" }}</span>
                                 </div>
                                 <p class="text-gray-300 text-sm leading-relaxed">{{ nota.contenido|linebreaksbr }}</p>
                             </div>
@@ -142,6 +142,10 @@
                                 <span class="text-gray-400 text-sm">Subtotal</span>
                                 <span class="text-white font-mono font-bold">RD$ {{ pedido.precio_total|floatformat:2 }}</span>
                             </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400 text-sm">Otros Costos</span>                                 
+                                <span class="text-white font-mono font-bold">RD$ {{ pedido.otros_costos|floatformat:2 }}</span>
+                            </div>
                             {% if anticipo %}
                                 <div class="flex justify-between items-center">
                                     <span class="text-gray-400 text-sm">Anticipo ({{ config_pago.porcentaje_anticipo }}%)</span>
@@ -163,8 +167,12 @@
                                         </svg>
                                         <p class="text-[11px] font-bold uppercase tracking-widest text-emerald-400">Pagado</p>
                                     {% else %}
-                                        <svg class="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 112.5 7.5a.75.75 0 00-1.06-1.061A7.5 7.5 0 1014.89 13.477z" clip-rule="evenodd" />
+                                        <svg class="w-4 h-4 text-red-400"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24"
+                                             stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                         <p class="text-[11px] font-bold uppercase tracking-widest text-red-400">Pendiente</p>
                                     {% endif %}
