@@ -131,7 +131,7 @@
         <div class="flex items-center gap-1">
             {% for i in materiales.paginator.page_range %}
                 {% if materiales.number == i %}
-                    <span class="px-3.5 py-1.5 text-sm font-bold bg-blue-600 text-white rounded-lg shadow-lg shadow-blue-900/20">{{ i }}</span>
+                    <span class="px-3.5 py-1.5 text-sm font-bold bg-emerald-500 text-white rounded-lg shadow-lg shadow-blue-900/20">{{ i }}</span>
                 {% elif i > materiales.number|add:'-6' and i < materiales.number|add:'6' %}
                     <a href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
                        hx-get="{% url 'materiales:lista_materiales' %}?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if orden_actual %}&orden={{ orden_actual }}{% endif %}"
