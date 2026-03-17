@@ -8,7 +8,8 @@
         <table class="w-full text-left border-collapse min-w-[800px]">
             <thead>
                 <tr class="bg-[#1e293b]/60 text-gray-400 text-[10px] uppercase tracking-widest">
-                    <th class="p-4 font-bold">Material / Marca</th>
+                    <th class="p-4 font-bold">Marca</th>
+                    <th class="p-4 font-bold">Tipo</th>
                     <th class="p-4 font-bold">Color</th>
                     <th class="p-4 font-bold">Stock Actual</th>
                     <th class="p-4 font-bold">Costo/g</th>
@@ -26,7 +27,9 @@
                                      style="background-color: {{ m.color.codigo_hex }}"></div>
                                 <div class="font-bold text-white group-hover:text-blue-400 transition-colors">{{ m.marca.nombre }}</div>
                             </div>
-                            <div class="text-gray-500 text-xs ml-5">{{ m.tipo.nombre }}</div>
+                        </td>
+                        <td>
+                            <div class="flex items-center gap-2">{{ m.tipo.nombre }}</div>
                         </td>
                         <td class="p-4 text-gray-300 text-sm">
                             <div class="flex items-center gap-2">{{ m.color.nombre }}</div>

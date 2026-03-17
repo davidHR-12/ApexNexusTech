@@ -97,10 +97,21 @@ def crear_producto_base(request, categoria_id=None):
                 return redirect(next_url)
             return redirect("productos:producto_detalle", slug=producto.slug)
         else:
+            for error in form.non_field_errors():
+                messages.error(request, error)
+
+            # 2. Manejar errores de campos específicos
             for field, errors in form.errors.items():
+                if field == '__all__':
+                    continue # Ya manejado arriba
                 for error in errors:
-                    nombre_campo = field.replace('_', ' ').capitalize()
-                    messages.error(request, f"{nombre_campo}: {error}")
+                    if field == 'nombre':
+                        # Si es el nombre, enviamos solo el error (ej: "Ya existe un producto...")
+                        messages.error(request, error)
+                    else:
+                        # Para otros campos, mantenemos el formato descriptivo
+                        nombre_campo = field.replace('_', ' ').capitalize()
+                        messages.error(request, f"{nombre_campo}: {error}")
             return redirect(request.META.get("HTTP_REFERER", "productos:productos_index"))
 
     return redirect("productos:productos_index")

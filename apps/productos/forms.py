@@ -104,6 +104,21 @@ class ProductoForm(TailwindModelForm):
     def clean_precio_venta(self):
         return self._limpiar_decimal(self.cleaned_data.get("precio_venta"))
 
+    def clean_nombre(self):
+        nombre = self.cleaned_data.get("nombre")
+        slug = slugify(nombre)
+        
+        # Verificamos si ya existe un producto con este slug
+        # Excluimos el producto actual (self.instance) por si estamos editando
+        exists = Producto.objects.filter(slug=slug).exclude(pk=self.instance.pk).exists()
+        
+        if exists:
+            raise ValidationError(
+                "Ya existe un producto con este nombre o uno muy similar."
+            )
+        
+        return nombre
+
     def save(self, commit=True):
         producto = super().save(commit=False)
         producto.slug = slugify(producto.nombre)
