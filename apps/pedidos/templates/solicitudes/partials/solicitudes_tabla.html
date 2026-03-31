@@ -19,7 +19,7 @@
                             <div class="text-gray-500 text-xs">{{ solicitud.fecha_solicitud|date:"d M, Y H:i" }}</div>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="text-gray-300 text-sm line-clamp-2 max-w-xs">{{ solicitud.descripcion }}</div>
+                            <div class="text-gray-300 text-sm line-clamp-2 max-w-xs">{{ solicitud.descripcion }}. Dimensiones: {{ solicitud.dimensiones_aprox }}</div>
                         </td>
                         <td class="px-6 py-4 text-center">
                             {% if solicitud.imagen_referencia %}
