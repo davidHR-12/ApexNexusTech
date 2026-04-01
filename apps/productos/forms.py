@@ -206,6 +206,14 @@ class VarianteProductoForm(TailwindModelForm):
             return False, [], "Debes agregar al menos un material a la variante."
 
         return True, nuevos_materiales, None
+    
+    def clean(self):
+        cleaned_data = super().clean()
+
+        if cleaned_data.get("es_default"):
+            producto = self.instance.producto if self.instance.pk else None
+
+        return cleaned_data
 
 
 class VarianteMaterialDetalleForm(TailwindModelForm):

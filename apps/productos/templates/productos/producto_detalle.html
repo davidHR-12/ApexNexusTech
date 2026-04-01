@@ -44,21 +44,32 @@
                     </div>
                     {% endfor %}
                 </div>
-            </div>
+            </div><div class="bg-emerald-500/5 border border-emerald-500/20 border-l-emerald-500 border-l-4 rounded-xl p-6 shadow-sm">
+    <div class="mb-6">
+        <h4 class="text-emerald-400 text-[10px] uppercase font-bold tracking-widest leading-none">
+            Referencia base del producto
+        </h4>
+        <p class="text-[11px] text-gray-400 mt-1 max-w-xs leading-relaxed">
+            Basado en la variante principal. La rentabilidad real varía según el precio final de cada variante.
+        </p>
+    </div>
 
-            <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6">
-                <h4 class="text-emerald-400 text-[10px] uppercase font-bold tracking-widest mb-4">Referencia de Costo (Variante base)</h4>
-                <div class="flex justify-between items-end">
-                    <div>
-                        <p class="text-gray-500 text-xs">Costo estimado de producción</p>
-                        <p class="text-2xl font-mono text-white">RD$ {{ producto.costo_produccion|intcomma }}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-gray-500 text-xs">Precio Base de Venta</p>
-                        <p class="text-xl font-mono text-emerald-400">RD$ {{ producto.precio_venta|intcomma }}</p>
-                    </div>
-                </div>
-            </div>
+    <div class="flex justify-between items-center">
+        <div>
+            <p class="text-gray-500 text-[11px] font-medium uppercase tracking-tight">Costo de producción</p>
+            <p class="text-2xl font-mono text-white mt-1">
+                <span class="text-xs font-sans text-gray-400 mr-1">RD$</span>{{ producto.costo_produccion|intcomma }}
+            </p>
+        </div>
+        
+        <div class="text-right">
+            <p class="text-gray-500 text-[11px] font-medium uppercase tracking-tight">Precio Base de Venta</p>
+            <p class="text-2xl font-mono text-emerald-400 mt-1">
+                <span class="text-xs font-sans opacity-70 mr-1">RD$</span>{{ producto.precio_venta|intcomma }}
+            </p>
+        </div>
+    </div>
+</div>
         </div>
 
         <div class="lg:col-span-7 space-y-6">
@@ -94,6 +105,8 @@
                                 <th class="p-4 text-center font-bold">Estado</th>
                                 <th class="p-4 text-center font-bold">Stock</th>
                                 <th class="p-4 text-center font-bold">Tiempo (Hrs)</th>
+                                <th class="p-4 text-center font-bold">Costo Producción</th>
+                                <th class="p-4 text-center font-bold">Margen</th>
                                 <th class="p-4 text-center font-bold">Precio Extra</th>
                                 <th class="p-4 text-center font-bold">Acciones</th>
                             </tr>
@@ -135,6 +148,22 @@
                                     <td class="p-4 text-center">
                                         <span class="text-blue-400 font-mono text-sm">{{ v.tiempo_impresion_horas }}h</span>
                                     </td>
+                                    <td class="p-4 text-center">
+                                        <span class="text-emerald-400 font-mono font-bold text-sm">RD$ {{ v.costo_produccion_total|intcomma }}</span>
+                                    </td>
+                                    <td class="p-4 text-center">
+    <span class="font-mono font-bold text-sm 
+        {% if v.margen_ganancia < 10 %}
+            text-red-400
+        {% elif v.margen_ganancia < 25 %}
+            text-yellow-400
+        {% else %}
+            text-emerald-400
+        {% endif %}
+    ">
+        {{ v.margen_ganancia }}%
+    </span>
+</td>
                                     <td class="p-4 text-center">
                                         <span class="text-emerald-400 font-mono font-bold text-sm">RD$ {{ v.precio_adicional|intcomma }}</span>
                                     </td>

@@ -120,7 +120,10 @@ def generar_factura_pdf(request, pedido_id):
     from apps.pedidos.models import Pedido
     from apps.core.models import ConfiguracionFactura
 
-    pedido = get_object_or_404(Pedido, pk=pedido_id)
+    pedido = get_object_or_404(
+        Pedido.objects.select_related("usuario__perfil_cliente"),
+        pk=pedido_id
+    )
     config = ConfiguracionFactura.obtener()
 
     # Solo raíz — excluye componentes (item_padre__isnull=True)

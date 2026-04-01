@@ -8,7 +8,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from PIL import Image
 import hashlib
-
+from apps.core.models import ConfiguracionCalculadora 
 # =============================
 # CATEGORÍAS
 # =============================
@@ -174,6 +174,17 @@ class Producto(models.Model):
         return "Sin definir"
 
     @property
+    def costo_produccion(self):
+        """
+        Retorna el costo de producción de la variante principal.
+        Si no hay variante principal, retorna 0.
+        """
+        v = self.variante_principal
+        if v:
+            return v.costo_produccion_total
+        return Decimal("0.00")
+
+    @property
     def stock_total(self):
         """Suma el stock de todas las variantes"""
         return sum(v.stock_disponible for v in self.variantes.all())
@@ -185,10 +196,11 @@ class Producto(models.Model):
 
     @property
     def margen_ganancia_base(self):
-        """Calcula el margen basado en la variante principal"""
+        """Calcula el margen del precio base vs el costo de la variante principal"""
         v = self.variante_principal
         if v and v.costo_produccion_total > 0:
-            return ((v.precio_final - v.costo_produccion_total) / v.costo_produccion_total * 100).quantize(Decimal("0.01"))
+            # IMPORTANTE: Usar self.precio_venta (el base), no v.precio_final
+            return ((self.precio_venta - v.costo_produccion_total) / v.costo_produccion_total * 100).quantize(Decimal("0.01"))
         return Decimal("0.00")
 
     def save(self, *args, **kwargs):
@@ -273,11 +285,24 @@ class VarianteProducto(models.Model):
 
     @property
     def costo_produccion_total(self):
-        """Suma costo de materiales + costo estimado de energía"""
-        # Calculamos costo de energía: (Tiempo en horas * Consumo Promedio Kw * Precio Kwh)
-        # Por ahora, para no complicar, usamos solo materiales o una fórmula simple:
-        costo_energia_estimado = self.tiempo_impresion_horas * Decimal("2.5") 
-        return self.costo_materiales + costo_energia_estimado
+        """Suma costo de materiales + costo estimado de energía + desgaste de máquina"""
+        # 1. Obtener la configuración global
+        config = ConfiguracionCalculadora.obtener()
+
+        # 2. Costo de Energía
+        # Fórmula: (Watts / 1000) * Horas * Precio kWh
+        consumo_kw = config.consumo_watts / Decimal('1000')
+        costo_energia = consumo_kw * self.tiempo_impresion_horas * config.precio_kwh
+
+        # 3. Costo de Desgaste de Máquina / Repuestos (Opcional pero muy profesional)
+        # Fórmula: (Costo Repuestos / Vida Útil Horas) * Horas de impresión
+        costo_desgaste = Decimal('0')
+        if config.vida_util_horas > 0:
+            costo_desgaste = (config.precio_repuestos / config.vida_util_horas) * self.tiempo_impresion_horas
+
+        # 4. Sumar todo y redondear a 2 decimales
+        total = self.costo_materiales + costo_energia + costo_desgaste
+        return total.quantize(Decimal("0.01"))
 
     def generar_firma(self):
         # Forzamos refrescar de la BD para obtener los materiales recién guardados
@@ -289,6 +314,15 @@ class VarianteProducto(models.Model):
 
         cadena_materiales = str(materiales).encode()
         return hashlib.md5(cadena_materiales).hexdigest()
+
+    @property
+    def margen_ganancia(self):
+        if self.costo_produccion_total > 0:
+            return (
+                (self.precio_final - self.costo_produccion_total)
+                / self.costo_produccion_total * 100
+            ).quantize(Decimal("0.01"))
+        return Decimal("0.00")
 
     def generar_sku_y_firma(self):
         """Calcula y guarda la firma y el SKU"""
@@ -313,6 +347,10 @@ class VarianteProducto(models.Model):
     def save(self, *args, **kwargs):
         # El save ahora solo se encarga de guardar los campos básicos (precio, tiempo, etc.)
         super().save(*args, **kwargs)
+        if self.es_default:
+            VarianteProducto.objects.filter(
+                producto=self.producto
+            ).exclude(pk=self.pk).update(es_default=False)
         # Intentamos actualizar por si es una edición
         self.generar_sku_y_firma()
 
