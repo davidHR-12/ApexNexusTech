@@ -75,7 +75,7 @@
         {% endif %}
         {% for i in pedidos.paginator.page_range %}
             {% if pedidos.number == i %}
-                <span class="px-3.5 py-1.5 text-sm font-bold bg-blue-600 text-white rounded-lg">{{ i }}</span>
+                <span class="px-3.5 py-1.5 text-sm font-bold bg-emerald-500 text-white rounded-lg">{{ i }}</span>
             {% elif i > pedidos.number|add:'-3' and i < pedidos.number|add:'3' %}
                 <button hx-get="{% url 'pedidos:pedidos_lista' %}?page={{ i }}&q={{ busqueda_actual }}&estado={{ filtro_actual }}"
                         hx-target="#pedidos-container"

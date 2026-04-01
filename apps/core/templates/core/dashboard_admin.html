@@ -86,101 +86,146 @@
         </div>
         {# ── FILA PRINCIPAL ───────────────────────────────────────── #}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {# ── Pedidos activos (columna grande) ── #}
-            <div class="lg:col-span-2 bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
-                <div class="px-5 py-4 border-b border-gray-800/50 flex items-center justify-between">
+            {# ── Pedidos activos + Catálogo agotado (columna grande) ── #}
+            <div class="lg:col-span-2 bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden flex flex-col">
+                {# ── Cabecera pedidos ── #}
+                <div class="px-5 py-4 border-b border-gray-800/50 flex items-center justify-between flex-shrink-0">
                     <h2 class="text-white font-bold text-sm">Pedidos activos</h2>
                     <a href="{% url 'pedidos:pedidos_lista' %}"
-                       class="text-[#10b981] text-xs hover:underline">Ver todos</a>
+                       class="text-[#10b981] text-xs hover:underline">
+                        Ver todos
+                        {% if total_activos > 0 %}({{ total_activos }}){% endif %}
+                    </a>
                 </div>
+                {# ── Tabla con scroll ── #}
                 {% if total_activos == 0 %}
-                    <div class="flex flex-col items-center justify-center py-14 gap-2">
+                    <div class="flex flex-col items-center justify-center py-10 gap-2">
                         <svg class="w-8 h-8 text-gray-700"
                              fill="none"
                              stroke="currentColor"
                              viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <p class="text-gray-600 text-sm">No hay pedidos activos en este momento.</p>
+                        <p class="text-gray-600 text-sm">No hay pedidos activos.</p>
                     </div>
                 {% else %}
-                    {# Tabla compacta de pedidos #}
-                    <div class="overflow-x-auto">
+                    <div class="overflow-y-auto max-h-[260px] scrollbar-thin">
                         <table class="w-full text-sm">
-                            <thead>
-                                <tr>
-                                    <th class="px-5 py-3 text-left text-gray-600 text-[10px] font-bold uppercase">#</th>
-                                    <th class="px-5 py-3 text-left text-gray-600 text-[10px] font-bold uppercase">Cliente</th>
-                                    <th class="px-5 py-3 text-left text-gray-600 text-[10px] font-bold uppercase">Estado</th>
-                                    <th class="px-5 py-3 text-right text-gray-600 text-[10px] font-bold uppercase">Total</th>
-                                    <th class="px-5 py-3 text-left text-gray-600 text-[10px] font-bold uppercase">Fecha</th>
+                            <thead class="sticky top-0 bg-[#1e293b] z-10">
+                                <tr class="border-b border-gray-800/50">
+                                    <th class="px-5 py-2.5 text-left text-gray-600 text-[10px] font-bold uppercase">#</th>
+                                    <th class="px-5 py-2.5 text-left text-gray-600 text-[10px] font-bold uppercase">Cliente</th>
+                                    <th class="px-5 py-2.5 text-left text-gray-600 text-[10px] font-bold uppercase">Estado</th>
+                                    <th class="px-5 py-2.5 text-right text-gray-600 text-[10px] font-bold uppercase">Total</th>
+                                    <th class="px-5 py-2.5 text-left text-gray-600 text-[10px] font-bold uppercase">Fecha</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-800/50">
-                                {# Listo primero (requieren acción: entregar) #}
                                 {% for pedido in pedidos_por_estado.Listo %}
                                     <tr class="hover:bg-gray-800/20 transition-colors">
-                                        <td class="px-5 py-3">
+                                        <td class="px-5 py-2.5">
                                             <a href="{% url 'pedidos:pedido_detalle' pedido.id %}"
-                                               class="text-[#10b981] font-mono font-bold hover:underline">#{{ pedido.id|stringformat:"04d" }}</a>
+                                               class="text-[#10b981] font-mono font-bold hover:underline text-xs">#{{ pedido.id|stringformat:"04d" }}</a>
                                         </td>
-                                        <td class="px-5 py-3 text-gray-300">{{ pedido.nombre_cliente }}</td>
-                                        <td class="px-5 py-3">
+                                        <td class="px-5 py-2.5 text-gray-300 text-xs">{{ pedido.nombre_cliente }}</td>
+                                        <td class="px-5 py-2.5">
                                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-400">Listo ✓</span>
                                         </td>
-                                        <td class="px-5 py-3 text-right font-mono text-white text-xs">RD$ {{ pedido.precio_total|floatformat:0 }}</td>
-                                        <td class="px-5 py-3 text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d/m/Y" }}</td>
+                                        <td class="px-5 py-2.5 text-right font-mono text-white text-xs">RD$ {{ pedido.precio_total|floatformat:0 }}</td>
+                                        <td class="px-5 py-2.5 text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d/m/Y" }}</td>
                                     </tr>
                                 {% endfor %}
-                                {# En producción #}
                                 {% for pedido in pedidos_por_estado.En_Produccion %}
                                     <tr class="hover:bg-gray-800/20 transition-colors">
-                                        <td class="px-5 py-3">
+                                        <td class="px-5 py-2.5">
                                             <a href="{% url 'pedidos:pedido_detalle' pedido.id %}"
-                                               class="text-[#10b981] font-mono font-bold hover:underline">#{{ pedido.id|stringformat:"04d" }}</a>
+                                               class="text-[#10b981] font-mono font-bold hover:underline text-xs">#{{ pedido.id|stringformat:"04d" }}</a>
                                         </td>
-                                        <td class="px-5 py-3 text-gray-300">{{ pedido.nombre_cliente }}</td>
-                                        <td class="px-5 py-3">
+                                        <td class="px-5 py-2.5 text-gray-300 text-xs">{{ pedido.nombre_cliente }}</td>
+                                        <td class="px-5 py-2.5">
                                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-400">Producción</span>
                                         </td>
-                                        <td class="px-5 py-3 text-right font-mono text-white text-xs">RD$ {{ pedido.precio_total|floatformat:0 }}</td>
-                                        <td class="px-5 py-3 text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d/m/Y" }}</td>
+                                        <td class="px-5 py-2.5 text-right font-mono text-white text-xs">RD$ {{ pedido.precio_total|floatformat:0 }}</td>
+                                        <td class="px-5 py-2.5 text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d/m/Y" }}</td>
                                     </tr>
                                 {% endfor %}
-                                {# Confirmados #}
                                 {% for pedido in pedidos_por_estado.Confirmado %}
                                     <tr class="hover:bg-gray-800/20 transition-colors">
-                                        <td class="px-5 py-3">
+                                        <td class="px-5 py-2.5">
                                             <a href="{% url 'pedidos:pedido_detalle' pedido.id %}"
-                                               class="text-[#10b981] font-mono font-bold hover:underline">#{{ pedido.id|stringformat:"04d" }}</a>
+                                               class="text-[#10b981] font-mono font-bold hover:underline text-xs">#{{ pedido.id|stringformat:"04d" }}</a>
                                         </td>
-                                        <td class="px-5 py-3 text-gray-300">{{ pedido.nombre_cliente }}</td>
-                                        <td class="px-5 py-3">
+                                        <td class="px-5 py-2.5 text-gray-300 text-xs">{{ pedido.nombre_cliente }}</td>
+                                        <td class="px-5 py-2.5">
                                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-400">Confirmado</span>
                                         </td>
-                                        <td class="px-5 py-3 text-right font-mono text-white text-xs">RD$ {{ pedido.precio_total|floatformat:0 }}</td>
-                                        <td class="px-5 py-3 text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d/m/Y" }}</td>
+                                        <td class="px-5 py-2.5 text-right font-mono text-white text-xs">RD$ {{ pedido.precio_total|floatformat:0 }}</td>
+                                        <td class="px-5 py-2.5 text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d/m/Y" }}</td>
                                     </tr>
                                 {% endfor %}
-                                {# En espera (menos urgente) #}
                                 {% for pedido in pedidos_por_estado.En_Espera %}
-                                    <tr class="hover:bg-gray-800/20 transition-colors opacity-70">
-                                        <td class="px-5 py-3">
+                                    <tr class="hover:bg-gray-800/20 transition-colors opacity-60">
+                                        <td class="px-5 py-2.5">
                                             <a href="{% url 'pedidos:pedido_detalle' pedido.id %}"
-                                               class="text-[#10b981] font-mono font-bold hover:underline">#{{ pedido.id|stringformat:"04d" }}</a>
+                                               class="text-[#10b981] font-mono font-bold hover:underline text-xs">#{{ pedido.id|stringformat:"04d" }}</a>
                                         </td>
-                                        <td class="px-5 py-3 text-gray-300">{{ pedido.nombre_cliente }}</td>
-                                        <td class="px-5 py-3">
+                                        <td class="px-5 py-2.5 text-gray-300 text-xs">{{ pedido.nombre_cliente }}</td>
+                                        <td class="px-5 py-2.5">
                                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400">En Espera</span>
                                         </td>
-                                        <td class="px-5 py-3 text-right font-mono text-white text-xs">RD$ {{ pedido.precio_total|floatformat:0 }}</td>
-                                        <td class="px-5 py-3 text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d/m/Y" }}</td>
+                                        <td class="px-5 py-2.5 text-right font-mono text-white text-xs">RD$ {{ pedido.precio_total|floatformat:0 }}</td>
+                                        <td class="px-5 py-2.5 text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d/m/Y" }}</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
                 {% endif %}
+                {# ── Divider + Sección catálogo agotado ── #}
+                <div class="border-t border-gray-800/60 flex-shrink-0">
+                    <div class="px-5 py-3 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <p class="text-gray-500 text-[10px] font-bold uppercase tracking-wider">Catálogo — Stock bajo</p>
+                            {% if total_agotadas > 0 %}
+                                <span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-orange-500/20 text-orange-400 border border-orange-500/20">{{ total_agotadas }}</span>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'productos:productos_index' %}"
+                           class="text-[#10b981] text-xs hover:underline">Ver catálogo</a>
+                    </div>
+                    {% if variantes_agotadas %}
+                        <div class="px-5 pb-4 overflow-y-auto max-h-[140px] scrollbar-thin">
+                            <div class="flex flex-wrap gap-2">
+                                {% for variante in variantes_agotadas %}
+                                    <a href="{% url 'productos:producto_detalle' variante.producto.slug %}">
+                                        <div class="flex items-center gap-2 px-3 py-1.5 {% if variante.stock_disponible == 0 %}bg-red-500/5 border border-red-500/15{% else %}bg-orange-500/5 border border-orange-500/15{% endif %} rounded-xl">
+                                            <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 {% if variante.stock_disponible == 0 %}bg-red-500{% else %}bg-orange-400{% endif %}">
+                                            </span>
+                                            <div class="min-w-0">
+                                                <p class="text-gray-300 text-xs font-medium leading-none truncate max-w-[160px]">{{ variante.producto.nombre }}</p>
+                                                <p class="text-gray-600 text-[10px] truncate max-w-[160px]">
+                                                    {% for d in variante.detalles_material.all %}
+                                                        {{ d.material.color.nombre }}
+                                                        {% if not forloop.last %},{% endif %}
+                                                    {% endfor %}
+                                                </p>
+                                            </div>
+                                            <span class="text-[10px] font-black flex-shrink-0 {% if variante.stock_disponible == 0 %}text-red-400{% else %}text-orange-400{% endif %}">
+                                                {% if variante.stock_disponible == 0 %}
+                                                    Agotado
+                                                {% else %}
+                                                    {{ variante.stock_disponible }} u.
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="px-5 pb-4 text-gray-600 text-xs italic">Todo el catálogo tiene 5 o más unidades.</p>
+                    {% endif %}
+                </div>
             </div>
             {# ── Columna derecha: Solicitudes + Stock ── #}
             <div class="flex flex-col gap-5">

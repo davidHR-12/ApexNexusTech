@@ -289,6 +289,13 @@ class Pedido(models.Model):
         if self.usuario:
             return self.usuario.telefono or "—"
         return self.guest_telefono or "—"
+    
+    @property
+    def direccion_cliente(self):
+        if self.usuario and hasattr(self.usuario, "perfil_cliente"):
+            return self.usuario.perfil_cliente.get_direccion_completa()
+        return self.guest_direccion or "—"
+    
 
     def actualizar_totales(self):
         """

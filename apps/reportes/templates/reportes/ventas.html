@@ -92,7 +92,7 @@
                                 <td class="px-5 py-3 text-gray-400 text-xs">{{ pago.get_metodo_display }}</td>
                                 <td class="px-5 py-3 text-gray-500 text-xs font-mono">{{ pago.referencia|default:"—" }}</td>
                                 <td class="px-5 py-3 text-right font-mono font-bold text-emerald-400">RD$ {{ pago.monto|floatformat:2 }}</td>
-                                <td class="px-5 py-3 text-gray-500 text-xs">{{ pago.fecha_pago|date:"d/m/Y H:i" }}</td>
+                                <td class="px-5 py-3 text-gray-500 text-xs">{{ pago.fecha_pago|date:"d/m/Y h:i A" }}</td>
                             </tr>
                         {% empty %}
                             <tr>

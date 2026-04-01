@@ -1,0 +1,339 @@
+{% extends "core/base_admin.html" %}
+{% block title %}Reporte Operativo - A.N.T{% endblock title %}
+{% block content %}
+<div class="space-y-6">
+
+    {# ── CABECERA ── #}
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+            <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest mb-3 gap-2">
+                <a href="{% url 'reportes:dashboard' %}" class="hover:text-white transition-colors">Reportes</a>
+                <span>/</span>
+                <span class="text-[#10b981]">Operativo</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-white">Reporte Operativo</h1>
+            <p class="text-gray-500 text-sm mt-0.5">Desempeño del taller · tiempos de respuesta y producción</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <form method="get" class="flex items-center gap-2 flex-wrap" id="filtroForm">
+                <input type="date" name="desde" id="inputDesde"
+                       value="{{ fecha_desde|date:'Y-m-d' }}"
+                       class="bg-[#0f172a] border border-gray-700 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#10b981] transition">
+                <span class="text-gray-600 text-xs">hasta</span>
+                <input type="date" name="hasta" id="inputHasta"
+                       value="{{ fecha_hasta|date:'Y-m-d' }}"
+                       class="bg-[#0f172a] border border-gray-700 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-[#10b981] transition">
+                <button type="submit"
+                        class="px-4 py-2 rounded-xl bg-[#10b981] hover:bg-emerald-400 text-white text-xs font-bold transition">
+                    Filtrar
+                </button>
+            </form>
+            <a id="btnExport"
+               href="{% url 'reportes:exportar_reporte_ejecutivo' %}?desde={{ fecha_desde|date:'Y-m-d' }}&hasta={{ fecha_hasta|date:'Y-m-d' }}"
+               class="flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400 text-xs font-bold transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Exportar Ejecutivo
+            </a>
+        </div>
+    </div>
+
+    {# ── KPIs ── #}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+
+        <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-5">
+            <p class="text-gray-500 text-xs uppercase font-bold mb-2">Total pedidos</p>
+            <p class="text-2xl font-black text-white">{{ total_pedidos }}</p>
+        </div>
+
+        <div class="bg-[#1e293b] border border-emerald-500/20 rounded-2xl p-5">
+            <p class="text-gray-500 text-xs uppercase font-bold mb-2">Tasa completación</p>
+            <p class="text-2xl font-black text-emerald-400">{{ tasa_completacion }}%</p>
+            <p class="text-gray-600 text-xs mt-1">{{ entregados }} entregados</p>
+        </div>
+
+        <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-5">
+            <p class="text-gray-500 text-xs uppercase font-bold mb-2">T. respuesta prom.</p>
+            {% if tiempo_respuesta_horas %}
+                <p class="text-2xl font-black {% if tiempo_respuesta_horas > 48 %}text-red-400{% elif tiempo_respuesta_horas > 24 %}text-amber-400{% else %}text-emerald-400{% endif %}">
+                    {{ tiempo_respuesta_horas }}h
+                </p>
+                <p class="text-gray-600 text-xs mt-1">solicitud → producción</p>
+            {% else %}
+                <p class="text-gray-500 text-sm italic">Sin datos</p>
+            {% endif %}
+        </div>
+
+        <div class="bg-[#1e293b] border border-gray-800 rounded-2xl p-5">
+            <p class="text-gray-500 text-xs uppercase font-bold mb-2">T. producción prom.</p>
+            {% if tiempo_promedio_horas %}
+                <p class="text-2xl font-black text-blue-400">{{ tiempo_promedio_horas }}h</p>
+                <p class="text-gray-600 text-xs mt-1">inicio → entrega</p>
+            {% else %}
+                <p class="text-gray-500 text-sm italic">Sin datos</p>
+            {% endif %}
+        </div>
+
+    </div>
+
+    {# ── FILA 2: estados + pérdidas ── #}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+
+        <div class="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4">
+            <p class="text-amber-400 text-xs font-bold uppercase mb-1">En producción</p>
+            <p class="text-xl font-black text-amber-300">{{ en_produccion }}</p>
+        </div>
+
+        <div class="bg-cyan-500/10 border border-cyan-500/20 rounded-2xl p-4">
+            <p class="text-cyan-400 text-xs font-bold uppercase mb-1">Listos</p>
+            <p class="text-xl font-black text-cyan-300">{{ listos }}</p>
+        </div>
+
+        <div class="bg-red-500/10 border border-red-500/20 rounded-2xl p-4">
+            <p class="text-red-400 text-xs font-bold uppercase mb-1">Cancelados</p>
+            <p class="text-xl font-black text-red-300">{{ cancelados }}</p>
+        </div>
+
+        <div class="{% if total_gramos_perdidos > 0 %}bg-orange-500/10 border-orange-500/20{% else %}bg-emerald-500/10 border-emerald-500/20{% endif %} border rounded-2xl p-4">
+            <p class="{% if total_gramos_perdidos > 0 %}text-orange-400{% else %}text-emerald-400{% endif %} text-xs font-bold uppercase mb-1">
+                Merma período
+            </p>
+            <p class="text-xl font-black {% if total_gramos_perdidos > 0 %}text-orange-300{% else %}text-emerald-300{% endif %}">
+                {{ total_gramos_perdidos|floatformat:0 }}g
+            </p>
+        </div>
+
+    </div>
+
+    {# ── PEDIDOS ACTIVOS (cuellos de botella) ── #}
+    {% if pedidos_activos_data %}
+    <div class="bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-800/50 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h2 class="text-white font-bold text-sm">Pedidos activos — tiempo transcurrido</h2>
+            </div>
+            <span class="text-gray-600 text-xs">{{ pedidos_activos_data|length }} activo{{ pedidos_activos_data|length|pluralize:"s" }}</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr>
+                        <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">#</th>
+                        <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Cliente</th>
+                        <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Estado</th>
+                        <th class="px-5 py-3 text-right text-gray-500 text-xs font-bold uppercase">Total</th>
+                        <th class="px-5 py-3 text-center text-gray-500 text-xs font-bold uppercase">Días transcurridos</th>
+                        <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Creado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-800/50">
+                    {% for item in pedidos_activos_data %}
+                    <tr class="hover:bg-gray-800/20 transition-colors {% if item.alerta %}bg-amber-500/5{% endif %}">
+                        <td class="px-5 py-3">
+                            <a href="{% url 'pedidos:pedido_detalle' item.pedido.id %}"
+                               class="text-[#10b981] font-mono font-bold hover:underline">
+                                #{{ item.pedido.id|stringformat:"04d" }}
+                            </a>
+                        </td>
+                        <td class="px-5 py-3 text-gray-300">{{ item.pedido.nombre_cliente }}</td>
+                        <td class="px-5 py-3">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase
+                                {% if item.pedido.estado_pedido == 'En_Espera' %}bg-amber-500/20 text-amber-400
+                                {% elif item.pedido.estado_pedido == 'Confirmado' %}bg-blue-500/20 text-blue-400
+                                {% elif item.pedido.estado_pedido == 'En_Produccion' %}bg-purple-500/20 text-purple-400
+                                {% elif item.pedido.estado_pedido == 'Listo' %}bg-cyan-500/20 text-cyan-400
+                                {% endif %}">
+                                {{ item.pedido.get_estado_pedido_display }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-3 text-right font-mono text-white font-bold">
+                            RD$ {{ item.pedido.precio_total|floatformat:0 }}
+                        </td>
+                        <td class="px-5 py-3 text-center">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold
+                                {% if item.alerta %}bg-amber-500/20 text-amber-400{% else %}bg-gray-700 text-gray-400{% endif %}">
+                                {% if item.alerta %}⚠ {% endif %}{{ item.dias_transcurridos }}d
+                            </span>
+                        </td>
+                        <td class="px-5 py-3 text-gray-500 text-xs">
+                            {{ item.pedido.fecha_creacion|date:"d/m/Y H:i" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── TABLA DE PEDIDOS DEL PERÍODO ── #}
+    <div class="bg-[#1e293b] border border-gray-800 rounded-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-800/50 flex items-center justify-between">
+            <h2 class="text-white font-bold text-sm">Pedidos del período</h2>
+            <p class="text-gray-600 text-xs">{{ total_pedidos }} pedido{{ total_pedidos|pluralize:"s" }}</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr>
+                        <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">#</th>
+                        <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Cliente</th>
+                        <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Estado</th>
+                        <th class="px-5 py-3 text-center text-gray-500 text-xs font-bold uppercase">T. Respuesta</th>
+                        <th class="px-5 py-3 text-center text-gray-500 text-xs font-bold uppercase">T. Producción</th>
+                        <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Creado</th>
+                        <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Entregado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-800/50">
+                    {% for pedido in pedidos %}
+                    <tr class="hover:bg-gray-800/20 transition-colors">
+                        <td class="px-5 py-3">
+                            <a href="{% url 'pedidos:pedido_detalle' pedido.id %}"
+                               class="text-[#10b981] font-mono font-bold hover:underline">
+                                #{{ pedido.id|stringformat:"04d" }}
+                            </a>
+                        </td>
+                        <td class="px-5 py-3 text-gray-300">{{ pedido.nombre_cliente }}</td>
+                        <td class="px-5 py-3">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase
+                                {% if pedido.estado_pedido == 'En_Espera' %}bg-amber-500/20 text-amber-400
+                                {% elif pedido.estado_pedido == 'Confirmado' %}bg-blue-500/20 text-blue-400
+                                {% elif pedido.estado_pedido == 'En_Produccion' %}bg-purple-500/20 text-purple-400
+                                {% elif pedido.estado_pedido == 'Listo' %}bg-cyan-500/20 text-cyan-400
+                                {% elif pedido.estado_pedido == 'Entregado' %}bg-emerald-500/20 text-emerald-400
+                                {% else %}bg-red-500/20 text-red-400{% endif %}">
+                                {{ pedido.get_estado_pedido_display }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-3 text-center font-mono text-xs">
+                            {% if pedido.fecha_inicio_produccion %}
+                                {% with horas=pedido.fecha_inicio_produccion|timeuntil:pedido.fecha_creacion %}
+                                    <span class="text-gray-400">{{ pedido.fecha_inicio_produccion|date:"d/m H:i" }}</span>
+                                {% endwith %}
+                            {% else %}
+                                <span class="text-gray-600">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-5 py-3 text-center font-mono text-xs">
+                            {% if pedido.fecha_inicio_produccion and pedido.fecha_entrega %}
+                                <span class="text-blue-400">{{ pedido.fecha_entrega|date:"d/m H:i" }}</span>
+                            {% else %}
+                                <span class="text-gray-600">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-5 py-3 text-gray-500 text-xs">{{ pedido.fecha_creacion|date:"d/m/Y" }}</td>
+                        <td class="px-5 py-3 text-gray-500 text-xs">
+                            {{ pedido.fecha_entrega|date:"d/m/Y"|default:"—" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-5 py-10 text-center text-gray-600">
+                            Sin pedidos en este período.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# ── PÉRDIDAS DEL PERÍODO ── #}
+    <div class="bg-[#1e293b] border {% if total_gramos_perdidos > 0 %}border-orange-500/20{% else %}border-gray-800{% endif %} rounded-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-800/50 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 {% if total_gramos_perdidos > 0 %}text-orange-400{% else %}text-gray-500{% endif %}"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <h2 class="text-white font-bold text-sm">Pérdidas de material del período</h2>
+                {% if total_gramos_perdidos > 0 %}
+                    <span class="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] font-bold rounded-full">
+                        {{ total_gramos_perdidos|floatformat:0 }}g perdidos
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if perdidas_periodo %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr>
+                        <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Fecha</th>
+                        <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Pedido</th>
+                        <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Material</th>
+                        <th class="px-5 py-3 text-right text-gray-500 text-xs font-bold uppercase">Gramos</th>
+                        <th class="px-5 py-3 text-left text-gray-500 text-xs font-bold uppercase">Motivo</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-800/50">
+                    {% for perdida in perdidas_periodo %}
+                    <tr class="hover:bg-gray-800/20 transition-colors">
+                        <td class="px-5 py-3 text-gray-500 text-xs">{{ perdida.fecha|date:"d/m/Y H:i" }}</td>
+                        <td class="px-5 py-3">
+                            {% if perdida.pedido %}
+                                <a href="{% url 'pedidos:pedido_detalle' perdida.pedido.id %}"
+                                   class="text-[#10b981] font-mono font-bold hover:underline text-xs">
+                                    #{{ perdida.pedido.id|stringformat:"04d" }}
+                                </a>
+                            {% else %}
+                                <span class="text-gray-600 text-xs">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-5 py-3">
+                            <p class="text-white text-sm font-medium">{{ perdida.material.tipo }} {{ perdida.material.color }}</p>
+                            <p class="text-gray-500 text-xs">{{ perdida.material.marca }}</p>
+                        </td>
+                        <td class="px-5 py-3 text-right font-mono font-bold text-orange-400">
+                            {{ perdida.gramos_perdidos|floatformat:1 }}g
+                        </td>
+                        <td class="px-5 py-3 text-gray-400 text-xs italic">
+                            {{ perdida.motivo|default:"Sin descripción" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="border-t-2 border-gray-700">
+                        <td colspan="3" class="px-5 py-3 text-right text-gray-400 text-xs font-bold uppercase">
+                            Total pérdidas
+                        </td>
+                        <td class="px-5 py-3 text-right font-mono font-black text-orange-400 text-base">
+                            {{ total_gramos_perdidos|floatformat:1 }}g
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="flex items-center justify-center py-10 gap-2">
+            <svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            <p class="text-gray-500 text-sm">Sin pérdidas registradas en este período.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+document.getElementById('filtroForm').addEventListener('change', function() {
+    const desde = document.getElementById('inputDesde').value;
+    const hasta = document.getElementById('inputHasta').value;
+    document.getElementById('btnExport').href =
+        `{% url 'reportes:exportar_reporte_ejecutivo' %}?desde=${desde}&hasta=${hasta}`;
+});
+</script>
+{% endblock content %}

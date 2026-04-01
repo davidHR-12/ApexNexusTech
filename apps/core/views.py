@@ -210,23 +210,36 @@ def dashboard_admin(request):
     total_gramos = sum(m.stock_actual for m in materiales)
     alertas_stock = [m for m in materiales if m.necesita_reposicion]
 
+    from apps.productos.models import VarianteProducto
+
+    variantes_agotadas = (
+        VarianteProducto.objects
+        .filter(activa=True, stock_disponible__lt=5)
+        .select_related('producto')
+        .prefetch_related('detalles_material__material__color')
+        .order_by('stock_disponible')[:5]
+    )
+
     context = {
         'segment': 'dashboard_admin',
         'kpis': {'solicitudes_nuevas': solicitudes_count, 'recordatorio_reporte': recordatorio_reporte},
         'recordatorio_reporte': recordatorio_reporte,
         # Pedidos operativos
-        'pedidos_por_estado':  pedidos_por_estado,
-        'total_en_espera':     len(pedidos_por_estado['En_Espera']),
-        'total_confirmado':    len(pedidos_por_estado['Confirmado']),
-        'total_produccion':    len(pedidos_por_estado['En_Produccion']),
-        'total_listo':         len(pedidos_por_estado['Listo']),
-        'total_activos':       len(pedidos_activos),
+        'pedidos_por_estado':pedidos_por_estado,
+        'total_en_espera':len(pedidos_por_estado['En_Espera']),
+        'total_confirmado':len(pedidos_por_estado['Confirmado']),
+        'total_produccion':len(pedidos_por_estado['En_Produccion']),
+        'total_listo':len(pedidos_por_estado['Listo']),
+        'total_activos':len(pedidos_activos),
         # Solicitudes
-        'solicitudes_pendientes': solicitudes_pendientes[:5],
-        'solicitudes_count':      solicitudes_count,
+        'solicitudes_pendientes':solicitudes_pendientes[:5],
+        'solicitudes_count':solicitudes_count,
         # Inventario
-        'alertas_stock':  alertas_stock[:5],
-        'total_kg':       total_gramos / 1000,
+        'alertas_stock':alertas_stock[:5],
+        'total_kg':total_gramos / 1000,
+        # Agotados
+        'variantes_agotadas':variantes_agotadas,
+        'total_agotadas':variantes_agotadas.count(),
     }
     return render(request, 'core/dashboard_admin.html', context)
 

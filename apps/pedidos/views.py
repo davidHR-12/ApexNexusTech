@@ -421,6 +421,18 @@ def cambiar_estado_pedido(request, pedido_id):
         if not _validar_stock_disponible(pedido, request):
             return redirect("pedidos:pedido_detalle", pedido_id=pedido_id)
 
+    # Solo bloquear si el cliente tiene acceso real al panel (cuenta normal, no manual)
+    cliente_puede_seleccionar = (
+        pedido.usuario is not None and
+        not getattr(pedido.usuario, 'is_manual', False)
+    )
+
+    # Validar método de pago
+    if nuevo_estado in estados_que_consumen and cliente_puede_seleccionar and not pedido.metodo_pago_preferido:
+        messages.error(request, "El cliente aún no ha seleccionado un método de pago.")
+        return redirect("pedidos:pedido_detalle", pedido_id=pedido_id)
+
+
     # Validar impresoras (solo al pasar a producción)
     if nuevo_estado == "En_Produccion":
         if not _validar_requisitos_produccion(pedido, request):

@@ -12,6 +12,7 @@
 {% block sidebar_nav %}
   <a href="{% url 'core:dashboard_admin' %}"
      data-tooltip="Dashboard"
+     title="Dashboard"
      class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'dashboard_admin' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
     <svg class="w-5 h-5 flex-shrink-0"
          fill="none"
@@ -28,6 +29,7 @@
   <nav class="space-y-1">
     <a href="{% url 'pedidos:solicitudes_list' %}"
        data-tooltip="Solicitudes"
+       title="Solicitudes"
        class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if segment == 'solicitud' %}bg-[#334155] text-[#10b981]{% else %}text-gray-300 hover:bg-[#334155] hover:text-[#10b981]{% endif %}">
       <div class="relative">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,6 +46,7 @@
     </a>
     <a href="{% url 'pedidos:pedidos_lista' %}"
        data-tooltip="Pedidos"
+       title="Pedidos"
        class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if segment == 'pedidos' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
       <svg class="w-5 h-5 flex-shrink-0"
            fill="none"
@@ -58,6 +61,8 @@
   <div class="mini-separator"></div>
   <nav class="space-y-1">
     <a href="{% url 'productos:productos_index' %}"
+       data-tooltip="Catálogo Piezas"
+       title="Catálogo Piezas"
        class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'productos' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
       <svg class="w-5 h-5 flex-shrink-0"
            fill="none"
@@ -68,6 +73,8 @@
       <span class="nav-text whitespace-nowrap">Catálogo Piezas</span>
     </a>
     <a href="{% url 'materiales:lista_materiales' %}"
+       data-tooltip="Materiales"
+       title="Materiales"
        class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'materiales' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
       <svg class="w-5 h-5 flex-shrink-0"
            fill="none"
@@ -87,6 +94,7 @@
     {# Reportes — visión ejecutiva #}
     <a href="{% url 'reportes:dashboard' %}"
        data-tooltip="Reportes"
+       title="Reportes"
        class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if segment == 'reportes' %}bg-[#334155] text-[#10b981]{% else %}text-gray-300 hover:bg-[#334155] hover:text-[#10b981]{% endif %}">
       <div class="relative">
         <svg class="w-5 h-5 flex-shrink-0"
@@ -107,6 +115,7 @@
     {# Gastos — listado operativo y análisis detallado #}
     <a href="{% url 'finanzas:gastos' %}"
        data-tooltip="Gastos"
+       title="Gastos"
        class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.app_name == 'finanzas' %}bg-[#334155] text-[#10b981]{% else %}text-gray-300 hover:bg-[#334155] hover:text-[#10b981]{% endif %}">
       <svg class="w-5 h-5 flex-shrink-0"
            fill="none"
@@ -120,6 +129,8 @@
   <div class="section-title pt-5 pb-2 px-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Herramientas</div>
   <div class="mini-separator"></div>
   <a href="{% url 'core:calculadora' %}"
+     data-tooltip="Calculadora"
+     title="Calculadora"
      class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition group {% if request.resolver_match.url_name == 'calculadora' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
     <svg class="w-5 h-5 flex-shrink-0"
          fill="none"
@@ -134,6 +145,8 @@
 {% block sidebar_footer %}
   <div class="mini-separator"></div>
   <a href="{% url 'core:configuracion' %}"
+     data-tooltip="Configuración"
+     title="Configuración"
      class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl transition {% if segment == 'configuracion' %} bg-[#334155] text-[#10b981] {% else %} text-gray-300 hover:bg-[#334155] hover:text-[#10b981] {% endif %}">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066 c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572 c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573 c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065 c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066 c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572 c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573 c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -144,6 +157,7 @@
   <div class="mini-separator"></div>
   <a href="{% url 'clientes:index' %}"
      data-tooltip="Ver Sitio Público"
+     title="Ver Sitio Público"
      class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl text-gray-300 hover:bg-[#334155] hover:text-[#10b981] transition">
     <svg class="w-5 h-5 flex-shrink-0"
          fill="none"
@@ -155,6 +169,7 @@
   </a>
   <a href="{% url 'clientes:home' %}"
      data-tooltip="Ver como Cliente"
+     title="Ver como Cliente"
      class="nav-link tooltip flex items-center gap-3 p-3 rounded-xl text-gray-300 hover:bg-[#334155] hover:text-[#10b981] transition">
     <svg class="w-5 h-5 flex-shrink-0"
          fill="none"
@@ -171,6 +186,7 @@
     {% csrf_token %}
     <button type="submit"
             data-tooltip="Cerrar Sesión"
+            title="Cerrar Sesión"
             class="nav-link tooltip w-full flex items-center gap-3 p-3 rounded-xl text-red-400 hover:bg-red-400/10 transition">
       <svg class="w-5 h-5 flex-shrink-0"
            fill="none"
