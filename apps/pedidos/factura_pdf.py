@@ -225,7 +225,7 @@ def generar_factura_pdf(request, pedido_id):
         ("LEFTPADDING",   (0,0),(-1,-1), 8),
         ("RIGHTPADDING",  (0,0),(-1,-1), 8),
     ]))
-
+    direccion_cliente = getattr(pedido, "direccion_cliente", None)
     izq2 = [
     Paragraph("DATOS DEL CLIENTE", S["sec"]),
     Paragraph(nombre_cliente, S["cli_nom"]),
@@ -234,6 +234,9 @@ def generar_factura_pdf(request, pedido_id):
         izq2.append(Paragraph(email_cliente, S["cli_sub"]))
     if tel_cliente:
         izq2.append(Paragraph(tel_cliente, S["cli_sub"]))
+
+    if direccion_cliente and direccion_cliente != "—":
+        izq2.append(Paragraph(direccion_cliente, S["cli_sub"]))
 
     metodo = (pedido.get_metodo_pago_preferido_display()
               if getattr(pedido, "metodo_pago_preferido", None) else "—")
