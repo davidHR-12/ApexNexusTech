@@ -65,30 +65,6 @@ class SolicitudCotizacion(models.Model):
         auto_now_add=True, verbose_name="Fecha de solicitud"
     )
 
-    def convertir_a_pedido(self):
-        """Crea un pedido a partir de esta solicitud aceptada"""
-        if self.estado != "Aceptada":
-            return None
-
-        nuevo_pedido = Pedido.objects.create(
-            usuario=self.usuario,
-            solicitud=self,
-            descripcion=f"Pedido personalizado: {self.descripcion}",
-            peso_estimado_g=0,
-            estado_pedido="En_Espera",
-        )
-
-        # Crear el item. Al no pasar 'variante', Django lo deja en Null
-        ItemPedido.objects.create(
-            pedido=nuevo_pedido,
-            descripcion=self.descripcion[:300],  # Cortamos por si es muy largo
-            cantidad=1,
-            precio_unitario=0,
-            gramos_por_unidad=0,
-        )
-
-        return nuevo_pedido
-
     def __str__(self):
         return (
             f"Solicitud #{self.id} - {self.usuario.email} ({self.get_estado_display()})"
