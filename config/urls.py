@@ -36,5 +36,3 @@ urlpatterns = [
 ] + static(
     settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
 )  # Para que funcione la subida de archivos
-if settings.DEBUG:
-    urlpatterns += [path('__reload__/', include('django_browser_reload.urls'))]
