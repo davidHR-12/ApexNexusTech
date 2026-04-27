@@ -283,24 +283,28 @@ class VarianteProducto(models.Model):
         total = sum(d.gramos_usados * d.material.costo_por_gramo for d in self.detalles_material.all())
         return Decimal(total).quantize(Decimal("0.01"))
 
+    from decimal import Decimal # Asegúrate de tener esta importación
+
     @property
     def costo_produccion_total(self):
         """Suma costo de materiales + costo estimado de energía + desgaste de máquina"""
-        # 1. Obtener la configuración global
         config = ConfiguracionCalculadora.obtener()
+        
+        # Convertimos el tiempo a Decimal para evitar el choque de tipos
+        tiempo_decimal = Decimal(str(self.tiempo_impresion_horas))
 
         # 2. Costo de Energía
-        # Fórmula: (Watts / 1000) * Horas * Precio kWh
         consumo_kw = config.consumo_watts / Decimal('1000')
-        costo_energia = consumo_kw * self.tiempo_impresion_horas * config.precio_kwh
+        # Usamos tiempo_decimal aquí
+        costo_energia = consumo_kw * tiempo_decimal * config.precio_kwh
 
-        # 3. Costo de Desgaste de Máquina / Repuestos (Opcional pero muy profesional)
-        # Fórmula: (Costo Repuestos / Vida Útil Horas) * Horas de impresión
+        # 3. Costo de Desgaste
         costo_desgaste = Decimal('0')
         if config.vida_util_horas > 0:
-            costo_desgaste = (config.precio_repuestos / config.vida_util_horas) * self.tiempo_impresion_horas
+            # Usamos tiempo_decimal aquí también
+            costo_desgaste = (config.precio_repuestos / config.vida_util_horas) * tiempo_decimal
 
-        # 4. Sumar todo y redondear a 2 decimales
+        # 4. Sumar todo
         total = self.costo_materiales + costo_energia + costo_desgaste
         return total.quantize(Decimal("0.01"))
 

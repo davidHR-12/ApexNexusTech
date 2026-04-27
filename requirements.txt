@@ -6,15 +6,12 @@ charset-normalizer==3.4.5
 click==8.3.1
 colorama==0.4.6
 cookiecutter==2.7.1
-cssbeautifier==1.15.4
 defusedxml==0.7.1
 Django==6.0.1
-django-browser-reload==1.21.0
 django-cleanup==9.0.0
 django-environ==0.12.0
 django-htmx==1.27.0
 django-svg-image-form-field==1.0.1
-django-tailwind==4.4.2
 djlint==1.36.4
 EditorConfig==0.17.1
 et_xmlfile==2.0.0
@@ -29,7 +26,6 @@ openpyxl==3.1.5
 pathspec==1.0.4
 pillow==12.1.0
 Pygments==2.19.2
-pytailwindcss==0.3.0
 python-dateutil==2.9.0.post0
 python-slugify==8.0.4
 PyYAML==6.0.3

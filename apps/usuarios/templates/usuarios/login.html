@@ -1,4 +1,5 @@
 {% extends "usuarios/base_auth.html" %}
+{% load static %}
 {% block title %}
   Login
 {% endblock title %}
@@ -7,8 +8,11 @@
 {% endblock card_width %}
 {% block auth_content %}
   <div class="flex justify-center mb-6">
-    <div class="bg-[#10b981] p-3 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.5)]">
-      <span class="text-white font-bold text-xl">3D</span>
+    <div class="w-20 h-20 flex items-center justify-center flex-shrink-0">
+      <img src="{% static 'img/Logo-figura.ico' %}"
+           loading="lazy"
+           alt="A.N.T Logo"
+           class="w-full h-full object-contain" />
     </div>
   </div>
   <h2 class="text-white text-2xl font-bold text-center mb-8">Inicio Sesión</h2>

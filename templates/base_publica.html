@@ -1,17 +1,14 @@
 {% load humanize %}
-{% load tailwind_tags %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    {% tailwind_css %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <link rel="icon"
           type="image/x-icon"
           href="{% static 'img/Logo-figura.ico' %}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
-          rel="stylesheet">
     <title>
       {% block title %}
         Inicio - A.N.T
@@ -83,22 +80,24 @@
               {% endif %}
               {# data-carrito para JS (fuera del badge) #}
               {{ request.session.carrito|json_script:"data-carrito" }}
-            </button>{% if user.is_authenticated %}
-<div class="grid grid-cols-2 gap-3 items-stretch w-full">
-  <a href="{% if user.rol == 'Admin' %}{% url 'core:dashboard_admin' %}{% else %}{% url 'clientes:home' %}{% endif %}"
-     class="flex items-center justify-center bg-[#10b981] text-white py-2 px-2 rounded-xl text-center text-sm font-bold hover:bg-[#059669] transition shadow-lg shadow-[#10b981]/20">
-    Mi Panel
-  </a>
-
-  <form action="{% url 'usuarios:logout' %}" method="post" class="w-full flex">
-    {% csrf_token %}
-    <button type="submit"
-            class="w-full flex items-center justify-center border-2 border-red-600 text-red-600 py-2 px-1 rounded-xl hover:bg-red-600 hover:text-white transition text-sm font-bold leading-tight">
-      <span class="block truncate">Cerrar Sesión</span>
-    </button>
-  </form>
-</div>
-{% else %}
+            </button>
+            {% if user.is_authenticated %}
+              <div class="grid grid-cols-2 gap-3 items-stretch w-full">
+                <a href="{% if user.rol == 'Admin' %}{% url 'core:dashboard_admin' %}{% else %}{% url 'clientes:home' %}{% endif %}"
+                   class="flex items-center justify-center bg-[#10b981] text-white py-2 px-2 rounded-xl text-center text-sm font-bold hover:bg-[#059669] transition shadow-lg shadow-[#10b981]/20">
+                  Mi Panel
+                </a>
+                <form action="{% url 'usuarios:logout' %}"
+                      method="post"
+                      class="w-full flex">
+                  {% csrf_token %}
+                  <button type="submit"
+                          class="w-full flex items-center justify-center border-2 border-red-600 text-red-600 py-2 px-1 rounded-xl hover:bg-red-600 hover:text-white transition text-sm font-bold leading-tight">
+                    <span class="block truncate">Cerrar Sesión</span>
+                  </button>
+                </form>
+              </div>
+            {% else %}
               <a href="{% url 'usuarios:login' %}"
                  class="text-gray-400 hover:text-white transition">Iniciar Sesión</a>
               <a href="{% url 'usuarios:register' %}"

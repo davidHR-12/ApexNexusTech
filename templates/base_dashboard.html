@@ -1,12 +1,15 @@
 {% load humanize %}
-{% load tailwind_tags %} 
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}Mi Panel - A.N.T{% endblock title %}</title>
+    <title>
+      {% block title %}
+        Mi Panel - A.N.T
+      {% endblock title %}
+    </title>
     <script>
   (function () {
     try {
@@ -18,7 +21,7 @@
     } catch (e) {}
   })();
     </script>
-    {% tailwind_css %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <link rel="icon"
           type="image/x-icon"
           href="{% static 'img/Logo-figura.ico' %}">
@@ -26,7 +29,6 @@
     <style>{% block extra_css %}{% endblock extra_css %}</style>
   </head>
   <body class="bg-[#0f172a] text-gray-100 font-sans">
-
     {# ========== HEADER MÓVIL ========== #}
     <div class="md:hidden bg-[#1e293b] border-b border-gray-800 p-4 flex items-center justify-between sticky top-0 z-50 h-16">
       <div class="flex items-center gap-2">
@@ -42,65 +44,60 @@
         </svg>
       </button>
     </div>
-
     <div class="flex min-h-screen">
-
       {# Overlay para móvil #}
       <div id="sidebarOverlay"
            class="fixed inset-0 bg-black/60 z-40 hidden md:hidden backdrop-blur-sm"></div>
-
       {# ========== SIDEBAR ========== #}
       <aside id="sidebar"
              class="w-64 bg-[#1e293b] border-r border-gray-800 flex flex-col fixed h-full z-[60] shadow-2xl md:shadow-none transition-transform duration-300 -translate-x-full md:translate-x-0 overflow-hidden">
-
         {# Logo / Header del sidebar #}
         {% block sidebar_logo %}
-        <a href="{% block sidebar_home_url %}#{% endblock %}">
-          <div class="sidebar-header hidden md:flex p-6 flex-col gap-4 flex-shrink-0">
-            <div class="logo-container flex items-center justify-between">
-              {# Logo expandido #}
-              <div class="logo-full flex items-center gap-2">
-                <div class="p-2 rounded-lg flex items-center justify-center w-12 h-12 flex-shrink-0">
-                  <img src="{% static 'img/Logo-figura.ico' %}"
-                       loading="lazy"
-                       alt="Logo Figura"
-                       class="w-8 h-8 object-contain" />
-                </div>
-                <div class="logo-text whitespace-nowrap">
-                  <div class="flex flex-col">
-                    <div class="flex items-end gap-0.5">
-                      <div class="flex items-end">
-                        <span class="text-2xl font-black text-white tracking-tighter leading-none">A</span>
-                        <span class="text-xl font-black text-white leading-none mb-0.5">.</span>
+          <a href="{% block sidebar_home_url %}#{% endblock %}">
+            <div class="sidebar-header hidden md:flex p-6 flex-col gap-4 flex-shrink-0">
+              <div class="logo-container flex items-center justify-between">
+                {# Logo expandido #}
+                <div class="logo-full flex items-center gap-2">
+                  <div class="p-2 rounded-lg flex items-center justify-center w-12 h-12 flex-shrink-0">
+                    <img src="{% static 'img/Logo-figura.ico' %}"
+                         loading="lazy"
+                         alt="Logo Figura"
+                         class="w-8 h-8 object-contain" />
+                  </div>
+                  <div class="logo-text whitespace-nowrap">
+                    <div class="flex flex-col">
+                      <div class="flex items-end gap-0.5">
+                        <div class="flex items-end">
+                          <span class="text-2xl font-black text-white tracking-tighter leading-none">A</span>
+                          <span class="text-xl font-black text-white leading-none mb-0.5">.</span>
+                        </div>
+                        <div class="flex items-end">
+                          <span class="text-2xl font-black text-white tracking-tighter leading-none">N</span>
+                          <span class="text-xl font-black text-white leading-none mb-0.5">.</span>
+                        </div>
+                        <span class="text-2xl font-black text-white tracking-tighter leading-none">T</span>
                       </div>
-                      <div class="flex items-end">
-                        <span class="text-2xl font-black text-white tracking-tighter leading-none">N</span>
-                        <span class="text-xl font-black text-white leading-none mb-0.5">.</span>
+                      <div class="flex items-center gap-1">
+                        <span class="text-[8px] font-bold text-[#10b981] tracking-[0.1em] leading-none uppercase">APEX</span>
+                        <span class="text-[8px] font-bold text-[#10b981] tracking-[0.1em] leading-none uppercase">NEXUS</span>
+                        <span class="text-[8px] font-bold text-[#10b981] tracking-[0.1em] leading-none uppercase">TECHNOLOGY</span>
                       </div>
-                      <span class="text-2xl font-black text-white tracking-tighter leading-none">T</span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                      <span class="text-[8px] font-bold text-[#10b981] tracking-[0.1em] leading-none uppercase">APEX</span>
-                      <span class="text-[8px] font-bold text-[#10b981] tracking-[0.1em] leading-none uppercase">NEXUS</span>
-                      <span class="text-[8px] font-bold text-[#10b981] tracking-[0.1em] leading-none uppercase">TECHNOLOGY</span>
                     </div>
                   </div>
                 </div>
-              </div>
-              {# Logo mini (sidebar colapsado) #}
-              <div class="logo-mini flex-col items-center gap-1">
-                <div class="p-2 rounded-lg flex items-center justify-center w-12 h-12 flex-shrink-0">
-                  <img src="{% static 'img/Logo-figura.ico' %}"
-                       loading="lazy"
-                       alt="Logo Figura"
-                       class="w-8 h-8 object-contain" />
+                {# Logo mini (sidebar colapsado) #}
+                <div class="logo-mini flex-col items-center gap-1">
+                  <div class="p-2 rounded-lg flex items-center justify-center w-12 h-12 flex-shrink-0">
+                    <img src="{% static 'img/Logo-figura.ico' %}"
+                         loading="lazy"
+                         alt="Logo Figura"
+                         class="w-8 h-8 object-contain" />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </a>
+          </a>
         {% endblock sidebar_logo %}
-
         {# Botón toggle sidebar (escritorio) #}
         <button id="toggleSidebar"
                 class="flex items-center justify-center p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors mx-4 mb-2 hidden md:flex">
@@ -112,37 +109,29 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-
         <div class="mini-separator"></div>
-
         {# ========== NAV LINKS (sobreescribir en cada template hijo) ========== #}
         <nav class="flex-1 px-4 space-y-1 overflow-y-auto mt-4 md:mt-0 custom-scrollbar">
           {% block sidebar_nav %}
           {% endblock sidebar_nav %}
         </nav>
-
         {# ========== FOOTER DEL SIDEBAR (sobreescribir en cada template hijo) ========== #}
         <div class="sidebar-footer flex-shrink-0 p-4 border-t border-gray-800 space-y-1">
           {% block sidebar_footer %}
           {% endblock sidebar_footer %}
         </div>
-
       </aside>
-
       {# ========== CONTENIDO PRINCIPAL ========== #}
       <main id="mainContent"
             class="flex-1 w-full min-w-0 transition-all duration-300 md:ml-64 p-4 md:p-8 overflow-x-hidden ml-0">
         {% block content %}
         {% endblock content %}
       </main>
-
     </div>
-
     {#========== SCRIPTS GLOBALES ==========#}
     <script src="{% static 'sweetalert2/sweetalert2.all.min.js' %}"></script>
     <script src="{% static 'js/globals.js' %}"></script>
     <script src="{% static 'js/htmx.min.js' %}"></script>
-
     <script>
       document.addEventListener('DOMContentLoaded', function() {
           {% if messages %}
@@ -163,9 +152,7 @@
           {% endif %}
       });
     </script>
-
     {% block extra_js %}
     {% endblock extra_js %}
-
   </body>
 </html>
