@@ -30,6 +30,7 @@ urlpatterns = [
     path("administrador/", include("apps.pedidos.urls")),
     path("administrador/", include("apps.reportes.urls")),
     path("administrador/", include("apps.productos.urls")),
+    path("api/", include("api.urls")),
     path("", include("apps.clientes.urls")),  # Dirije a la raiz de clientes
     # Ruta para 404 a modo de prueba
     path('404/', TemplateView.as_view(template_name='404.html'), name='404'),

@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
 
     "rest_framework",
+    "api",
 
     # Apps del proyecto (en orden de dependencias)
     'apps.core',
