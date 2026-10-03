@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "django.contrib.humanize",
 
+    "rest_framework",
 
     # Apps del proyecto (en orden de dependencias)
     'apps.core',

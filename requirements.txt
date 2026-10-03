@@ -6,12 +6,14 @@ charset-normalizer==3.4.5
 click==8.3.1
 colorama==0.4.6
 cookiecutter==2.7.1
+cssbeautifier==2.0.3
 defusedxml==0.7.1
 Django==6.0.1
 django-cleanup==9.0.0
 django-environ==0.12.0
 django-htmx==1.27.0
 django-svg-image-form-field==1.0.1
+djangorestframework==3.18.1
 djlint==1.36.4
 EditorConfig==0.17.1
 et_xmlfile==2.0.0
